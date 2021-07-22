@@ -1,4 +1,4 @@
-// GPOS HARDFORK 2020-12-21 00:00:00 GMT
+// NFT HARDFORK Sat, 15-Aug-20 00:00:00 UTC
 #ifndef HARDFORK_NFT_TIME
-#define HARDFORK_NFT_TIME (fc::time_point_sec( 1608508800 ))
+#define HARDFORK_NFT_TIME (fc::time_point_sec( 1597449600 ))
 #endif

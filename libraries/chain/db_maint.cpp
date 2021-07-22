@@ -32,24 +32,24 @@
 #include <graphene/chain/is_authorized_asset.hpp>
 
 #include <graphene/chain/account_object.hpp>
+#include <graphene/chain/account_role_object.hpp>
 #include <graphene/chain/asset_object.hpp>
 #include <graphene/chain/budget_record_object.hpp>
 #include <graphene/chain/buyback_object.hpp>
 #include <graphene/chain/chain_property_object.hpp>
 #include <graphene/chain/committee_member_object.hpp>
+#include <graphene/chain/custom_account_authority_object.hpp>
 #include <graphene/chain/fba_object.hpp>
 #include <graphene/chain/global_property_object.hpp>
 #include <graphene/chain/market_object.hpp>
 #include <graphene/chain/special_authority_object.hpp>
 #include <graphene/chain/son_object.hpp>
+#include <graphene/chain/son_wallet_object.hpp>
 #include <graphene/chain/vesting_balance_object.hpp>
 #include <graphene/chain/vote_count.hpp>
 #include <graphene/chain/witness_object.hpp>
 #include <graphene/chain/witness_schedule_object.hpp>
 #include <graphene/chain/worker_object.hpp>
-#include <graphene/chain/custom_account_authority_object.hpp>
-
-#define USE_VESTING_OBJECT_BY_ASSET_BALANCE_INDEX // vesting_balance_object by_asset_balance index needed
 
 namespace graphene { namespace chain {
 
@@ -178,36 +178,52 @@ void database::update_worker_votes()
 
 void database::pay_sons()
 {
-   auto get_weight = []( uint64_t total_votes ) {
-      int8_t bits_to_drop = std::max(int(boost::multiprecision::detail::find_msb(total_votes)) - 15, 0);
-      uint16_t weight = std::max((total_votes >> bits_to_drop), uint64_t(1) );
-      return weight;
-   };
    time_point_sec now = head_block_time();
    const dynamic_global_property_object& dpo = get_dynamic_global_properties();
    // Current requirement is that we have to pay every 24 hours, so the following check
    if( dpo.son_budget.value > 0 && ((now - dpo.last_son_payout_time) >= fc::seconds(get_global_properties().parameters.son_pay_time()))) {
+      auto sons = sort_votable_objects<son_index>(get_global_properties().parameters.maximum_son_count());
+      // After SON2 HF
+      uint64_t total_votes = 0;
+      for( const son_object& son : sons )
+      {
+         total_votes += _vote_tally_buffer[son.vote_id];
+      }
+      int8_t bits_to_drop = std::max(int(boost::multiprecision::detail::find_msb(total_votes)) - 15, 0);
+      auto get_weight = [&bits_to_drop]( uint64_t son_votes ) {
+         uint16_t weight = std::max((son_votes >> bits_to_drop), uint64_t(1) );
+         return weight;
+      };
+      // Before SON2 HF
+      auto get_weight_before_son2_hf = []( uint64_t son_votes ) {
+         int8_t bits_to_drop = std::max(int(boost::multiprecision::detail::find_msb(son_votes)) - 15, 0);
+         uint16_t weight = std::max((son_votes >> bits_to_drop), uint64_t(1) );
+         return weight;
+      };
       uint64_t weighted_total_txs_signed = 0;
       share_type son_budget = dpo.son_budget;
-      get_index_type<son_stats_index>().inspect_all_objects([this, &weighted_total_txs_signed, &get_weight](const object& o) {
+      get_index_type<son_stats_index>().inspect_all_objects([this, &weighted_total_txs_signed, &get_weight, &now, &get_weight_before_son2_hf](const object& o) {
          const son_statistics_object& s = static_cast<const son_statistics_object&>(o);
          const auto& idx = get_index_type<son_index>().indices().get<by_id>();
          auto son_obj = idx.find( s.owner );
          auto son_weight = get_weight(_vote_tally_buffer[son_obj->vote_id]);
+         if( now < HARDFORK_SON2_TIME ) {
+            son_weight = get_weight_before_son2_hf(_vote_tally_buffer[son_obj->vote_id]);
+         }
          weighted_total_txs_signed += (s.txs_signed * son_weight);
       });
 
-
       // Now pay off each SON proportional to the number of transactions signed.
-      get_index_type<son_stats_index>().inspect_all_objects([this, &weighted_total_txs_signed, &dpo, &son_budget, &get_weight](const object& o) {
+      get_index_type<son_stats_index>().inspect_all_objects([this, &weighted_total_txs_signed, &dpo, &son_budget, &get_weight, &get_weight_before_son2_hf, &now](const object& o) {
          const son_statistics_object& s = static_cast<const son_statistics_object&>(o);
          if(s.txs_signed > 0){
-            auto son_params = get_global_properties().parameters;
             const auto& idx = get_index_type<son_index>().indices().get<by_id>();
             auto son_obj = idx.find( s.owner );
             auto son_weight = get_weight(_vote_tally_buffer[son_obj->vote_id]);
+            if( now < HARDFORK_SON2_TIME ) {
+               son_weight = get_weight_before_son2_hf(_vote_tally_buffer[son_obj->vote_id]);
+            }
             share_type pay = (s.txs_signed * son_weight * son_budget.value)/weighted_total_txs_signed;
-
             modify( *son_obj, [&]( son_object& _son_obj)
             {
                _son_obj.pay_son_fee(pay, *this);
@@ -1190,7 +1206,6 @@ uint32_t database::get_gpos_current_subperiod()
    const auto period_start = fc::time_point_sec(gpo.parameters.gpos_period_start());
 
    //  variables needed
-   const fc::time_point_sec period_end = period_start + vesting_period;
    const auto number_of_subperiods = vesting_period / vesting_subperiod;
    const auto now = this->head_block_time();
    auto seconds_since_period_start = now.sec_since_epoch() - period_start.sec_since_epoch();
@@ -1383,7 +1398,6 @@ void schedule_pending_dividend_balances(database& db,
 
    uint32_t holder_account_count = 0;
 
-#ifdef USE_VESTING_OBJECT_BY_ASSET_BALANCE_INDEX
    // get only once a collection of accounts that hold nonzero vesting balances of the dividend asset
    auto vesting_balances_begin =
       vesting_index.indices().get<by_asset_balance>().lower_bound(boost::make_tuple(dividend_holder_asset_obj.id, balance_type));
@@ -1398,22 +1412,6 @@ void schedule_pending_dividend_balances(database& db,
              ("owner", vesting_balance_obj.owner(db).name)
              ("amount", vesting_balance_obj.balance.amount));
    }
-#else
-   // get only once a collection of accounts that hold nonzero vesting balances of the dividend asset
-   const auto& vesting_balances = vesting_index.indices().get<by_id>();
-   for (const vesting_balance_object& vesting_balance_obj : vesting_balances)
-   {
-        if (vesting_balance_obj.balance.asset_id == dividend_holder_asset_obj.id && vesting_balance_obj.balance.amount &&
-        vesting_balance_object.balance_type == balance_type)
-        {
-            vesting_amounts[vesting_balance_obj.owner] += vesting_balance_obj.balance.amount;
-            ++gpos_holder_account_count;
-            dlog("Vesting balance for account: ${owner}, amount: ${amount}",
-                 ("owner", vesting_balance_obj.owner(db).name)
-                 ("amount", vesting_balance_obj.balance.amount));
-        }
-   }
-#endif
 
    auto current_distribution_account_balance_iter = current_distribution_account_balance_range.begin();
    if(db.head_block_time() < HARDFORK_GPOS_TIME)
@@ -1867,7 +1865,6 @@ void process_dividend_assets(database& db)
                   {
                      // if there was a previous payout, make our next payment one interval
                      uint32_t current_time_sec = current_head_block_time.sec_since_epoch();
-                     fc::time_point_sec reference_time = *dividend_data_obj.last_scheduled_payout_time;
                      uint32_t next_possible_time_sec = dividend_data_obj.last_scheduled_payout_time->sec_since_epoch();
                      do
                         next_possible_time_sec += *dividend_data_obj.options.payout_interval;
@@ -1958,6 +1955,21 @@ void database::perform_son_tasks()
    }
 }
 
+void update_son_asset(database& db)
+{
+   if( db.head_block_time() >= HARDFORK_SON2_TIME )
+   {
+      const auto& gpo = db.get_global_properties();
+      const asset_object& btc_asset = gpo.parameters.btc_asset()(db);
+      if( btc_asset.is_transfer_restricted() ) {
+         db.modify( btc_asset, []( asset_object& ao ) {
+            ao.options.flags = asset_issuer_permission_flags::charge_market_fee |
+                              asset_issuer_permission_flags::override_authority;
+         });
+      }
+   }
+}
+
 void database::perform_chain_maintenance(const signed_block& next_block, const global_property_object& global_props)
 { try {
    const auto& gpo = get_global_properties();
@@ -1968,6 +1980,8 @@ void database::perform_chain_maintenance(const signed_block& next_block, const g
    process_dividend_assets(*this);
 
    rolling_period_start(*this);
+
+   update_son_asset(*this);
 
    struct vote_tally_helper {
       database& d;
@@ -1988,7 +2002,7 @@ void database::perform_chain_maintenance(const signed_block& next_block, const g
             balance_type = vesting_balance_type::gpos;
 
          const vesting_balance_index& vesting_index = d.get_index_type<vesting_balance_index>();
-#ifdef USE_VESTING_OBJECT_BY_ASSET_BALANCE_INDEX
+
          auto vesting_balances_begin =
               vesting_index.indices().get<by_asset_balance>().lower_bound(boost::make_tuple(asset_id_type(), balance_type));
          auto vesting_balances_end =
@@ -2000,19 +2014,7 @@ void database::perform_chain_maintenance(const signed_block& next_block, const g
                  ("owner", vesting_balance_obj.owner(d).name)
                  ("amount", vesting_balance_obj.balance.amount));
          }
-#else
-         const auto& vesting_balances = vesting_index.indices().get<by_id>();
-         for (const vesting_balance_object& vesting_balance_obj : vesting_balances)
-         {
-            if (vesting_balance_obj.balance.asset_id == asset_id_type() && vesting_balance_obj.balance.amount && vesting_balance_obj.balance_type == balance_type)
-            {
-                vesting_amounts[vesting_balance_obj.owner] += vesting_balance_obj.balance.amount;
-                dlog("Vesting balance for account: ${owner}, amount: ${amount}",
-                     ("owner", vesting_balance_obj.owner(d).name)
-                     ("amount", vesting_balance_obj.balance.amount));
-            }
-         }
-#endif
+
       }
 
       void operator()( const account_object& stake_account, const account_statistics_object& stats )

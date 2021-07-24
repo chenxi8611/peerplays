@@ -93,7 +93,7 @@
 #define GRAPHENE_DEFAULT_MIN_SON_COUNT                        (5)
 #define GRAPHENE_DEFAULT_MAX_WITNESSES                        (1001) // SHOULD BE ODD
 #define GRAPHENE_DEFAULT_MAX_COMMITTEE                        (1001) // SHOULD BE ODD
-#define GRAPHENE_DEFAULT_MAX_SONS                             (7)
+#define GRAPHENE_DEFAULT_MAX_SONS                             (15)
 #define GRAPHENE_DEFAULT_MAX_PROPOSAL_LIFETIME_SEC            (60*60*24*7*4) // Four weeks
 #define GRAPHENE_DEFAULT_COMMITTEE_PROPOSAL_REVIEW_PERIOD_SEC (60*60*24*7*2) // Two weeks
 #define GRAPHENE_DEFAULT_NETWORK_PERCENT_OF_FEE               (20*GRAPHENE_1_PERCENT)

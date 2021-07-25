@@ -1987,7 +1987,7 @@ void update_son_params(database& db)
          });
       }
       db.modify( gpo, []( global_property_object& gpo ) {
-            gpo.parameters.extensions.value.maximum_son_count = 9;
+            gpo.parameters.extensions.value.maximum_son_count = 7;
       });
    }
 }

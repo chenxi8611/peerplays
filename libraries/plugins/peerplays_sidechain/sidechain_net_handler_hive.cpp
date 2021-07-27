@@ -5,6 +5,7 @@
 #include <thread>
 
 #include <boost/algorithm/hex.hpp>
+#include <boost/algorithm/string.hpp>
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/property_tree/ptree.hpp>
 
@@ -313,7 +314,7 @@ bool sidechain_net_handler_hive::process_proposal(const proposal_object &po) {
                   if (operation_type == "transfer_operation") {
                      const auto &op_value = op.get_child("value");
 
-                     std::string address = op_value.get<std::string>("from");
+                     std::string sidechain_from = op_value.get<std::string>("from");
 
                      const auto &amount_child = op_value.get_child("amount");
 
@@ -327,7 +328,17 @@ bool sidechain_net_handler_hive::process_proposal(const proposal_object &po) {
                         sidechain_currency = "HIVE";
                      }
 
-                     process_ok = (swdo_sidechain_from == address) &&
+                     std::string memo = op_value.get<std::string>("memo");
+                     if (!memo.empty()) {
+                        boost::trim(memo);
+                        if (memo.find("son-payment-to:") == 0) {
+                           memo = memo.substr(15);
+                           boost::trim(memo);
+                           sidechain_from = memo;
+                        }
+                     }
+
+                     process_ok = (swdo_sidechain_from == sidechain_from) &&
                                   (swdo_sidechain_currency == sidechain_currency) &&
                                   (swdo_sidechain_amount == amount);
                   }
@@ -865,6 +876,16 @@ void sidechain_net_handler_hive::handle_event(const std::string &event_data) {
                   if ((nai == "@@000000021") /*?? HIVE*/ || (nai == "@@000000021" /*TESTS*/)) {
                      sidechain_currency = "HIVE";
                      sidechain_currency_price = database.get<asset_object>(database.get_global_properties().parameters.hive_asset()).options.core_exchange_rate;
+                  }
+
+                  std::string memo = op_value.get<std::string>("memo");
+                  if (!memo.empty()) {
+                     boost::trim(memo);
+                     if (memo.find("son-payment-to:") == 0) {
+                        memo = memo.substr(15);
+                        boost::trim(memo);
+                        from = memo;
+                     }
                   }
 
                   if (to == "son-account") {

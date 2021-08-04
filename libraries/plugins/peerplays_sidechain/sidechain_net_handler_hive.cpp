@@ -329,13 +329,9 @@ bool sidechain_net_handler_hive::process_proposal(const proposal_object &po) {
                      }
 
                      std::string memo = op_value.get<std::string>("memo");
+                     boost::trim(memo);
                      if (!memo.empty()) {
-                        boost::trim(memo);
-                        if (memo.find("son-payment-to:") == 0) {
-                           memo = memo.substr(15);
-                           boost::trim(memo);
-                           sidechain_from = memo;
-                        }
+                        sidechain_from = memo;
                      }
 
                      process_ok = (swdo_sidechain_from == sidechain_from) &&
@@ -879,13 +875,9 @@ void sidechain_net_handler_hive::handle_event(const std::string &event_data) {
                   }
 
                   std::string memo = op_value.get<std::string>("memo");
+                  boost::trim(memo);
                   if (!memo.empty()) {
-                     boost::trim(memo);
-                     if (memo.find("son-payment-to:") == 0) {
-                        memo = memo.substr(15);
-                        boost::trim(memo);
-                        from = memo;
-                     }
+                     from = memo;
                   }
 
                   if (to == "son-account") {

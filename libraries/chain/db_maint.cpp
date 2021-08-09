@@ -248,6 +248,9 @@ void database::pay_sons()
                for (const auto &ts : s.txs_signed) {
                   _s.txs_signed.at(ts.first) = 0;
                }
+               for (const auto &str : s.sidechain_txs_reported) {
+                  _s.sidechain_txs_reported.at(str.first) = 0;
+               }
             });
          }
       });

@@ -9,7 +9,7 @@ namespace graphene { namespace peerplays_sidechain {
 
 class rpc_client {
 public:
-   rpc_client(std::string _ip, uint32_t _port, std::string _user, std::string _password);
+   rpc_client(std::string _ip, uint32_t _port, std::string _user, std::string _password, bool _debug_rpc_calls);
 
 protected:
    std::string retrieve_array_value_from_reply(std::string reply_str, std::string array_path, uint32_t idx);
@@ -20,6 +20,7 @@ protected:
    uint32_t port;
    std::string user;
    std::string password;
+   bool debug_rpc_calls;
 
    uint32_t request_id;
 

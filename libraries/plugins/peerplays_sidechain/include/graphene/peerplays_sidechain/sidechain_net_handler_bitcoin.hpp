@@ -21,7 +21,7 @@ public:
 
 class bitcoin_rpc_client {
 public:
-   bitcoin_rpc_client(std::string _ip, uint32_t _rpc, std::string _user, std::string _password, std::string _wallet, std::string _wallet_password);
+   bitcoin_rpc_client(std::string _ip, uint32_t _rpc, std::string _user, std::string _password, std::string _wallet, std::string _wallet_password, bool _debug_rpc_calls);
 
    std::string addmultisigaddress(const uint32_t nrequired, const std::vector<std::string> public_keys);
    std::string combinepsbt(const vector<std::string> &psbts);
@@ -51,7 +51,7 @@ public:
    //bool walletpassphrase(const std::string &passphrase, uint32_t timeout = 60);
 
 private:
-   fc::http::reply send_post_request(std::string body, bool show_log = false);
+   fc::http::reply send_post_request(std::string body, bool show_log);
 
    std::string ip;
    uint32_t rpc_port;
@@ -59,6 +59,7 @@ private:
    std::string password;
    std::string wallet;
    std::string wallet_password;
+   bool debug_rpc_calls;
 
    fc::http::header authorization;
 };

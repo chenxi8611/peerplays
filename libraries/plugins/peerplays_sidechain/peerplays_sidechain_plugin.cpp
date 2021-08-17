@@ -142,6 +142,8 @@ void peerplays_sidechain_plugin_impl::plugin_set_program_options(
 
    cli.add_options()("sidechain-retry-threshold", bpo::value<uint16_t>()->default_value(150), "Sidechain retry throttling threshold");
 
+   cli.add_options()("debug-rpc-calls", bpo::value<bool>()->default_value(false), "Outputs RPC calls to console");
+
    cli.add_options()("bitcoin-sidechain-enabled", bpo::value<bool>()->default_value(false), "Bitcoin sidechain handler enabled");
    cli.add_options()("bitcoin-node-ip", bpo::value<string>()->default_value("127.0.0.1"), "IP address of Bitcoin node");
    cli.add_options()("bitcoin-node-zmq-port", bpo::value<uint32_t>()->default_value(11111), "ZMQ port of Bitcoin node");
@@ -200,7 +202,9 @@ void peerplays_sidechain_plugin_impl::plugin_initialize(const boost::program_opt
          }
          config_ready_son = config_ready_son && !private_keys.empty();
       }
-      retries_threshold = options.at("sidechain-retry-threshold").as<uint16_t>();
+      if (options.count("sidechain-retry-threshold")) {
+         retries_threshold = options.at("sidechain-retry-threshold").as<uint16_t>();
+      }
       ilog("sidechain-retry-threshold: ${sidechain-retry-threshold}", ("sidechain-retry-threshold", retries_threshold));
    }
    if (!config_ready_son) {

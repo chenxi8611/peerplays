@@ -11,11 +11,12 @@
 
 namespace graphene { namespace peerplays_sidechain {
 
-rpc_client::rpc_client(std::string _ip, uint32_t _port, std::string _user, std::string _password) :
+rpc_client::rpc_client(std::string _ip, uint32_t _port, std::string _user, std::string _password, bool _debug_rpc_calls) :
       ip(_ip),
       port(_port),
       user(_user),
       password(_password),
+      debug_rpc_calls(_debug_rpc_calls),
       request_id(0) {
    authorization.key = "Authorization";
    authorization.val = "Basic " + fc::base64_encode(user + ":" + password);

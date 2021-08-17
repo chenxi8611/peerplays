@@ -29,18 +29,18 @@
 
 namespace graphene { namespace peerplays_sidechain {
 
-hive_node_rpc_client::hive_node_rpc_client(std::string _ip, uint32_t _port, std::string _user, std::string _password) :
-      rpc_client(_ip, _port, _user, _password) {
+hive_node_rpc_client::hive_node_rpc_client(std::string _ip, uint32_t _port, std::string _user, std::string _password, bool _debug_rpc_calls) :
+      rpc_client(_ip, _port, _user, _password, _debug_rpc_calls) {
 }
 
 std::string hive_node_rpc_client::account_history_api_get_transaction(std::string transaction_id) {
    std::string params = "{ \"id\": \"" + transaction_id + "\" }";
-   return send_post_request("account_history_api.get_transaction", params, false);
+   return send_post_request("account_history_api.get_transaction", params, debug_rpc_calls);
 }
 
 std::string hive_node_rpc_client::block_api_get_block(uint32_t block_number) {
    std::string params = "{ \"block_num\": " + std::to_string(block_number) + " }";
-   return send_post_request("block_api.get_block", params, false);
+   return send_post_request("block_api.get_block", params, debug_rpc_calls);
 }
 
 std::string hive_node_rpc_client::condenser_api_get_accounts(std::vector<std::string> accounts) {
@@ -52,25 +52,25 @@ std::string hive_node_rpc_client::condenser_api_get_accounts(std::vector<std::st
       params = "\"" + account + "\"";
    }
    params = "[[" + params + "]]";
-   return send_post_request("condenser_api.get_accounts", params, false);
+   return send_post_request("condenser_api.get_accounts", params, debug_rpc_calls);
 }
 
 std::string hive_node_rpc_client::condenser_api_get_config() {
    std::string params = "[]";
-   return send_post_request("condenser_api.get_config", params, false);
+   return send_post_request("condenser_api.get_config", params, debug_rpc_calls);
 }
 
 std::string hive_node_rpc_client::database_api_get_dynamic_global_properties() {
-   return send_post_request("database_api.get_dynamic_global_properties", "", false);
+   return send_post_request("database_api.get_dynamic_global_properties", "", debug_rpc_calls);
 }
 
 std::string hive_node_rpc_client::database_api_get_version() {
-   return send_post_request("database_api.get_version", "", false);
+   return send_post_request("database_api.get_version", "", debug_rpc_calls);
 }
 
 std::string hive_node_rpc_client::network_broadcast_api_broadcast_transaction(std::string htrx) {
    std::string params = "{ \"trx\": " + htrx + ", \"max_block_age\": -1 }";
-   return send_post_request("network_broadcast_api.broadcast_transaction", params, false);
+   return send_post_request("network_broadcast_api.broadcast_transaction", params, debug_rpc_calls);
 }
 
 std::string hive_node_rpc_client::get_account(std::string account) {
@@ -115,6 +115,10 @@ sidechain_net_handler_hive::sidechain_net_handler_hive(peerplays_sidechain_plugi
       sidechain_net_handler(_plugin, options) {
    sidechain = sidechain_type::hive;
 
+   if (options.count("debug-rpc-calls")) {
+      debug_rpc_calls = options.at("debug-rpc-calls").as<bool>();
+   }
+
    node_ip = options.at("hive-node-ip").as<std::string>();
    node_rpc_port = options.at("hive-node-rpc-port").as<uint32_t>();
    if (options.count("hive-node-rpc-user")) {
@@ -148,7 +152,7 @@ sidechain_net_handler_hive::sidechain_net_handler_hive(peerplays_sidechain_plugi
       FC_ASSERT(false);
    }
 
-   node_rpc_client = new hive_node_rpc_client(node_ip, node_rpc_port, node_rpc_user, node_rpc_password);
+   node_rpc_client = new hive_node_rpc_client(node_ip, node_rpc_port, node_rpc_user, node_rpc_password, debug_rpc_calls);
 
    std::string chain_id_str = node_rpc_client->get_chain_id();
    chain_id = chain_id_type(chain_id_str);

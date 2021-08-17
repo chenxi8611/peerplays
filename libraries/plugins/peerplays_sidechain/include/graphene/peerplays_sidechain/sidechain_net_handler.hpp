@@ -52,6 +52,8 @@ protected:
    graphene::chain::database &database;
    sidechain_type sidechain;
 
+   bool debug_rpc_calls;
+
    std::map<std::string, std::string> private_keys;
 
    void on_applied_block(const signed_block &b);

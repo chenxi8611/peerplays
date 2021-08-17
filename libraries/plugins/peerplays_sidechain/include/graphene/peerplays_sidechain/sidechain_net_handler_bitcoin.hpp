@@ -1,13 +1,14 @@
 #pragma once
 
-#include <graphene/peerplays_sidechain/bitcoin/bitcoin_address.hpp>
 #include <graphene/peerplays_sidechain/sidechain_net_handler.hpp>
 
 #include <string>
 #include <zmq.hpp>
 
+#include <boost/signals2.hpp>
+
 #include <fc/network/http/connection.hpp>
-#include <fc/signals.hpp>
+#include <graphene/peerplays_sidechain/bitcoin/bitcoin_address.hpp>
 
 namespace graphene { namespace peerplays_sidechain {
 
@@ -68,7 +69,7 @@ class zmq_listener {
 public:
    zmq_listener(std::string _ip, uint32_t _zmq);
 
-   fc::signal<void(const std::string &)> event_received;
+   boost::signals2::signal<void(const std::string &)> event_received;
 
 private:
    void handle_zmq();

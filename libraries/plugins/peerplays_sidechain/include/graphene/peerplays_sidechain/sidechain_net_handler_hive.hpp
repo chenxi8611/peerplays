@@ -4,9 +4,9 @@
 
 #include <string>
 
-#include <fc/network/http/connection.hpp>
-#include <fc/signals.hpp>
+#include <boost/signals2.hpp>
 
+#include <fc/network/http/connection.hpp>
 #include <graphene/peerplays_sidechain/common/rpc_client.hpp>
 #include <graphene/peerplays_sidechain/hive/types.hpp>
 
@@ -57,13 +57,9 @@ private:
    hive::chain_id_type chain_id;
    hive::network network_type;
 
-   std::string create_primary_wallet_transaction(const son_wallet_object &prev_swo, std::string new_sw_address);
-   std::string create_deposit_transaction(const son_wallet_deposit_object &swdo);
-   std::string create_withdrawal_transaction(const son_wallet_withdraw_object &swwo);
-
    uint64_t last_block_received;
    fc::future<void> _listener_task;
-   fc::signal<void(const std::string &)> event_received;
+   boost::signals2::signal<void(const std::string &)> event_received;
    void schedule_hive_listener();
    void hive_listener_loop();
    void handle_event(const std::string &event_data);

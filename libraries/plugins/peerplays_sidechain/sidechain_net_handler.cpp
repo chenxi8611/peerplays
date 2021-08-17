@@ -415,7 +415,11 @@ void sidechain_net_handler::process_deposits() {
       const auto &sidechain_addresses_idx = database.get_index_type<sidechain_address_index>().indices().get<by_sidechain_and_deposit_address_and_expires>();
       const auto &addr_itr = sidechain_addresses_idx.find(std::make_tuple(sidechain, swdo.sidechain_from, time_point_sec::maximum()));
       if (addr_itr == sidechain_addresses_idx.end()) {
-         return;
+         const auto &account_idx = database.get_index_type<account_index>().indices().get<by_name>();
+         const auto &account_itr = account_idx.find(swdo.sidechain_from);
+         if (account_itr == account_idx.end()) {
+            return;
+         }
       }
 
       ilog("Deposit to process: ${swdo}", ("swdo", swdo));

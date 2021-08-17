@@ -4,7 +4,6 @@
 
 #include <boost/program_options.hpp>
 
-#include <fc/signals.hpp>
 #include <graphene/chain/proposal_object.hpp>
 #include <graphene/chain/sidechain_address_object.hpp>
 #include <graphene/chain/sidechain_transaction_object.hpp>

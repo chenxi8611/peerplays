@@ -883,8 +883,18 @@ void sidechain_net_handler_hive::handle_event(const std::string &event_data) {
                   if (to == "son-account") {
                      const auto &sidechain_addresses_idx = database.get_index_type<sidechain_address_index>().indices().get<by_sidechain_and_deposit_address_and_expires>();
                      const auto &addr_itr = sidechain_addresses_idx.find(std::make_tuple(sidechain, from, time_point_sec::maximum()));
-                     if (addr_itr == sidechain_addresses_idx.end())
-                        continue;
+                     account_id_type accn = account_id_type();
+                     if (addr_itr == sidechain_addresses_idx.end()) {
+                        const auto &account_idx = database.get_index_type<account_index>().indices().get<by_name>();
+                        const auto &account_itr = account_idx.find(from);
+                        if (account_itr == account_idx.end()) {
+                           continue;
+                        } else {
+                           accn = account_itr->id;
+                        }
+                     } else {
+                        accn = addr_itr->sidechain_address_account;
+                     }
 
                      std::stringstream ss;
                      ss << "hive"
@@ -894,14 +904,14 @@ void sidechain_net_handler_hive::handle_event(const std::string &event_data) {
                      sidechain_event_data sed;
                      sed.timestamp = database.head_block_time();
                      sed.block_num = database.head_block_num();
-                     sed.sidechain = addr_itr->sidechain;
+                     sed.sidechain = sidechain;
                      sed.sidechain_uid = sidechain_uid;
                      sed.sidechain_transaction_id = transaction_id;
                      sed.sidechain_from = from;
                      sed.sidechain_to = to;
                      sed.sidechain_currency = sidechain_currency;
                      sed.sidechain_amount = amount;
-                     sed.peerplays_from = addr_itr->sidechain_address_account;
+                     sed.peerplays_from = accn;
                      sed.peerplays_to = database.get_global_properties().parameters.son_account();
                      sed.peerplays_asset = asset(sed.sidechain_amount * sidechain_currency_price.base.amount / sidechain_currency_price.quote.amount);
                      sidechain_event_data_received(sed);

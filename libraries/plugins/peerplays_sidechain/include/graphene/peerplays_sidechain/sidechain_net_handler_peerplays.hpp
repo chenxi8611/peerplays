@@ -4,8 +4,6 @@
 
 #include <string>
 
-#include <fc/signals.hpp>
-
 namespace graphene { namespace peerplays_sidechain {
 
 class sidechain_net_handler_peerplays : public sidechain_net_handler {

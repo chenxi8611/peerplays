@@ -448,9 +448,15 @@ void peerplays_sidechain_plugin_impl::son_processing() {
       return;
    }
 
+   //fc::time_point now_fine = fc::time_point::now();
+   //fc::time_point_sec now = now_fine + fc::microseconds(500000);
+   //if (plugin.database().get_slot_time(1) < now) {
+   //   return; // Not synced
+   //}
+
    fc::time_point now_fine = fc::time_point::now();
-   fc::time_point_sec now = now_fine + fc::microseconds(500000);
-   if (plugin.database().get_slot_time(1) < now) {
+   fc::time_point_sec now = now_fine - fc::milliseconds(3000);
+   if (plugin.database().head_block_time() < now) {
       return; // Not synced
    }
 

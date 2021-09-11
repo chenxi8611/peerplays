@@ -496,6 +496,12 @@ BOOST_AUTO_TEST_CASE( son_pay_test )
 
          _s.total_txs_signed[sidechain_type::bitcoin] = 2;
          _s.total_txs_signed[sidechain_type::hive] = 4;
+
+         _s.sidechain_txs_reported[sidechain_type::bitcoin] = 4;
+         _s.sidechain_txs_reported[sidechain_type::hive] = 8;
+
+         _s.total_sidechain_txs_reported[sidechain_type::bitcoin] = 4;
+         _s.total_sidechain_txs_reported[sidechain_type::hive] = 8;
       });
       // Modify the transaction signed statistics of Bob's SON
       db.modify( *son_stats_obj2, [&]( son_statistics_object& _s)
@@ -505,6 +511,12 @@ BOOST_AUTO_TEST_CASE( son_pay_test )
 
          _s.total_txs_signed[sidechain_type::bitcoin] = 3;
          _s.total_txs_signed[sidechain_type::hive] = 6;
+
+         _s.sidechain_txs_reported[sidechain_type::bitcoin] = 6;
+         _s.sidechain_txs_reported[sidechain_type::hive] = 12;
+
+         _s.total_sidechain_txs_reported[sidechain_type::bitcoin] = 6;
+         _s.total_sidechain_txs_reported[sidechain_type::hive] = 12;
       });
 
       // Note the balances before the maintenance
@@ -518,11 +530,19 @@ BOOST_AUTO_TEST_CASE( son_pay_test )
       BOOST_REQUIRE_EQUAL(son_stats_obj1->txs_signed.at(sidechain_type::hive), 0);
       BOOST_REQUIRE_EQUAL(son_stats_obj2->txs_signed.at(sidechain_type::bitcoin), 0);
       BOOST_REQUIRE_EQUAL(son_stats_obj2->txs_signed.at(sidechain_type::hive), 0);
+      BOOST_REQUIRE_EQUAL(son_stats_obj1->sidechain_txs_reported.at(sidechain_type::bitcoin), 0);
+      BOOST_REQUIRE_EQUAL(son_stats_obj1->sidechain_txs_reported.at(sidechain_type::hive), 0);
+      BOOST_REQUIRE_EQUAL(son_stats_obj2->sidechain_txs_reported.at(sidechain_type::bitcoin), 0);
+      BOOST_REQUIRE_EQUAL(son_stats_obj2->sidechain_txs_reported.at(sidechain_type::hive), 0);
 
       BOOST_REQUIRE_EQUAL(son_stats_obj1->total_txs_signed.at(sidechain_type::bitcoin), 2);
       BOOST_REQUIRE_EQUAL(son_stats_obj1->total_txs_signed.at(sidechain_type::hive), 4);
       BOOST_REQUIRE_EQUAL(son_stats_obj2->total_txs_signed.at(sidechain_type::bitcoin), 3);
       BOOST_REQUIRE_EQUAL(son_stats_obj2->total_txs_signed.at(sidechain_type::hive), 6);
+      BOOST_REQUIRE_EQUAL(son_stats_obj1->total_sidechain_txs_reported.at(sidechain_type::bitcoin), 4);
+      BOOST_REQUIRE_EQUAL(son_stats_obj1->total_sidechain_txs_reported.at(sidechain_type::hive), 8);
+      BOOST_REQUIRE_EQUAL(son_stats_obj2->total_sidechain_txs_reported.at(sidechain_type::bitcoin), 6);
+      BOOST_REQUIRE_EQUAL(son_stats_obj2->total_sidechain_txs_reported.at(sidechain_type::hive), 12);
       // Check that Alice and Bob are paid for signing the transactions in the previous day/cycle
       BOOST_REQUIRE_EQUAL(db.get_balance(obj1->son_account, asset_id_type()).amount.value, 80+obj1_balance);
       BOOST_REQUIRE_EQUAL(db.get_balance(obj2->son_account, asset_id_type()).amount.value, 120+obj2_balance);

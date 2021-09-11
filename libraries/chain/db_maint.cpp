@@ -248,9 +248,6 @@ void database::pay_sons()
                for (const auto &ts : s.txs_signed) {
                   _s.txs_signed.at(ts.first) = 0;
                }
-               for (const auto &str : s.sidechain_txs_reported) {
-                  _s.sidechain_txs_reported.at(str.first) = 0;
-               }
             });
          }
       });
@@ -280,11 +277,13 @@ void database::update_son_metrics(const vector<son_info>& curr_active_sons)
       bool is_active_son = (std::find(current_sons.begin(), current_sons.end(), son.id) != current_sons.end());
       modify( stats, [&]( son_statistics_object& _stats )
       {
+         if(is_active_son) {
+            _stats.total_voted_time = _stats.total_voted_time + get_global_properties().parameters.maintenance_interval;
+         }
          _stats.total_downtime += _stats.current_interval_downtime;
          _stats.current_interval_downtime = 0;
-         if(is_active_son)
-         {
-            _stats.total_voted_time = _stats.total_voted_time + get_global_properties().parameters.maintenance_interval;
+         for (const auto &str : _stats.sidechain_txs_reported) {
+            _stats.sidechain_txs_reported.at(str.first) = 0;
          }
       });
    }

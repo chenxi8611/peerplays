@@ -1,5 +1,7 @@
 #include <graphene/peerplays_sidechain/sidechain_net_handler.hpp>
 
+#include <boost/algorithm/string.hpp>
+
 #include <fc/log/logger.hpp>
 #include <graphene/chain/chain_property_object.hpp>
 #include <graphene/chain/proposal_object.hpp>
@@ -223,10 +225,14 @@ void sidechain_net_handler::sidechain_event_data_received(const sidechain_event_
 
    // Withdrawal request
    if (withdraw_condition) {
+      std::string withdraw_address = "";
       const auto &sidechain_addresses_idx = database.get_index_type<sidechain_address_index>().indices().get<by_account_and_sidechain_and_expires>();
       const auto &addr_itr = sidechain_addresses_idx.find(std::make_tuple(sed.peerplays_from, sidechain, time_point_sec::maximum()));
-      if (addr_itr == sidechain_addresses_idx.end())
-         return;
+      if (addr_itr != sidechain_addresses_idx.end()) {
+         withdraw_address = addr_itr->withdraw_address;
+      } else {
+         withdraw_address = sed.sidechain_from;
+      }
 
       std::string withdraw_currency = "";
       price withdraw_currency_price = {};
@@ -260,7 +266,7 @@ void sidechain_net_handler::sidechain_event_data_received(const sidechain_event_
             op.peerplays_from = sed.peerplays_from;
             op.peerplays_asset = sed.peerplays_asset;
             op.withdraw_sidechain = sidechain;
-            op.withdraw_address = addr_itr->withdraw_address;
+            op.withdraw_address = withdraw_address;
             op.withdraw_currency = withdraw_currency;
             op.withdraw_amount = sed.peerplays_asset.amount * withdraw_currency_price.quote.amount / withdraw_currency_price.base.amount;
 
@@ -636,6 +642,16 @@ void sidechain_net_handler::on_applied_block(const signed_block &b) {
                continue;
             }
 
+            std::string sidechain_from = account_id_to_string(transfer_op.from);
+            std::string memo = "";
+            if (transfer_op.memo) {
+               memo = transfer_op.memo->get_message(fc::ecc::private_key(), public_key_type());
+               boost::trim(memo);
+               if (!memo.empty()) {
+                  sidechain_from = memo;
+               }
+            }
+
             std::stringstream ss;
             ss << "peerplays"
                << "-" << trx.id().str() << "-" << operation_index;
@@ -647,7 +663,7 @@ void sidechain_net_handler::on_applied_block(const signed_block &b) {
             sed.sidechain = sidechain_type::peerplays;
             sed.sidechain_uid = sidechain_uid;
             sed.sidechain_transaction_id = trx.id().str();
-            sed.sidechain_from = account_id_to_string(transfer_op.from);
+            sed.sidechain_from = sidechain_from;
             sed.sidechain_to = account_id_to_string(transfer_op.to);
             sed.sidechain_currency = asset_id_to_string(transfer_op.amount.asset_id);
             sed.sidechain_amount = transfer_op.amount.amount;

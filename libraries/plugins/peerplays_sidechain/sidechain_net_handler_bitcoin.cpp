@@ -1576,7 +1576,17 @@ std::string sidechain_net_handler_bitcoin::create_primary_wallet_address(const s
 
 std::string sidechain_net_handler_bitcoin::create_primary_wallet_transaction(const son_wallet_object &prev_swo, std::string new_sw_address) {
 
-   std::stringstream prev_sw_ss(prev_swo.addresses.find(sidechain_type::bitcoin)->second);
+   const auto &address_data = prev_swo.addresses.find(sidechain_type::bitcoin);
+   if (address_data == prev_swo.addresses.end()) {
+      return "";
+   }
+
+   std::string s = address_data->second;
+   if (s.empty()) {
+      return "";
+   }
+
+   std::stringstream prev_sw_ss(s);
    boost::property_tree::ptree prev_sw_pt;
    boost::property_tree::read_json(prev_sw_ss, prev_sw_pt);
    std::string prev_pw_address = prev_sw_pt.get<std::string>("address");

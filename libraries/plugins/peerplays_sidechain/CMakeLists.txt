@@ -15,6 +15,7 @@ add_library( peerplays_sidechain
              bitcoin/utils.cpp
              bitcoin/sign_bitcoin_transaction.cpp
              common/rpc_client.cpp
+             common/https_call.cpp
              common/utils.cpp
              hive/asset.cpp
              hive/operations.cpp

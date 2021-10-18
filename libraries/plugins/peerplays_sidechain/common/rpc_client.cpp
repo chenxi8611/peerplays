@@ -9,6 +9,8 @@
 #include <fc/log/logger.hpp>
 #include <fc/network/ip.hpp>
 
+#include "https_call.h"
+
 namespace graphene { namespace peerplays_sidechain {
 
 rpc_client::rpc_client(std::string _ip, uint32_t _port, std::string _user, std::string _password, bool _debug_rpc_calls) :
@@ -100,6 +102,33 @@ std::string rpc_client::send_post_request(std::string method, std::string params
 }
 
 fc::http::reply rpc_client::send_post_request(std::string body, bool show_log) {
+
+	using namespace peerplays::net;
+
+	HttpRequest request("POST", "/", authorization.key + ":" + authorization.val, body);
+
+	HttpsCall call(ip, port);
+
+	HttpRequest response;
+	
+	fc::http::reply reply;
+
+	if (call.exec(request, &response)) {
+		reply.status = response.statusCode;
+		reply.body.resize(response.body.size());
+		memcpy(&reply.body[0], &response.body[0], response.body.size());
+	}
+
+	if (show_log) {
+		std::string url = "http://" + ip + ":" + std::to_string(port);
+		ilog("### Request URL:    ${url}", ("url", url));
+		ilog("### Request:        ${body}", ("body", body));
+		std::stringstream ss(std::string(reply.body.begin(), reply.body.end()));
+		ilog("### Response:       ${ss}", ("ss", ss.str()));
+	}
+
+	return reply;
+
    fc::http::connection conn;
    conn.connect_to(fc::ip::endpoint(fc::ip::address(ip), port));
 

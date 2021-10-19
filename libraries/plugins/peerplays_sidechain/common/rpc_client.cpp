@@ -109,7 +109,7 @@ fc::http::reply rpc_client::send_post_request(std::string body, bool show_log) {
 
 	HttpsCall call(ip, port);
 
-	HttpRequest response;
+	HttpResponse response;
 	
 	fc::http::reply reply;
 
@@ -128,7 +128,7 @@ fc::http::reply rpc_client::send_post_request(std::string body, bool show_log) {
 	}
 
 	return reply;
-
+/*
    fc::http::connection conn;
    conn.connect_to(fc::ip::endpoint(fc::ip::address(ip), port));
 
@@ -148,6 +148,7 @@ fc::http::reply rpc_client::send_post_request(std::string body, bool show_log) {
    }
 
    return reply;
+   */
 }
 
 }} // namespace graphene::peerplays_sidechain

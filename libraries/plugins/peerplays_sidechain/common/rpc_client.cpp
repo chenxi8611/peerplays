@@ -120,11 +120,13 @@ fc::http::reply rpc_client::send_post_request(std::string body, bool show_log) {
 	}
 
 	if (show_log) {
-		std::string url = "http://" + ip + ":" + std::to_string(port);
+		std::string url = "https://" + ip + ":" + std::to_string(port);
 		ilog("### Request URL:    ${url}", ("url", url));
 		ilog("### Request:        ${body}", ("body", body));
+		ilog("### Response code:  ${code}", ("code", response.statusCode));
+		ilog("### Response len:   ${len}", ("len", response.body.size()));
 		std::stringstream ss(std::string(reply.body.begin(), reply.body.end()));
-		ilog("### Response:       ${ss}", ("ss", ss.str()));
+		ilog("### Response body:  ${ss}", ("ss", ss.str()));
 	}
 
 	return reply;

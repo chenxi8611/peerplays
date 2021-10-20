@@ -7,6 +7,7 @@
 #include <boost/algorithm/string/trim.hpp>
 #include <boost/algorithm/string/case_conv.hpp>
 
+//#include <iostream>
 
 namespace peerplays {
 namespace net {
@@ -61,10 +62,6 @@ private:
 	streambuf m_ResponseBuf;
 	uint32_t m_ContentLength;
 
-	static uint16_t u16Swap(uint16_t x) {
-		return ((x >> 8) & 0x00FF) | ((x << 8) & 0xFF00);
-	}
-
 	void resolve() {
 
 		// resolve TCP endpoint for host name
@@ -75,7 +72,8 @@ private:
 		m_Endpoint = *iter;
 
 		if (m_Call.port() != 0)										// if port was specified
-			m_Endpoint.port(u16Swap(m_Call.port()));				// force set port 
+			m_Endpoint.port(m_Call.port());							// force set port 
+
 	}
 
 	void connect() {
@@ -101,7 +99,7 @@ private:
 
 		// host
 
-		stream << "Host: " << m_Call.host() << ":" << u16Swap(m_Endpoint.port()) << CrLf;
+		stream << "Host: " << m_Call.host() << ":" << m_Endpoint.port() << CrLf;
 
 		// content
 

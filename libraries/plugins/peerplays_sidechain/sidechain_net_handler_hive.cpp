@@ -35,7 +35,7 @@ hive_node_rpc_client::hive_node_rpc_client(std::string _ip, uint32_t _port, std:
 }
 
 std::string hive_node_rpc_client::account_history_api_get_transaction(std::string transaction_id) {
-   std::string params = "{ \"id\": \"" + transaction_id + "\" }";
+   std::string params = "{ \"id\": \"" + transaction_id + "\", \"include_reversible\": \"true\" }";
    return send_post_request("account_history_api.get_transaction", params, debug_rpc_calls);
 }
 
@@ -145,13 +145,13 @@ sidechain_net_handler_hive::sidechain_net_handler_hive(peerplays_sidechain_plugi
       }
    }
 
-   fc::http::connection conn;
-   try {
-      conn.connect_to(fc::ip::endpoint(fc::ip::address(node_ip), node_rpc_port));
-   } catch (fc::exception &e) {
-      elog("No Hive node running at ${ip} or wrong rpc port: ${port}", ("ip", node_ip)("port", node_rpc_port));
-      FC_ASSERT(false);
-   }
+   //fc::http::connection conn;
+   //try {
+   //   conn.connect_to(fc::ip::endpoint(fc::ip::address(node_ip), node_rpc_port));
+   //} catch (fc::exception &e) {
+   //   elog("No Hive node running at ${ip} or wrong rpc port: ${port}", ("ip", node_ip)("port", node_rpc_port));
+   //   FC_ASSERT(false);
+   //}
 
    node_rpc_client = new hive_node_rpc_client(node_ip, node_rpc_port, node_rpc_user, node_rpc_password, debug_rpc_calls);
 

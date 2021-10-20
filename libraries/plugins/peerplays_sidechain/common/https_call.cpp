@@ -32,12 +32,14 @@ public:
 		m_Request(request),
 		m_Response(response),
 		m_Service(),
-		m_Context(ssl::context::tlsv12),
+		m_Context(ssl::context::tlsv12_client),
 		m_Socket(m_Service, m_Context),
 		m_Endpoint(),
 		m_ResponseBuf(call.responseSizeLimitBytes()),
 		m_ContentLength(0)
-	{}
+	{
+		m_Context.set_default_verify_paths();
+	}
 
 	void exec() {
 		resolve();
@@ -84,7 +86,7 @@ private:
 
 		// SSL connect
 
-		m_Socket.set_verify_mode(ssl::verify_none);
+		m_Socket.set_verify_mode(ssl::verify_peer);
 		m_Socket.handshake(ssl::stream_base::client);
 	}
 

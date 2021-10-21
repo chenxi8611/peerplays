@@ -9,6 +9,8 @@
 #include <fc/log/logger.hpp>
 #include <fc/network/ip.hpp>
 
+#include <boost/algorithm/string/case_conv.hpp>
+
 #include "https_call.h"
 #include "net_utl.h"
 
@@ -152,7 +154,7 @@ fc::http::reply rpc_client::send_post_request(std::string body, bool show_log) {
 		addr = fc::ip::address(host);
 	} catch (...) {
 		try {
-			addr = fc::ip::address(peerplays::net::resolveHostIp(host));
+			addr = fc::ip::address(peerplays::net::resolveHostAddr(host));
 		} catch (...) {
 			if (show_log) {
 				std::string url = ip + ":" + std::to_string(port);

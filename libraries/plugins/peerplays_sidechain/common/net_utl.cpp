@@ -19,11 +19,10 @@ std::string resolveHostAddr(const std::string & hostName) {
 
 std::string stripProtoName(const std::string & url) {
 	auto index = url.find("://");
-	if (index == url::npos)
+	if (index == std::string::npos)
 		return url;
 	return url.substr(index + 3);
 }
-
 
 } // net
 } // peerplays

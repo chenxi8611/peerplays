@@ -156,7 +156,7 @@ sidechain_net_handler_hive::sidechain_net_handler_hive(peerplays_sidechain_plugi
 			addr = fc::ip::address(host);
 		} catch (...) {
 			try {
-				addr = fc::ip::address(peerplays::net::resolveHostIp(host));
+				addr = fc::ip::address(peerplays::net::resolveHostAddr(host));
 			} catch (...) {
 				elog("Failed to resolve Hive node address ${ip}", ("ip", node_ip));
 				FC_ASSERT(false);

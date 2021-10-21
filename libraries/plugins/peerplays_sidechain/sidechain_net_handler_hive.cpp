@@ -144,15 +144,16 @@ sidechain_net_handler_hive::sidechain_net_handler_hive(peerplays_sidechain_plugi
          private_keys[key_pair.first] = key_pair.second;
       }
    }
-
+/*
    fc::http::connection conn;
+
    try {
       conn.connect_to(fc::ip::endpoint(fc::ip::address(node_ip), node_rpc_port));
    } catch (fc::exception &e) {
       elog("No Hive node running at ${ip} or wrong rpc port: ${port}", ("ip", node_ip)("port", node_rpc_port));
       FC_ASSERT(false);
    }
-
+*/
    node_rpc_client = new hive_node_rpc_client(node_ip, node_rpc_port, node_rpc_user, node_rpc_password, debug_rpc_calls);
 
    std::string chain_id_str = node_rpc_client->get_chain_id();

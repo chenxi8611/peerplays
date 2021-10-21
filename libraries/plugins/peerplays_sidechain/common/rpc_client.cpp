@@ -10,6 +10,7 @@
 #include <fc/network/ip.hpp>
 
 #include "https_call.h"
+#include "net_utl.h"
 
 namespace graphene { namespace peerplays_sidechain {
 
@@ -103,54 +104,84 @@ std::string rpc_client::send_post_request(std::string method, std::string params
 
 fc::http::reply rpc_client::send_post_request(std::string body, bool show_log) {
 
-	using namespace peerplays::net;
-
-	HttpRequest request("POST", "/", authorization.key + ":" + authorization.val, body);
-
-	HttpsCall call(ip, port);
-
-	HttpResponse response;
-	
 	fc::http::reply reply;
+	auto temp = ip.substr(0, 6);
+	boost::algorithm::to_lower(temp);
 
-	if (call.exec(request, &response)) {
-		reply.status = response.statusCode;
-		reply.body.resize(response.body.size());
-		memcpy(&reply.body[0], &response.body[0], response.body.size());
+	if (temp == "https:") {
+
+		auto host = ip.substr(8);
+
+		using namespace peerplays::net;
+
+		HttpsCall call(host, port);
+		HttpRequest request("POST", "/", authorization.key + ":" + authorization.val, body);
+		HttpResponse response;
+
+		if (call.exec(request, &response)) {
+			reply.status = response.statusCode;
+			reply.body.resize(response.body.size());
+			memcpy(&reply.body[0], &response.body[0], response.body.size());
+		}
+
+		if (show_log) {
+			std::string url = ip + ":" + std::to_string(port);
+			ilog("### Request URL:    ${url}", ("url", url));
+			ilog("### Request:        ${body}", ("body", body));
+			ilog("### Response code:  ${code}", ("code", response.statusCode));
+			ilog("### Response len:   ${len}", ("len", response.body.size()));
+			std::stringstream ss(std::string(reply.body.begin(), reply.body.end()));
+			ilog("### Response body:  ${ss}", ("ss", ss.str()));
+		}
+
+		return reply;
+
 	}
 
+	std::string host;
+
+	if (temp == "http:/")
+		host = ip.substr(7);
+	else
+		host = ip;
+
+	fc::ip::endpoint endpoint;
+
+	try {
+		endpoint = fc::ip::endpoint(fc::ip::address(host), port));
+	} catch (...) {
+		try {
+			endpoint = fc::ip::endpoint(fc::ip::address(peerplays::net::resolveHostIp(host)), port));
+		} catch (...) {
+			if (show_log) {
+				std::string url = ip + ":" + std::to_string(port);
+				ilog("### Request URL:    ${url}", ("url", url));
+				ilog("### Request:        ${body}", ("body", body));
+				ilog("### Request: error: host address resolve failed");
+			}
+			return reply;
+		}
+	}
+
+	fc::http::connection conn;
+	conn.connect_to(endpoint);
+	std::string url = "http://" + host + ":" + std::to_string(port);
+
+	//if (wallet.length() > 0) {
+	//   url = url + "/wallet/" + wallet;
+	//}
+
+	reply = conn.request("POST", url, body, fc::http::headers{authorization});
+
 	if (show_log) {
-		std::string url = "https://" + ip + ":" + std::to_string(port);
 		ilog("### Request URL:    ${url}", ("url", url));
 		ilog("### Request:        ${body}", ("body", body));
-		ilog("### Response code:  ${code}", ("code", response.statusCode));
-		ilog("### Response len:   ${len}", ("len", response.body.size()));
 		std::stringstream ss(std::string(reply.body.begin(), reply.body.end()));
-		ilog("### Response body:  ${ss}", ("ss", ss.str()));
+		ilog("### Response:       ${ss}", ("ss", ss.str()));
 	}
 
 	return reply;
-/*
-   fc::http::connection conn;
-   conn.connect_to(fc::ip::endpoint(fc::ip::address(ip), port));
 
-   std::string url = "http://" + ip + ":" + std::to_string(port);
-
-   //if (wallet.length() > 0) {
-   //   url = url + "/wallet/" + wallet;
-   //}
-
-   fc::http::reply reply = conn.request("POST", url, body, fc::http::headers{authorization});
-
-   if (show_log) {
-      ilog("### Request URL:    ${url}", ("url", url));
-      ilog("### Request:        ${body}", ("body", body));
-      std::stringstream ss(std::string(reply.body.begin(), reply.body.end()));
-      ilog("### Response:       ${ss}", ("ss", ss.str()));
-   }
-
-   return reply;
-   */
 }
 
 }} // namespace graphene::peerplays_sidechain

@@ -99,7 +99,14 @@ private:
 
 		// host
 
-		stream << "Host: " << m_Call.host() << ":" << m_Endpoint.port() << CrLf;
+		stream << "Host: " << m_Call.host();
+
+		if (m_Call.port() != 0) {
+			//ASSERT(m_Endpoint.port() == m_Call.port());
+			stream << ":" << m_Call.port();	
+		}
+
+		stream << CrLf;
 
 		// content
 

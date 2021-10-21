@@ -1,4 +1,4 @@
-#include "https_call.h"
+#include "net_utl.h"
 
 #include <boost/asio.hpp>
 
@@ -13,8 +13,15 @@ std::string resolveHostAddr(const std::string & hostName) {
 	auto query = ip::tcp::resolver::query(hostName, "");
 	auto iter = resolver.resolve(query);
 	auto endpoint = *iter;
-	auto addr = endpoint.address();
+	auto addr = ((ip::tcp::endpoint)endpoint).address();
 	return addr.to_string();
+}
+
+std::string stripProtoName(const std::string & url) {
+	auto index = url.find("://");
+	if (index == url::npos)
+		return url;
+	return url.substr(index + 3);
 }
 
 

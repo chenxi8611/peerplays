@@ -105,12 +105,12 @@ std::string rpc_client::send_post_request(std::string method, std::string params
 fc::http::reply rpc_client::send_post_request(std::string body, bool show_log) {
 
 	fc::http::reply reply;
-	auto temp = ip.substr(0, 6);
-	boost::algorithm::to_lower(temp);
+	auto start = ip.substr(0, 6);
+	boost::algorithm::to_lower(start);
 
-	if (temp == "https:") {
+	if (start == "https:") {
 
-		auto host = ip.substr(8);
+		auto host = ip.substr(8);		// skip "https://"
 
 		using namespace peerplays::net;
 
@@ -140,18 +140,19 @@ fc::http::reply rpc_client::send_post_request(std::string body, bool show_log) {
 
 	std::string host;
 
-	if (temp == "http:/")
-		host = ip.substr(7);
+	if (start == "http:/")
+		host = ip.substr(7);		// skip "http://"
 	else
 		host = ip;
 
-	fc::ip::endpoint endpoint;
+	std::string url = "http://" + host + ":" + std::to_string(port);
+	fc::ip::address addr;
 
 	try {
-		endpoint = fc::ip::endpoint(fc::ip::address(host), port));
+		addr = fc::ip::address(host);
 	} catch (...) {
 		try {
-			endpoint = fc::ip::endpoint(fc::ip::address(peerplays::net::resolveHostIp(host)), port));
+			addr = fc::ip::address(peerplays::net::resolveHostIp(host));
 		} catch (...) {
 			if (show_log) {
 				std::string url = ip + ":" + std::to_string(port);
@@ -163,15 +164,19 @@ fc::http::reply rpc_client::send_post_request(std::string body, bool show_log) {
 		}
 	}
 
-	fc::http::connection conn;
-	conn.connect_to(endpoint);
-	std::string url = "http://" + host + ":" + std::to_string(port);
+	try {
 
-	//if (wallet.length() > 0) {
-	//   url = url + "/wallet/" + wallet;
-	//}
+		fc::http::connection conn;
+		conn.connect_to(fc::ip::endpoint(addr, port));
 
-	reply = conn.request("POST", url, body, fc::http::headers{authorization});
+		//if (wallet.length() > 0) {
+		//   url = url + "/wallet/" + wallet;
+		//}
+
+		reply = conn.request("POST", url, body, fc::http::headers{authorization});
+
+	} catch (...) {
+	}
 
 	if (show_log) {
 		ilog("### Request URL:    ${url}", ("url", url));

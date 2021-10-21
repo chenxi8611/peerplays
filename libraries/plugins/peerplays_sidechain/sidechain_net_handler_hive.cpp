@@ -28,6 +28,8 @@
 #include <graphene/peerplays_sidechain/hive/transaction.hpp>
 #include <graphene/utilities/key_conversion.hpp>
 
+#include "common/net_utl.h"
+
 namespace graphene { namespace peerplays_sidechain {
 
 hive_node_rpc_client::hive_node_rpc_client(std::string _ip, uint32_t _port, std::string _user, std::string _password, bool _debug_rpc_calls) :
@@ -144,16 +146,28 @@ sidechain_net_handler_hive::sidechain_net_handler_hive(peerplays_sidechain_plugi
          private_keys[key_pair.first] = key_pair.second;
       }
    }
-/*
+
    fc::http::connection conn;
 
    try {
-      conn.connect_to(fc::ip::endpoint(fc::ip::address(node_ip), node_rpc_port));
+		auto host = peerplays::net::stripProtoName(node_ip);
+		fc::ip::address addr;
+		try {
+			addr = fc::ip::address(host);
+		} catch (...) {
+			try {
+				addr = fc::ip::address(peerplays::net::resolveHostIp(host));
+			} catch (...) {
+				elog("Failed to resolve Hive node address ${ip}", ("ip", node_ip));
+				FC_ASSERT(false);
+			}
+		}
+      conn.connect_to(fc::ip::endpoint(addr, node_rpc_port));
    } catch (fc::exception &e) {
       elog("No Hive node running at ${ip} or wrong rpc port: ${port}", ("ip", node_ip)("port", node_rpc_port));
       FC_ASSERT(false);
    }
-*/
+
    node_rpc_client = new hive_node_rpc_client(node_ip, node_rpc_port, node_rpc_user, node_rpc_password, debug_rpc_calls);
 
    std::string chain_id_str = node_rpc_client->get_chain_id();

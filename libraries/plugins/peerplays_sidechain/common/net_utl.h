@@ -6,6 +6,8 @@ namespace peerplays {
 namespace net {
 
 std::string resolveHostAddr(const std::string & hostName);
+std::string stripProtoName(const std::string & utl);
+
 
 } // net
 } // peerplays

@@ -28,8 +28,6 @@
 #include <graphene/peerplays_sidechain/hive/transaction.hpp>
 #include <graphene/utilities/key_conversion.hpp>
 
-#include "common/net_utl.hpp"
-
 namespace graphene { namespace peerplays_sidechain {
 
 hive_node_rpc_client::hive_node_rpc_client(std::string _ip, uint32_t _port, std::string _user, std::string _password, bool _debug_rpc_calls) :
@@ -147,29 +145,13 @@ sidechain_net_handler_hive::sidechain_net_handler_hive(peerplays_sidechain_plugi
       }
    }
 
-   fc::http::connection conn;
-
-   try {
-      auto host = strip_proto_name(node_ip);
-      fc::ip::address addr;
-      try {
-         // IP address assumed
-         addr = fc::ip::address(host);
-      } catch (...) {
-         try {
-            // host name assumed
-            addr = fc::ip::address(resolve_host_addr(host));
-         } catch (...) {
-            elog("Failed to resolve Hive node address ${ip}", ("ip", node_ip));
-            FC_ASSERT(false);
-         }
-      }
-      // try to connect to TCP endpoint
-      conn.connect_to(fc::ip::endpoint(addr, node_rpc_port));
-   } catch (fc::exception &e) {
-      elog("No Hive node running at ${ip} or wrong rpc port: ${port}", ("ip", node_ip)("port", node_rpc_port));
-      FC_ASSERT(false);
-   }
+   //fc::http::connection conn;
+   //try {
+   //   conn.connect_to(fc::ip::endpoint(fc::ip::address(node_ip), node_rpc_port));
+   //} catch (fc::exception &e) {
+   //   elog("No Hive node running at ${ip} or wrong rpc port: ${port}", ("ip", node_ip)("port", node_rpc_port));
+   //   FC_ASSERT(false);
+   //}
 
    node_rpc_client = new hive_node_rpc_client(node_ip, node_rpc_port, node_rpc_user, node_rpc_password, debug_rpc_calls);
 

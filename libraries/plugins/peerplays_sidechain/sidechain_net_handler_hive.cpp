@@ -28,7 +28,7 @@
 #include <graphene/peerplays_sidechain/hive/transaction.hpp>
 #include <graphene/utilities/key_conversion.hpp>
 
-#include "common/net_utl.h"
+#include "common/net_utl.hpp"
 
 namespace graphene { namespace peerplays_sidechain {
 
@@ -150,7 +150,7 @@ sidechain_net_handler_hive::sidechain_net_handler_hive(peerplays_sidechain_plugi
    fc::http::connection conn;
 
    try {
-      auto host = peerplays::net::stripProtoName(node_ip);
+      auto host = strip_proto_name(node_ip);
       fc::ip::address addr;
       try {
          // IP address assumed
@@ -158,7 +158,7 @@ sidechain_net_handler_hive::sidechain_net_handler_hive(peerplays_sidechain_plugi
       } catch (...) {
          try {
             // host name assumed
-            addr = fc::ip::address(peerplays::net::resolveHostAddr(host));
+            addr = fc::ip::address(resolve_host_addr(host));
          } catch (...) {
             elog("Failed to resolve Hive node address ${ip}", ("ip", node_ip));
             FC_ASSERT(false);

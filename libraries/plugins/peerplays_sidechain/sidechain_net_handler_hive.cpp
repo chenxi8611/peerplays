@@ -150,18 +150,21 @@ sidechain_net_handler_hive::sidechain_net_handler_hive(peerplays_sidechain_plugi
    fc::http::connection conn;
 
    try {
-		auto host = peerplays::net::stripProtoName(node_ip);
-		fc::ip::address addr;
-		try {
-			addr = fc::ip::address(host);
-		} catch (...) {
-			try {
-				addr = fc::ip::address(peerplays::net::resolveHostAddr(host));
-			} catch (...) {
-				elog("Failed to resolve Hive node address ${ip}", ("ip", node_ip));
-				FC_ASSERT(false);
-			}
-		}
+      auto host = peerplays::net::stripProtoName(node_ip);
+      fc::ip::address addr;
+      try {
+         // IP address assumed
+         addr = fc::ip::address(host);
+      } catch (...) {
+         try {
+            // host name assumed
+            addr = fc::ip::address(peerplays::net::resolveHostAddr(host));
+         } catch (...) {
+            elog("Failed to resolve Hive node address ${ip}", ("ip", node_ip));
+            FC_ASSERT(false);
+         }
+      }
+      // try to connect to TCP endpoint
       conn.connect_to(fc::ip::endpoint(addr, node_rpc_port));
    } catch (fc::exception &e) {
       elog("No Hive node running at ${ip} or wrong rpc port: ${port}", ("ip", node_ip)("port", node_rpc_port));

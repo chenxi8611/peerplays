@@ -60,9 +60,7 @@ public:
 
 	HttpsCall(const std::string & host, uint16_t port = 0);
 
-	bool exec(const HttpRequest & request, HttpResponse * response); 
-
-	const std::string host() const {
+	const std::string & host() const {
 		return m_Host;
 	}
 
@@ -73,6 +71,8 @@ public:
 	uint32_t responseSizeLimitBytes() const {
 		return ResponseSizeLimitBytes;
 	}
+
+	bool exec(const HttpRequest & request, HttpResponse * response); 
 
 private:
 	std::string m_Host;

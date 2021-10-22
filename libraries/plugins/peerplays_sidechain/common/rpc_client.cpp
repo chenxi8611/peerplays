@@ -106,89 +106,87 @@ std::string rpc_client::send_post_request(std::string method, std::string params
 
 fc::http::reply rpc_client::send_post_request(std::string body, bool show_log) {
 
-	fc::http::reply reply;
-	auto start = ip.substr(0, 6);
-	boost::algorithm::to_lower(start);
+   fc::http::reply reply;
+   auto start = ip.substr(0, 6);
+   boost::algorithm::to_lower(start);
 
-	if (start == "https:") {
+   if (start == "https:") {
 
-		auto host = ip.substr(8);		// skip "https://"
+      auto host = ip.substr(8); // skip "https://"
 
-		using namespace peerplays::net;
+      using namespace peerplays::net;
 
-		HttpsCall call(host, port);
-		HttpRequest request("POST", "/", authorization.key + ":" + authorization.val, body);
-		HttpResponse response;
+      HttpsCall call(host, port);
+      HttpRequest request("POST", "/", authorization.key + ":" + authorization.val, body);
+      HttpResponse response;
 
-		if (call.exec(request, &response)) {
-			reply.status = response.statusCode;
-			reply.body.resize(response.body.size());
-			memcpy(&reply.body[0], &response.body[0], response.body.size());
-		}
+      if (call.exec(request, &response)) {
+         reply.status = response.statusCode;
+         reply.body.resize(response.body.size());
+         memcpy(&reply.body[0], &response.body[0], response.body.size());
+      }
 
-		if (show_log) {
-			std::string url = ip + ":" + std::to_string(port);
-			ilog("### Request URL:    ${url}", ("url", url));
-			ilog("### Request:        ${body}", ("body", body));
-			ilog("### Response code:  ${code}", ("code", response.statusCode));
-			ilog("### Response len:   ${len}", ("len", response.body.size()));
-			std::stringstream ss(std::string(reply.body.begin(), reply.body.end()));
-			ilog("### Response body:  ${ss}", ("ss", ss.str()));
-		}
+      if (show_log) {
+         std::string url = ip + ":" + std::to_string(port);
+         ilog("### Request URL:    ${url}", ("url", url));
+         ilog("### Request:        ${body}", ("body", body));
+         ilog("### Response code:  ${code}", ("code", response.statusCode));
+         ilog("### Response len:   ${len}", ("len", response.body.size()));
+         std::stringstream ss(std::string(reply.body.begin(), reply.body.end()));
+         ilog("### Response body:  ${ss}", ("ss", ss.str()));
+      }
 
-		return reply;
+      return reply;
+   }
 
-	}
+   std::string host;
 
-	std::string host;
+   if (start == "http:/")
+      host = ip.substr(7); // skip "http://"
+   else
+      host = ip;
 
-	if (start == "http:/")
-		host = ip.substr(7);		// skip "http://"
-	else
-		host = ip;
+   std::string url = "http://" + host + ":" + std::to_string(port);
+   fc::ip::address addr;
 
-	std::string url = "http://" + host + ":" + std::to_string(port);
-	fc::ip::address addr;
+   try {
+      addr = fc::ip::address(host);
+   } catch (...) {
+      try {
+         addr = fc::ip::address(peerplays::net::resolveHostAddr(host));
+      } catch (...) {
+         if (show_log) {
+            std::string url = ip + ":" + std::to_string(port);
+            ilog("### Request URL:    ${url}", ("url", url));
+            ilog("### Request:        ${body}", ("body", body));
+            ilog("### Request: error: host address resolve failed");
+         }
+         return reply;
+      }
+   }
 
-	try {
-		addr = fc::ip::address(host);
-	} catch (...) {
-		try {
-			addr = fc::ip::address(peerplays::net::resolveHostAddr(host));
-		} catch (...) {
-			if (show_log) {
-				std::string url = ip + ":" + std::to_string(port);
-				ilog("### Request URL:    ${url}", ("url", url));
-				ilog("### Request:        ${body}", ("body", body));
-				ilog("### Request: error: host address resolve failed");
-			}
-			return reply;
-		}
-	}
+   try {
 
-	try {
+      fc::http::connection conn;
+      conn.connect_to(fc::ip::endpoint(addr, port));
 
-		fc::http::connection conn;
-		conn.connect_to(fc::ip::endpoint(addr, port));
+      //if (wallet.length() > 0) {
+      //   url = url + "/wallet/" + wallet;
+      //}
 
-		//if (wallet.length() > 0) {
-		//   url = url + "/wallet/" + wallet;
-		//}
+      reply = conn.request("POST", url, body, fc::http::headers{authorization});
 
-		reply = conn.request("POST", url, body, fc::http::headers{authorization});
+   } catch (...) {
+   }
 
-	} catch (...) {
-	}
+   if (show_log) {
+      ilog("### Request URL:    ${url}", ("url", url));
+      ilog("### Request:        ${body}", ("body", body));
+      std::stringstream ss(std::string(reply.body.begin(), reply.body.end()));
+      ilog("### Response:       ${ss}", ("ss", ss.str()));
+   }
 
-	if (show_log) {
-		ilog("### Request URL:    ${url}", ("url", url));
-		ilog("### Request:        ${body}", ("body", body));
-		std::stringstream ss(std::string(reply.body.begin(), reply.body.end()));
-		ilog("### Response:       ${ss}", ("ss", ss.str()));
-	}
-
-	return reply;
-
+   return reply;
 }
 
 }} // namespace graphene::peerplays_sidechain

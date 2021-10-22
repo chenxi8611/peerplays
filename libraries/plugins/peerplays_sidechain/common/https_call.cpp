@@ -1,11 +1,11 @@
 #include "https_call.h"
 
 #include <boost/asio.hpp>
-#include <boost/asio/ssl.hpp>
 #include <boost/asio/buffer.hpp>
+#include <boost/asio/ssl.hpp>
 
-#include <boost/algorithm/string/trim.hpp>
 #include <boost/algorithm/string/case_conv.hpp>
+#include <boost/algorithm/string/trim.hpp>
 
 //#include <iostream>
 
@@ -16,239 +16,238 @@ namespace detail {
 
 static const char Cr = 0x0D;
 static const char Lf = 0x0A;
-static const char * CrLf = "\x0D\x0A";
-static const char * CrLfCrLf = "\x0D\x0A\x0D\x0A";
+static const char *CrLf = "\x0D\x0A";
+static const char *CrLfCrLf = "\x0D\x0A\x0D\x0A";
 
 using namespace boost::asio;
 
-[[noreturn]] static void throwError(const std::string & msg) {
-	throw std::runtime_error(msg);
+[[noreturn]] static void throwError(const std::string &msg) {
+   throw std::runtime_error(msg);
 }
 
 class Impl {
 public:
+   Impl(const HttpsCall &call, const HttpRequest &request, HttpResponse &response) :
+         m_Call(call),
+         m_Request(request),
+         m_Response(response),
+         m_Service(),
+         m_Context(ssl::context::tlsv12_client),
+         m_Socket(m_Service, m_Context),
+         m_Endpoint(),
+         m_ResponseBuf(call.responseSizeLimitBytes()),
+         m_ContentLength(0) {
+      m_Context.set_default_verify_paths();
+   }
 
-	Impl(const HttpsCall & call, const HttpRequest & request, HttpResponse & response) : 
-		m_Call(call),
-		m_Request(request),
-		m_Response(response),
-		m_Service(),
-		m_Context(ssl::context::tlsv12_client),
-		m_Socket(m_Service, m_Context),
-		m_Endpoint(),
-		m_ResponseBuf(call.responseSizeLimitBytes()),
-		m_ContentLength(0)
-	{
-		m_Context.set_default_verify_paths();
-	}
-
-	void exec() {
-		resolve();
-		connect();
-		sendRequest();
-		processResponse();
-	}
+   void exec() {
+      resolve();
+      connect();
+      sendRequest();
+      processResponse();
+   }
 
 private:
+   const HttpsCall &m_Call;
+   const HttpRequest &m_Request;
+   HttpResponse &m_Response;
 
-	const HttpsCall & m_Call;
-	const HttpRequest & m_Request;
-	HttpResponse & m_Response;
+   io_service m_Service;
+   ssl::context m_Context;
+   ssl::stream<ip::tcp::socket> m_Socket;
+   ip::tcp::endpoint m_Endpoint;
+   streambuf m_ResponseBuf;
+   uint32_t m_ContentLength;
 
-    io_service m_Service;
-    ssl::context m_Context;
-	ssl::stream<ip::tcp::socket> m_Socket;
-	ip::tcp::endpoint m_Endpoint;
-	streambuf m_ResponseBuf;
-	uint32_t m_ContentLength;
+   void resolve() {
 
-	void resolve() {
+      // resolve TCP endpoint for host name
 
-		// resolve TCP endpoint for host name
+      ip::tcp::resolver resolver(m_Service);
+      auto query = ip::tcp::resolver::query(m_Call.host(), "https");
+      auto iter = resolver.resolve(query);
+      m_Endpoint = *iter;
 
-	    ip::tcp::resolver resolver(m_Service);
-		auto query = ip::tcp::resolver::query(m_Call.host(), "https");
-		auto iter = resolver.resolve(query);
-		m_Endpoint = *iter;
+      if (m_Call.port() != 0)            // if port was specified
+         m_Endpoint.port(m_Call.port()); // force set port
+   }
 
-		if (m_Call.port() != 0)										// if port was specified
-			m_Endpoint.port(m_Call.port());							// force set port 
+   void connect() {
 
-	}
+      // TCP connect
 
-	void connect() {
+      m_Socket.lowest_layer().connect(m_Endpoint);
 
-		// TCP connect 
+      // SSL connect
 
-		m_Socket.lowest_layer().connect(m_Endpoint);
+      m_Socket.set_verify_mode(ssl::verify_peer);
+      m_Socket.handshake(ssl::stream_base::client);
+   }
 
-		// SSL connect
+   void sendRequest() {
 
-		m_Socket.set_verify_mode(ssl::verify_peer);
-		m_Socket.handshake(ssl::stream_base::client);
-	}
+      streambuf requestBuf;
+      std::ostream stream(&requestBuf);
 
-	void sendRequest() {
+      // start string: <method> <path> HTTP/1.0
 
-		streambuf requestBuf;
-		std::ostream stream(&requestBuf);
+      stream << m_Request.method << " " << m_Request.path << " HTTP/1.0" << CrLf;
 
-		// start string: method path HTTP/1.0
+      // host
 
-        stream << m_Request.method << " " << m_Request.path << " HTTP/1.0" << CrLf;
+      stream << "Host: " << m_Call.host();
 
-		// host
+      if (m_Call.port() != 0) {
+         //ASSERT(m_Endpoint.port() == m_Call.port());
+         stream << ":" << m_Call.port();
+      }
 
-		stream << "Host: " << m_Call.host();
+      stream << CrLf;
 
-		if (m_Call.port() != 0) {
-			//ASSERT(m_Endpoint.port() == m_Call.port());
-			stream << ":" << m_Call.port();	
-		}
+      // content
 
-		stream << CrLf;
+      if (!m_Request.body.empty()) {
+         stream << "Content-Type: " << m_Request.contentType << CrLf;
+         stream << "Content-Length: " << m_Request.body.size() << CrLf;
+      }
 
-		// content
+      // additional headers
 
-		if (!m_Request.body.empty()) {
-			stream << "Content-Type: " << m_Request.contentType << CrLf;
-			stream << "Content-Length: " << m_Request.body.size() << CrLf;
-		}
+      const auto &h = m_Request.headers;
 
-		// additional headers
+      if (!h.empty()) {
+         if (h.size() < 2)
+            throwError("invalid headers data");
+         stream << h;
+         // ensure headers finished correctly
+         if ((h.substr(h.size() - 2) != CrLf))
+            stream << CrLf;
+      }
 
-		const auto & h = m_Request.headers;
+      // other
 
-		if (!h.empty()) {
-			if (h.size() < 2)
-				throw 1;
-			stream << h;
-			if ((h.substr(h.size() - 2) != CrLf))
-				stream << CrLf;
-		}
+      stream << "Accept: *\x2F*" << CrLf;
+      stream << "Connection: close" << CrLf;
 
-		// other
+      // end
 
-		stream << "Accept: *\x2F*" << CrLf;
-		stream << "Connection: close" << CrLf;
+      stream << CrLf;
 
-		// end
+      // content
 
-		stream << CrLf;
+      if (!m_Request.body.empty())
+         stream << m_Request.body;
 
-		// content
+      // send
 
-		if (!m_Request.body.empty())
-			stream << m_Request.body;
+      write(m_Socket, requestBuf);
+   }
 
-		// send
+   void processHeaders() {
 
-		write(m_Socket, requestBuf);
-	}
+      std::istream stream(&m_ResponseBuf);
 
-	void helper1() {
+      std::string httpVersion;
+      stream >> httpVersion;
+      stream >> m_Response.statusCode;
 
-		std::istream stream(&m_ResponseBuf);
+      if (!stream || httpVersion.substr(0, 5) != "HTTP/") {
+         throwError("invalid response");
+      }
 
-		std::string httpVersion;
-		stream >> httpVersion;
-		stream >> m_Response.statusCode;
-					  
-		if (!stream || httpVersion.substr(0, 5) != "HTTP/") {
-			throw "invalid response";
-		}
+      // read/skip headers
 
-		// read/skip headers
+      for (;;) {
+         std::string header;
+         if (!std::getline(stream, header, Lf) || (header.size() == 1 && header[0] == Cr))
+            break;
+         if (m_ContentLength) // if content length is already known
+            continue;         // continue skipping headers
+         auto pos = header.find(':');
+         if (pos == std::string::npos)
+            continue;
+         auto name = header.substr(0, pos);
+         boost::algorithm::trim(name);
+         boost::algorithm::to_lower(name);
+         if (name != "content-length")
+            continue;
+         auto value = header.substr(pos + 1);
+         boost::algorithm::trim(value);
+         m_ContentLength = std::stol(value);
+      }
+   }
 
-		for(;;) {
-			std::string header;
-			if (!std::getline(stream, header, Lf) || (header.size() == 1 && header[0] == Cr))
-				break;
-			if (m_ContentLength)							// if content length is already known
-				continue;									// continue skipping headers
-			auto pos = header.find(':');
-			if (pos == std::string::npos)
-				continue;
-			auto name = header.substr(0, pos);
-			boost::algorithm::trim(name);
-			boost::algorithm::to_lower(name);
-			if (name !=	"content-length")
-				continue;
-			auto value = header.substr(pos + 1);
-			boost::algorithm::trim(value);
-			m_ContentLength = std::stol(value);
-		}
+   void processResponse() {
 
-	}
+      auto &socket = m_Socket;
+      auto &buf = m_ResponseBuf;
+      auto &contentLength = m_ContentLength;
+      auto &body = m_Response.body;
 
-	void processResponse() {
+      read_until(socket, buf, CrLfCrLf);
 
-		auto & socket = m_Socket;
-		auto & buf = m_ResponseBuf;
-		auto & contentLength = m_ContentLength;
-		auto & body = m_Response.body;
+      processHeaders();
 
-		read_until(socket, buf, CrLfCrLf);
+      // check content length
 
-		helper1();
+      if (contentLength < 2) // minimum content is "{}"
+         throwError("invalid response body (too short)");
 
-		if (contentLength < 2)	// minimum content is "{}"
-			throwError("invalid response body (too short)");
+      if (contentLength > m_Call.responseSizeLimitBytes())
+         throwError("response body size limit exceeded");
 
-		if (contentLength > m_Call.responseSizeLimitBytes())
-			throwError("response body size limit exceeded");
+      // read body
 
-		auto avail = buf.size();
+      auto avail = buf.size(); // size of body data already stored in the buffer
 
-		if (avail > contentLength)
-			throwError("invalid response body (content length mismatch)");
+      if (avail > contentLength)
+         throwError("invalid response body (content length mismatch)");
 
-		body.resize(contentLength);
+      body.resize(contentLength);
 
-		if (avail) {
-			if (avail != buf.sgetn(&body[0], avail)) {
-				throwError("stream read failed");
-			}
-		}
+      if (avail) {
+         // copy already existing data
+         if (avail != buf.sgetn(&body[0], avail)) {
+            throwError("stream read failed");
+         }
+      }
 
-		auto rest = contentLength - avail;
+      auto rest = contentLength - avail; // size of remaining part of response body
 
-		boost::system::error_code errorCode;
+      boost::system::error_code errorCode;
 
-		read(socket, buffer(&body[avail], rest), errorCode);
+      read(socket, buffer(&body[avail], rest), errorCode); // read remaining part
 
-		socket.shutdown(errorCode);
-
-	}
-
+      socket.shutdown(errorCode);
+   }
 };
 
-} // detail
+} // namespace detail
 
 // HttpsCall
 
-HttpsCall::HttpsCall(const std::string & host, uint16_t port) : 
-	m_Host(host),
-	m_Port(port)
-{}
-
-bool HttpsCall::exec(const HttpRequest & request, HttpResponse * response) {
-
-//	ASSERT(response);
-	auto & resp = *response;
-
-	detail::Impl impl(*this, request, resp);
-
-	try {
-		resp.clear();
-		impl.exec();
-	} catch (...) {
-		resp.clear();
-		return false;
-	}
-
-	return true;
+HttpsCall::HttpsCall(const std::string &host, uint16_t port) :
+      m_Host(host),
+      m_Port(port) {
 }
 
-} // net
-} // peerplays
+bool HttpsCall::exec(const HttpRequest &request, HttpResponse *response) {
+
+   //	ASSERT(response);
+   auto &resp = *response;
+
+   detail::Impl impl(*this, request, resp);
+
+   try {
+      resp.clear();
+      impl.exec();
+   } catch (...) {
+      resp.clear();
+      return false;
+   }
+
+   return true;
+}
+
+}
+} // namespace peerplays::net

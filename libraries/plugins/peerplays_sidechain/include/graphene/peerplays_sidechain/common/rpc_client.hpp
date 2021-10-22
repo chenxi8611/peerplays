@@ -7,6 +7,11 @@
 
 namespace graphene { namespace peerplays_sidechain {
 
+struct rpc_reply {
+   uint16_t status;
+   std::string body;
+};
+
 class rpc_client {
 public:
    rpc_client(std::string _ip, uint32_t _port, std::string _user, std::string _password, bool _debug_rpc_calls);
@@ -27,7 +32,8 @@ protected:
    fc::http::header authorization;
 
 private:
-   fc::http::reply send_post_request(std::string body, bool show_log);
+   //fc::http::reply send_post_request(std::string body, bool show_log);
+   rpc_reply send_post_request(std::string body, bool show_log);
 };
 
 }} // namespace graphene::peerplays_sidechain

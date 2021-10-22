@@ -37,7 +37,7 @@ hive_node_rpc_client::hive_node_rpc_client(std::string _ip, uint32_t _port, std:
 }
 
 std::string hive_node_rpc_client::account_history_api_get_transaction(std::string transaction_id) {
-   std::string params = "{ \"id\": \"" + transaction_id + "\" }";
+   std::string params = "{ \"id\": \"" + transaction_id + "\", \"include_reversible\": \"true\" }";
    return send_post_request("account_history_api.get_transaction", params, debug_rpc_calls);
 }
 

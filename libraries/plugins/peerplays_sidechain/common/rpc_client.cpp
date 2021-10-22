@@ -1,6 +1,7 @@
 #include <graphene/peerplays_sidechain/common/rpc_client.hpp>
 
 #include <sstream>
+#include <string>
 
 #include <boost/asio.hpp>
 #include <boost/asio/buffer.hpp>
@@ -9,9 +10,11 @@
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/property_tree/ptree.hpp>
 
+#include <curl/curl.h>
+
 #include <fc/crypto/base64.hpp>
 #include <fc/log/logger.hpp>
-#include <fc/network/ip.hpp>
+//#include <fc/network/ip.hpp>
 
 #include <boost/algorithm/string/case_conv.hpp>
 #include <boost/algorithm/string/trim.hpp>
@@ -489,6 +492,7 @@ fc::http::reply rpc_client::send_post_request(std::string body, bool show_log) {
    }
 
    if (show_log) {
+      std::string url = ip + ":" + std::to_string(port);
       ilog("### Request URL:    ${url}", ("url", url));
       ilog("### Request:        ${body}", ("body", body));
       std::stringstream ss(std::string(reply.body.begin(), reply.body.end()));

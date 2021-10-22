@@ -44,7 +44,7 @@ endif()
 unset(ENABLE_PEERPLAYS_ASSET_DEPOSITS)
 unset(ENABLE_PEERPLAYS_ASSET_DEPOSITS CACHE)
 
-target_link_libraries( peerplays_sidechain PRIVATE graphene_plugin zmq )
+target_link_libraries( peerplays_sidechain PRIVATE curl graphene_plugin zmq )
 target_include_directories( peerplays_sidechain
                             PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include" )
 

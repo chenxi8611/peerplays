@@ -14,7 +14,7 @@
 
 #include <fc/crypto/base64.hpp>
 #include <fc/log/logger.hpp>
-//#include <fc/network/ip.hpp>
+#include <fc/network/ip.hpp>
 
 #include <boost/algorithm/string/case_conv.hpp>
 #include <boost/algorithm/string/trim.hpp>
@@ -418,9 +418,9 @@ std::string rpc_client::send_post_request(std::string method, std::string params
    return "";
 }
 
-fc::http::reply rpc_client::send_post_request(std::string body, bool show_log) {
+rpc_reply rpc_client::send_post_request(std::string body, bool show_log) {
 
-   fc::http::reply reply;
+   rpc_reply reply;
    auto start = ip.substr(0, 6);
    boost::algorithm::to_lower(start);
 
@@ -486,7 +486,9 @@ fc::http::reply rpc_client::send_post_request(std::string body, bool show_log) {
       //   url = url + "/wallet/" + wallet;
       //}
 
-      reply = conn.request("POST", url, body, fc::http::headers{authorization});
+      auto r = conn.request("POST", url, body, fc::http::headers{authorization});
+		reply.status = r.status;
+		reply.body.assign(r.body.begin(), r.body.end());
 
    } catch (...) {
    }

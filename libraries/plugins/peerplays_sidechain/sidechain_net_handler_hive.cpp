@@ -37,7 +37,7 @@ hive_node_rpc_client::hive_node_rpc_client(std::string _ip, uint32_t _port, std:
 }
 
 std::string hive_node_rpc_client::account_history_api_get_transaction(std::string transaction_id) {
-   std::string params = "{ \"id\": \"" + transaction_id + "\", \"include_reversible\": \"true\" }";
+   std::string params = "{ \"id\": \"" + transaction_id + "\" }";
    return send_post_request("account_history_api.get_transaction", params, debug_rpc_calls);
 }
 
@@ -179,9 +179,11 @@ sidechain_net_handler_hive::sidechain_net_handler_hive(peerplays_sidechain_plugi
    std::string is_test_net = node_rpc_client->get_is_test_net();
    network_type = is_test_net.compare("true") == 0 ? hive::network::testnet : hive::network::mainnet;
    if (network_type == hive::network::mainnet) {
+      ilog("Running on Hive mainnet, chain id ${chain_id_str}", ("chain_id_str", chain_id_str));
       hive::asset::hbd_symbol_ser = HBD_SYMBOL_SER;
       hive::asset::hive_symbol_ser = HIVE_SYMBOL_SER;
    } else {
+      ilog("Running on Hive testnet, chain id ${chain_id_str}", ("chain_id_str", chain_id_str));
       hive::asset::hbd_symbol_ser = TBD_SYMBOL_SER;
       hive::asset::hive_symbol_ser = TESTS_SYMBOL_SER;
    }
@@ -835,7 +837,6 @@ void sidechain_net_handler_hive::hive_listener_loop() {
    schedule_hive_listener();
 
    std::string reply = node_rpc_client->database_api_get_dynamic_global_properties();
-
    if (!reply.empty()) {
       std::stringstream ss(reply);
       boost::property_tree::ptree json;
@@ -849,6 +850,16 @@ void sidechain_net_handler_hive::hive_listener_loop() {
          }
       }
    }
+
+   //std::string reply = node_rpc_client->get_last_irreversible_block_num();
+   //if (!reply.empty()) {
+   //   uint64_t last_irreversible_block = std::stoul(reply);
+   //   if (last_irreversible_block != last_block_received) {
+   //      std::string event_data = std::to_string(last_irreversible_block);
+   //      handle_event(event_data);
+   //      last_block_received = last_irreversible_block;
+   //   }
+   //}
 }
 
 void sidechain_net_handler_hive::handle_event(const std::string &event_data) {
@@ -858,28 +869,25 @@ void sidechain_net_handler_hive::handle_event(const std::string &event_data) {
       boost::property_tree::ptree block_json;
       boost::property_tree::read_json(ss, block_json);
 
-      for (const auto &tx_ids_child : block_json.get_child("result.block.transaction_ids")) {
-         const auto &transaction_id = tx_ids_child.second.get_value<std::string>();
+      size_t tx_idx = -1;
+      for (const auto &tx_ids_child : block_json.get_child("result.block.transactions")) {
+         boost::property_tree::ptree tx = tx_ids_child.second;
+         tx_idx = tx_idx + 1;
 
-         std::string tx_str = node_rpc_client->account_history_api_get_transaction(transaction_id);
-         if (tx_str != "") {
+         size_t op_idx = -1;
+         for (const auto &ops : tx.get_child("operations")) {
+            const auto &op = ops.second;
+            op_idx = op_idx + 1;
 
-            std::stringstream ss_tx(tx_str);
-            boost::property_tree::ptree tx;
-            boost::property_tree::read_json(ss_tx, tx);
+            std::string operation_type = op.get<std::string>("type");
 
-            size_t op_idx = -1;
-            for (const auto &ops : tx.get_child("result.operations")) {
-               const auto &op = ops.second;
-               op_idx = op_idx + 1;
+            if (operation_type == "transfer_operation") {
+               const auto &op_value = op.get_child("value");
 
-               std::string operation_type = op.get<std::string>("type");
+               std::string from = op_value.get<std::string>("from");
+               std::string to = op_value.get<std::string>("to");
 
-               if (operation_type == "transfer_operation") {
-                  const auto &op_value = op.get_child("value");
-
-                  std::string from = op_value.get<std::string>("from");
-                  std::string to = op_value.get<std::string>("to");
+               if (to == "son-account") {
 
                   const auto &amount_child = op_value.get_child("amount");
 
@@ -903,42 +911,47 @@ void sidechain_net_handler_hive::handle_event(const std::string &event_data) {
                      from = memo;
                   }
 
-                  if (to == "son-account") {
-                     const auto &sidechain_addresses_idx = database.get_index_type<sidechain_address_index>().indices().get<by_sidechain_and_deposit_address_and_expires>();
-                     const auto &addr_itr = sidechain_addresses_idx.find(std::make_tuple(sidechain, from, time_point_sec::maximum()));
-                     account_id_type accn = account_id_type();
-                     if (addr_itr == sidechain_addresses_idx.end()) {
-                        const auto &account_idx = database.get_index_type<account_index>().indices().get<by_name>();
-                        const auto &account_itr = account_idx.find(from);
-                        if (account_itr == account_idx.end()) {
-                           continue;
-                        } else {
-                           accn = account_itr->id;
-                        }
+                  const auto &sidechain_addresses_idx = database.get_index_type<sidechain_address_index>().indices().get<by_sidechain_and_deposit_address_and_expires>();
+                  const auto &addr_itr = sidechain_addresses_idx.find(std::make_tuple(sidechain, from, time_point_sec::maximum()));
+                  account_id_type accn = account_id_type();
+                  if (addr_itr == sidechain_addresses_idx.end()) {
+                     const auto &account_idx = database.get_index_type<account_index>().indices().get<by_name>();
+                     const auto &account_itr = account_idx.find(from);
+                     if (account_itr == account_idx.end()) {
+                        continue;
                      } else {
-                        accn = addr_itr->sidechain_address_account;
+                        accn = account_itr->id;
                      }
-
-                     std::stringstream ss;
-                     ss << "hive"
-                        << "-" << transaction_id << "-" << op_idx;
-                     std::string sidechain_uid = ss.str();
-
-                     sidechain_event_data sed;
-                     sed.timestamp = database.head_block_time();
-                     sed.block_num = database.head_block_num();
-                     sed.sidechain = sidechain;
-                     sed.sidechain_uid = sidechain_uid;
-                     sed.sidechain_transaction_id = transaction_id;
-                     sed.sidechain_from = from;
-                     sed.sidechain_to = to;
-                     sed.sidechain_currency = sidechain_currency;
-                     sed.sidechain_amount = amount;
-                     sed.peerplays_from = accn;
-                     sed.peerplays_to = database.get_global_properties().parameters.son_account();
-                     sed.peerplays_asset = asset(sed.sidechain_amount * sidechain_currency_price.base.amount / sidechain_currency_price.quote.amount);
-                     sidechain_event_data_received(sed);
+                  } else {
+                     accn = addr_itr->sidechain_address_account;
                   }
+
+                  std::vector<std::string> transaction_ids;
+                  for (const auto &tx_ids_child : block_json.get_child("result.block.transaction_ids")) {
+                     const auto &transaction_id = tx_ids_child.second.get_value<std::string>();
+                     transaction_ids.push_back(transaction_id);
+                  }
+                  std::string transaction_id = transaction_ids.at(tx_idx);
+
+                  std::stringstream ss;
+                  ss << "hive"
+                     << "-" << transaction_id << "-" << op_idx;
+                  std::string sidechain_uid = ss.str();
+
+                  sidechain_event_data sed;
+                  sed.timestamp = database.head_block_time();
+                  sed.block_num = database.head_block_num();
+                  sed.sidechain = sidechain;
+                  sed.sidechain_uid = sidechain_uid;
+                  sed.sidechain_transaction_id = transaction_id;
+                  sed.sidechain_from = from;
+                  sed.sidechain_to = to;
+                  sed.sidechain_currency = sidechain_currency;
+                  sed.sidechain_amount = amount;
+                  sed.peerplays_from = accn;
+                  sed.peerplays_to = database.get_global_properties().parameters.son_account();
+                  sed.peerplays_asset = asset(sed.sidechain_amount * sidechain_currency_price.base.amount / sidechain_currency_price.quote.amount);
+                  sidechain_event_data_received(sed);
                }
             }
          }

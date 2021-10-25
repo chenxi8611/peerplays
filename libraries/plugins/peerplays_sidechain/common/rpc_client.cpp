@@ -19,8 +19,6 @@
 #include <boost/algorithm/string/case_conv.hpp>
 #include <boost/algorithm/string/trim.hpp>
 
-#include "net_utl.hpp"
-
 namespace graphene { namespace peerplays_sidechain {
 
 struct http_request {
@@ -104,10 +102,6 @@ static const char *crlf = "\x0D\x0A";
 static const char *crlfcrlf = "\x0D\x0A\x0D\x0A";
 
 using namespace boost::asio;
-
-[[noreturn]] static void throw_error(const std::string &msg) {
-   throw std::runtime_error(msg);
-}
 
 class https_call_impl {
 public:
@@ -200,8 +194,9 @@ private:
       const auto &h = m_request.headers;
 
       if (!h.empty()) {
-         if (h.size() < 2)
-            throw_error("invalid headers data");
+         if (h.size() < 2) {
+            FC_THROW("invalid headers data");
+         }
          stream << h;
          // ensure headers finished correctly
          if ((h.substr(h.size() - 2) != crlf))
@@ -236,7 +231,7 @@ private:
       stream >> m_response.status_code;
 
       if (!stream || http_version.substr(0, 5) != "HTTP/") {
-         throw_error("invalid response");
+         FC_THROW("invalid response data");
       }
 
       // read/skip headers
@@ -274,25 +269,28 @@ private:
 
       // check content length
 
-      if (content_length < 2) // minimum content is "{}"
-         throw_error("invalid response body (too short)");
+      if (content_length < 2) { // minimum content is "{}"
+         FC_THROW("invalid response body (too short)");
+      }
 
-      if (content_length > m_call.response_size_limit_bytes())
-         throw_error("response body size limit exceeded");
+      if (content_length > m_call.response_size_limit_bytes()) {
+         FC_THROW("response body size limit exceeded");
+      }
 
       // read body
 
       auto avail = buf.size(); // size of body data already stored in the buffer
 
-      if (avail > content_length)
-         throw_error("invalid response body (content length mismatch)");
+      if (avail > content_length) {
+         FC_THROW("invalid response body (content length mismatch)");
+      }
 
       body.resize(content_length);
 
       if (avail) {
          // copy already existing data
          if (avail != buf.sgetn(&body[0], avail)) {
-            throw_error("stream read failed");
+            FC_THROW("stream read failed");
          }
       }
 
@@ -438,59 +436,39 @@ rpc_reply rpc_client::send_post_request(std::string body, bool show_log) {
          memcpy(&reply.body[0], &response.body[0], response.body.size());
       }
 
-      if (show_log) {
-         std::string url = ip + ":" + std::to_string(port);
-         ilog("### Request URL:    ${url}", ("url", url));
-         ilog("### Request:        ${body}", ("body", body));
-         ilog("### Response code:  ${code}", ("code", response.status_code));
-         ilog("### Response len:   ${len}", ("len", response.body.size()));
-         std::stringstream ss(std::string(reply.body.begin(), reply.body.end()));
-         ilog("### Response body:  ${ss}", ("ss", ss.str()));
-      }
+   } else {
 
-      return reply;
-   }
+      std::string host;
 
-   std::string host;
+      if (start == "http:/")
+         host = ip.substr(7); // skip "http://"
+      else
+         host = ip;
 
-   if (start == "http:/")
-      host = ip.substr(7); // skip "http://"
-   else
-      host = ip;
+      std::string url = "http://" + host + ":" + std::to_string(port);
+      fc::ip::address addr;
 
-   std::string url = "http://" + host + ":" + std::to_string(port);
-   fc::ip::address addr;
-
-   try {
-      addr = fc::ip::address(host);
-   } catch (...) {
       try {
-         addr = fc::ip::address(resolve_host_addr(host));
+         addr = fc::ip::address(host);
       } catch (...) {
-         if (show_log) {
-            std::string url = ip + ":" + std::to_string(port);
-            ilog("### Request URL:    ${url}", ("url", url));
-            ilog("### Request:        ${body}", ("body", body));
-            ilog("### Request: error: host address resolve failed");
-         }
          return reply;
       }
-   }
 
-   try {
+      try {
 
-      fc::http::connection conn;
-      conn.connect_to(fc::ip::endpoint(addr, port));
+         fc::http::connection conn;
+         conn.connect_to(fc::ip::endpoint(addr, port));
 
-      //if (wallet.length() > 0) {
-      //   url = url + "/wallet/" + wallet;
-      //}
+         //if (wallet.length() > 0) {
+         //   url = url + "/wallet/" + wallet;
+         //}
 
-      auto r = conn.request("POST", url, body, fc::http::headers{authorization});
-      reply.status = r.status;
-      reply.body.assign(r.body.begin(), r.body.end());
+         auto r = conn.request("POST", url, body, fc::http::headers{authorization});
+         reply.status = r.status;
+         reply.body.assign(r.body.begin(), r.body.end());
 
-   } catch (...) {
+      } catch (...) {
+      }
    }
 
    if (show_log) {

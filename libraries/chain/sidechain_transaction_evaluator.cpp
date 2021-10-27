@@ -28,6 +28,7 @@ void_result sidechain_transaction_create_evaluator::do_evaluate(const sidechain_
 object_id_type sidechain_transaction_create_evaluator::do_apply(const sidechain_transaction_create_operation &op)
 { try {
    const auto &new_sidechain_transaction_object = db().create<sidechain_transaction_object>([&](sidechain_transaction_object &sto) {
+      sto.timestamp = db().head_block_time();
       sto.sidechain = op.sidechain;
       sto.object_id = op.object_id;
       sto.transaction = op.transaction;

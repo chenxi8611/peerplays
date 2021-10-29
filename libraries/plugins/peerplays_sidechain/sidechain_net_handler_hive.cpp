@@ -211,10 +211,12 @@ sidechain_net_handler_hive::sidechain_net_handler_hive(peerplays_sidechain_plugi
       ilog("Running on Hive mainnet, chain id ${chain_id_str}", ("chain_id_str", chain_id_str));
       hive::asset::hbd_symbol_ser = HBD_SYMBOL_SER;
       hive::asset::hive_symbol_ser = HIVE_SYMBOL_SER;
+      hive::public_key_type::prefix = KEY_PREFIX_STM;
    } else {
       ilog("Running on Hive testnet, chain id ${chain_id_str}", ("chain_id_str", chain_id_str));
       hive::asset::hbd_symbol_ser = TBD_SYMBOL_SER;
       hive::asset::hive_symbol_ser = TESTS_SYMBOL_SER;
+      hive::public_key_type::prefix = KEY_PREFIX_TST;
    }
 
    last_block_received = 0;

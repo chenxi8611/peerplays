@@ -5,6 +5,9 @@
 
 namespace graphene { namespace peerplays_sidechain { namespace hive {
 
+#define KEY_PREFIX_STM "STM"
+#define KEY_PREFIX_TST "TST"
+
 enum network {
    mainnet,
    testnet
@@ -30,6 +33,9 @@ typedef fc::safe<int64_t> share_type;
 //typedef fixed_string<32> custom_id_type;
 
 struct public_key_type {
+
+   static std::string prefix;
+
    struct binary_key {
       binary_key() {
       }

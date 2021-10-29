@@ -7,7 +7,7 @@
 
 namespace graphene { namespace peerplays_sidechain { namespace hive {
 
-#define ADDRESS_PREFIX "TST"
+std::string public_key_type::prefix = KEY_PREFIX_STM;
 
 public_key_type::public_key_type() :
       key_data(){};
@@ -19,8 +19,6 @@ public_key_type::public_key_type(const fc::ecc::public_key &pubkey) :
       key_data(pubkey){};
 
 public_key_type::public_key_type(const std::string &base58str) {
-   std::string prefix(ADDRESS_PREFIX);
-
    const size_t prefix_len = prefix.size();
    FC_ASSERT(base58str.size() > prefix_len);
    FC_ASSERT(base58str.substr(0, prefix_len) == prefix, "", ("base58str", base58str));
@@ -43,7 +41,7 @@ public_key_type::operator std::string() const {
    k.data = key_data;
    k.check = fc::ripemd160::hash(k.data.data, k.data.size())._hash[0];
    auto data = fc::raw::pack(k);
-   return ADDRESS_PREFIX + fc::to_base58(data.data(), data.size());
+   return prefix + fc::to_base58(data.data(), data.size());
 }
 
 bool operator==(const public_key_type &p1, const fc::ecc::public_key &p2) {

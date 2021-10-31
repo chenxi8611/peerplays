@@ -568,7 +568,7 @@ void sidechain_net_handler_hive::process_primary_wallet() {
 
          hive::signed_transaction htrx;
          htrx.set_reference_block(head_block_id);
-         htrx.set_expiration(head_block_time + fc::seconds(90));
+         htrx.set_expiration(head_block_time + fc::seconds(180));
 
          htrx.operations.push_back(auo);
 
@@ -726,7 +726,7 @@ bool sidechain_net_handler_hive::process_withdrawal(const son_wallet_withdraw_ob
 
    hive::signed_transaction htrx;
    htrx.set_reference_block(head_block_id);
-   htrx.set_expiration(head_block_time + fc::seconds(90));
+   htrx.set_expiration(head_block_time + fc::seconds(180));
 
    htrx.operations.push_back(t_op);
 

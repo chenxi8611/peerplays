@@ -174,35 +174,13 @@ sidechain_net_handler_hive::sidechain_net_handler_hive(peerplays_sidechain_plugi
       }
    }
 
-   std::string schema;
-   auto host = strip_proto_name(node_ip, &schema);
+   node_rpc_client = new hive_node_rpc_client(node_ip, node_rpc_port, node_rpc_user, node_rpc_password, debug_rpc_calls);
 
-   try {
-      fc::ip::address ip_addr;
-      try {
-         // IP address assumed
-         ip_addr = fc::ip::address(host);
-      } catch (...) {
-         try {
-            // host name assumed
-            host = resolve_host_addr(host);
-            ip_addr = fc::ip::address(host);
-         } catch (...) {
-            elog("Failed to resolve Hive node address ${ip}", ("ip", node_ip));
-            FC_ASSERT(false);
-         }
-      }
-      // try to connect to TCP endpoint
-      fc::http::connection conn;
-      conn.connect_to(fc::ip::endpoint(ip_addr, node_rpc_port));
-   } catch (fc::exception &e) {
+   std::string chain_id_str = node_rpc_client->get_chain_id();
+   if (chain_id_str.empty()) {
       elog("No Hive node running at ${ip} or wrong rpc port: ${port}", ("ip", node_ip)("port", node_rpc_port));
       FC_ASSERT(false);
    }
-
-   node_rpc_client = new hive_node_rpc_client(schema + host, node_rpc_port, node_rpc_user, node_rpc_password, debug_rpc_calls);
-
-   std::string chain_id_str = node_rpc_client->get_chain_id();
    chain_id = chain_id_type(chain_id_str);
 
    std::string is_test_net = node_rpc_client->get_is_test_net();

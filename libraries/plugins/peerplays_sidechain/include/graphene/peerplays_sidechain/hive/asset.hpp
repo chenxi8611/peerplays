@@ -6,12 +6,12 @@ namespace graphene { namespace peerplays_sidechain { namespace hive {
 
 #define HBD_NAI "@@000000013"
 #define HBD_PRECISION 3
-#define HBD_SYMBOL_U64 (uint64_t('H') | (uint64_t('B') << 8) | (uint64_t('D') << 16))
+#define HBD_SYMBOL_U64 (uint64_t('S') | (uint64_t('B') << 8) | (uint64_t('D') << 16))
 #define HBD_SYMBOL_SER (uint64_t(3) | (HBD_SYMBOL_U64 << 8))
 
 #define HIVE_NAI "@@000000021"
 #define HIVE_PRECISION 3
-#define HIVE_SYMBOL_U64 (uint64_t('H') | (uint64_t('I') << 8) | (uint64_t('V') << 16) | (uint64_t('E') << 24))
+#define HIVE_SYMBOL_U64 (uint64_t('S') | (uint64_t('T') << 8) | (uint64_t('E') << 16) | (uint64_t('E') << 24) | (uint64_t('M') << 32))
 #define HIVE_SYMBOL_SER (uint64_t(3) | (HIVE_SYMBOL_U64 << 8))
 
 #define TBD_NAI "@@000000013"

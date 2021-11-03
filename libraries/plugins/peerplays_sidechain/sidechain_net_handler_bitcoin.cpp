@@ -1546,7 +1546,7 @@ bool sidechain_net_handler_bitcoin::settle_sidechain_transaction(const sidechain
 
       if (sto.object_id.is<son_wallet_withdraw_id_type>()) {
          auto swwo = database.get<son_wallet_withdraw_object>(sto.object_id);
-         settle_amount = swwo.withdraw_amount;
+         settle_amount = asset(swwo.withdraw_amount, database.get_global_properties().parameters.btc_asset());
          return true;
       }
    }

@@ -337,12 +337,12 @@ rpc_client::rpc_client(std::string url, uint32_t _port, std::string _user, std::
    boost::algorithm::to_lower(schema);
 
    try {
-      fc::ip::address(host); // try to convert host string to valid IPv4 address
+      fc::ip::address temp(host); // try to convert host string to valid IPv4 address
       ip = host;
    } catch (...) {
       try {
          ip = resolve_host_addr(host);
-         fc::ip::address(ip);
+         fc::ip::address temp(ip);
       } catch (...) {
          elog("Failed to resolve Hive node address ${ip}", ("ip", url));
          FC_ASSERT(false);

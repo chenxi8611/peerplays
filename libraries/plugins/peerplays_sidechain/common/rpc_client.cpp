@@ -3,9 +3,10 @@
 #include <sstream>
 #include <string>
 
-#include <boost/asio.hpp>
+//#include <boost/asio.hpp>
+//#include <boost/asio/ssl.hpp>
+
 #include <boost/asio/buffer.hpp>
-#include <boost/asio/ssl.hpp>
 
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/property_tree/ptree.hpp>
@@ -21,303 +22,269 @@
 
 namespace graphene { namespace peerplays_sidechain {
 
-struct http_request {
-
-   std::string method; // ex: "POST"
-   std::string path;   // ex: "/"
-   std::string headers;
-   std::string body;
-   std::string content_type; // ex: "application/json"
-
-   http_request() {
-   }
-
-   http_request(const std::string &method_, const std::string &path_, const std::string &headers_, const std::string &body_, const std::string &content_type_) :
-         method(method_),
-         path(path_),
-         headers(headers_),
-         body(body_),
-         content_type(content_type_) {
-   }
-
-   http_request(const std::string &method_, const std::string &path_, const std::string &headers_, const std::string &body_ = std::string()) :
-         method(method_),
-         path(path_),
-         headers(headers_),
-         body(body_),
-         content_type("application/json") {
-   }
-
-   void clear() {
-      method.clear();
-      path.clear();
-      headers.clear();
-      body.clear();
-      content_type.clear();
-   }
-};
-
-struct http_response {
-
-   uint16_t status_code;
-   std::string body;
-
-   void clear() {
-      status_code = 0;
-      body = decltype(body)();
-   }
-};
-
-class https_call {
-public:
-   https_call(const std::string &host, uint16_t port = 0) :
-         m_host(host),
-         m_port(port) {
-   }
-
-   const std::string &host() const {
-      return m_host;
-   }
-
-   uint16_t port() const {
-      return m_port;
-   }
-
-   uint32_t response_size_limit_bytes() const {
-      return 1024 * 1024;
-   }
-
-   bool exec(const http_request &request, http_response *response);
-
-private:
-   std::string m_host;
-   uint16_t m_port;
-};
+using namespace boost::asio;
 
 namespace detail {
+
+// https_call_impl
+
+class https_call_impl {
+public:
+   https_call_impl(https_call &call, const void *body_data, size_t body_size, http_response &response);
+   void exec();
+
+private:
+   https_call &m_call;
+   const void *m_body_data;
+   size_t m_body_size;
+   http_response &m_response;
+
+   ssl::stream<ip::tcp::socket> m_socket;
+   streambuf m_response_buf;
+   int32_t m_content_length;
+
+private:
+   void connect();
+   void send_request();
+   void process_headers();
+   void process_response();
+};
 
 static const char cr = 0x0D;
 static const char lf = 0x0A;
 static const char *crlf = "\x0D\x0A";
 static const char *crlfcrlf = "\x0D\x0A\x0D\x0A";
 
-using namespace boost::asio;
+https_call_impl::https_call_impl(https_call &call, const void *body_data, size_t body_size, http_response &response) :
+      m_call(call),
+      m_body_data(body_data),
+      m_body_size(body_size),
+      m_response(response),
+      m_socket(m_call.m_service, m_call.m_context),
+      m_response_buf(https_call::response_size_limit_bytes) {
+}
 
-class https_call_impl {
-public:
-   https_call_impl(const https_call &call, const http_request &request, http_response &response) :
-         m_call(call),
-         m_request(request),
-         m_response(response),
-         m_service(),
-         m_context(ssl::context::tlsv12_client),
-         m_socket(m_service, m_context),
-         m_endpoint(),
-         m_response_buf(call.response_size_limit_bytes()),
-         m_content_length(0) {
-      m_context.set_default_verify_paths();
+void https_call_impl::exec() {
+   connect();
+   send_request();
+   process_response();
+}
+
+void https_call_impl::connect() {
+
+   // TCP connect
+
+   m_socket.lowest_layer().connect(m_call.m_endpoint);
+
+   // SSL connect
+
+   if (!SSL_set_tlsext_host_name(m_socket.native_handle(), m_call.m_host.c_str())) {
+      FC_THROW("SSL_set_tlsext_host_name failed");
    }
 
-   void exec() {
-      resolve();
-      connect();
-      send_request();
-      process_response();
+   m_socket.set_verify_mode(ssl::verify_peer);
+   m_socket.handshake(ssl::stream_base::client);
+}
+
+void https_call_impl::send_request() {
+
+   streambuf request;
+   std::ostream stream(&request);
+
+   // start string: <method> <path> HTTP/1.0
+
+   stream << m_call.m_method << " " << m_call.m_path << " HTTP/1.0" << crlf;
+
+   // host
+
+   stream << "Host: " << m_call.m_host << ":" << m_call.m_endpoint.port() << crlf;
+
+   // content
+
+   if (m_body_size) {
+      stream << "Content-Type: " << m_call.m_content_type << crlf;
+      stream << "Content-Length: " << m_body_size << crlf;
    }
 
-private:
-   const https_call &m_call;
-   const http_request &m_request;
-   http_response &m_response;
+   // additional headers
 
-   io_service m_service;
-   ssl::context m_context;
-   ssl::stream<ip::tcp::socket> m_socket;
-   ip::tcp::endpoint m_endpoint;
-   streambuf m_response_buf;
-   uint32_t m_content_length;
+   const auto &h = m_call.m_headers;
 
-   void resolve() {
-
-      // resolve TCP endpoint for host name
-
-      ip::tcp::resolver resolver(m_service);
-      auto query = ip::tcp::resolver::query(m_call.host(), "https");
-      auto iter = resolver.resolve(query);
-      m_endpoint = *iter;
-
-      if (m_call.port() != 0)            // if port was specified
-         m_endpoint.port(m_call.port()); // force set port
-   }
-
-   void connect() {
-
-      // TCP connect
-
-      m_socket.lowest_layer().connect(m_endpoint);
-
-      // SSL connect
-
-      m_socket.set_verify_mode(ssl::verify_peer);
-      m_socket.handshake(ssl::stream_base::client);
-   }
-
-   void send_request() {
-
-      streambuf request_buf;
-      std::ostream stream(&request_buf);
-
-      // start string: <method> <path> HTTP/1.0
-
-      stream << m_request.method << " " << m_request.path << " HTTP/1.0" << crlf;
-
-      // host
-
-      stream << "Host: " << m_call.host();
-
-      if (m_call.port() != 0) {
-         //ASSERT(m_Endpoint.port() == m_Call.port());
-         stream << ":" << m_call.port();
+   if (!h.empty()) {
+      if (h.size() < 2) {
+         FC_THROW("invalid headers data");
       }
-
-      stream << crlf;
-
-      // content
-
-      if (!m_request.body.empty()) {
-         stream << "Content-Type: " << m_request.content_type << crlf;
-         stream << "Content-Length: " << m_request.body.size() << crlf;
-      }
-
-      // additional headers
-
-      const auto &h = m_request.headers;
-
-      if (!h.empty()) {
-         if (h.size() < 2) {
-            FC_THROW("invalid headers data");
-         }
-         stream << h;
-         // ensure headers finished correctly
-         if ((h.substr(h.size() - 2) != crlf))
-            stream << crlf;
-      }
-
-      // other
-
-      stream << "Accept: *\x2F*" << crlf;
-      stream << "Connection: close" << crlf;
-
-      // end
-
-      stream << crlf;
-
-      // content
-
-      if (!m_request.body.empty())
-         stream << m_request.body;
-
-      // send
-
-      write(m_socket, request_buf);
+      stream << h;
+      // ensure headers finished correctly
+      if ((h.substr(h.size() - 2) != crlf))
+         stream << crlf;
    }
 
-   void process_headers() {
+   // other
 
-      std::istream stream(&m_response_buf);
+   //      stream << "Accept: *\x2F*" << crlf;
+   stream << "Accept: text/html, application/json" << crlf;
+   stream << "Connection: close" << crlf;
 
-      std::string http_version;
-      stream >> http_version;
-      stream >> m_response.status_code;
+   // end
 
-      if (!stream || http_version.substr(0, 5) != "HTTP/") {
-         FC_THROW("invalid response data");
-      }
+   stream << crlf;
 
-      // read/skip headers
+   // send headers
 
-      for (;;) {
-         std::string header;
-         if (!std::getline(stream, header, lf) || (header.size() == 1 && header[0] == cr))
-            break;
-         if (m_content_length) // if content length is already known
-            continue;          // continue skipping headers
-         auto pos = header.find(':');
-         if (pos == std::string::npos)
-            continue;
-         auto name = header.substr(0, pos);
-         boost::algorithm::trim(name);
-         boost::algorithm::to_lower(name);
-         if (name != "content-length")
-            continue;
-         auto value = header.substr(pos + 1);
-         boost::algorithm::trim(value);
-         m_content_length = std::stol(value);
-      }
+   write(m_socket, request);
+
+   // send body
+
+   if (m_body_size)
+      write(m_socket, buffer(m_body_data, m_body_size));
+}
+
+void https_call_impl::process_headers() {
+
+   std::istream stream(&m_response_buf);
+
+   std::string http_version;
+   stream >> http_version;
+   stream >> m_response.status_code;
+
+   boost::algorithm::trim(http_version);
+   boost::algorithm::to_lower(http_version);
+
+   if (!stream || http_version.substr(0, 5) != "http/") {
+      FC_THROW("invalid response data");
    }
 
-   void process_response() {
+   // read/skip headers
 
-      auto &socket = m_socket;
-      auto &buf = m_response_buf;
-      auto &content_length = m_content_length;
-      auto &body = m_response.body;
+   m_content_length = -1;
 
-      read_until(socket, buf, crlfcrlf);
+   for (;;) {
+      std::string header;
+      if (!std::getline(stream, header, lf) || (header.size() == 1 && header[0] == cr))
+         break;
+      if (m_content_length) // if content length is already known
+         continue;          // continue skipping headers
+      auto pos = header.find(':');
+      if (pos == std::string::npos)
+         continue;
+      auto name = header.substr(0, pos);
+      boost::algorithm::trim(name);
+      boost::algorithm::to_lower(name);
+      if (name != "content-length")
+         continue;
+      auto value = header.substr(pos + 1);
+      boost::algorithm::trim(value);
+      m_content_length = std::stol(value);
+   }
+}
 
-      process_headers();
+void https_call_impl::process_response() {
 
-      // check content length
+   auto &socket = m_socket;
+   auto &buf = m_response_buf;
+   auto &content_length = m_content_length;
+   auto &body = m_response.body;
 
+   read_until(socket, buf, crlfcrlf);
+
+   process_headers();
+
+   // check content length
+
+   if (content_length >= 0) {
       if (content_length < 2) { // minimum content is "{}"
          FC_THROW("invalid response body (too short)");
       }
-
-      if (content_length > m_call.response_size_limit_bytes()) {
+      if (content_length > https_call::response_size_limit_bytes) {
          FC_THROW("response body size limit exceeded");
       }
+   }
 
-      // read body
+   boost::system::error_code ec;
 
-      auto avail = buf.size(); // size of body data already stored in the buffer
+   for (;;) {
 
-      if (avail > content_length) {
-         FC_THROW("invalid response body (content length mismatch)");
+      auto readed = read(socket, buf, transfer_at_least(1), ec);
+
+      if (ec)
+         break;
+
+      if (!readed) {
+         if (buf.size() == buf.max_size())
+            FC_THROW("response body size limit exceeded");
+         else
+            FC_THROW("logic error: read failed but no error conditon");
       }
 
-      body.resize(content_length);
-
-      if (avail) {
-         // copy already existing data
-         if (avail != buf.sgetn(&body[0], avail)) {
-            FC_THROW("stream read failed");
+      if (content_length >= 0) {
+         if (buf.size() > content_length) {
+            FC_THROW("read more than content-length");
          }
       }
-
-      auto rest = content_length - avail; // size of remaining part of response body
-
-      boost::system::error_code error_code;
-
-      read(socket, buffer(&body[avail], rest), error_code); // read remaining part
-
-      socket.shutdown(error_code);
    }
-};
+
+   {
+      boost::system::error_code ec;
+      socket.shutdown(ec);
+   }
+
+   if ((ec != error::eof) &&
+       (ec != ssl::error::stream_truncated)) {
+      throw boost::system::system_error(ec);
+   }
+
+   if (content_length >= 0) {
+      if (buf.size() != content_length) {
+         FC_THROW("actual body size differs from content-length");
+      }
+   }
+
+   auto size = buf.size();
+   body.resize(size);
+   if (size != buf.sgetn(&body[0], size)) {
+      FC_THROW("stream read failed");
+   }
+}
 
 } // namespace detail
 
-bool https_call::exec(const http_request &request, http_response *response) {
+// https_call
 
-   //	ASSERT(response);
+https_call::https_call(const std::string &host, const std::string &ip_addr, uint16_t port, const std::string &method, const std::string &path, const std::string &headers, const std::string &content_type) :
+      m_host(host),
+      m_method(method),
+      m_path(path),
+      m_headers(headers),
+      m_content_type(content_type),
+      m_service(),
+      m_context(ssl::context::tlsv12_client),
+      m_endpoint(ip::address::from_string(ip_addr), port) {
+   m_context.set_default_verify_paths();
+   m_context.set_options(ssl::context::default_workarounds);
+}
+
+bool https_call::exec(const void *body_data, size_t body_size, http_response *response) {
+
+   //ASSERT(response);
    auto &resp = *response;
 
-   detail::https_call_impl impl(*this, request, resp);
+   detail::https_call_impl impl(*this, body_data, body_size, resp);
+
+   m_error_what = decltype(m_error_what)();
 
    try {
-      resp.clear();
-      impl.exec();
+      try {
+         resp.clear();
+         impl.exec();
+      } catch (const std::exception &e) {
+         resp.clear();
+         m_error_what = e.what();
+         return false;
+      }
    } catch (...) {
       resp.clear();
+      m_error_what = "unknown exception";
       return false;
    }
 
@@ -328,15 +295,64 @@ bool https_call::exec(const http_request &request, http_response *response) {
 
 namespace graphene { namespace peerplays_sidechain {
 
-rpc_client::rpc_client(std::string _ip, uint32_t _port, std::string _user, std::string _password, bool _debug_rpc_calls) :
-      ip(_ip),
+static std::string resolve_host_addr(const std::string &host_name) {
+   using namespace boost::asio;
+   io_service service;
+   ip::tcp::resolver resolver(service);
+   auto query = ip::tcp::resolver::query(host_name, std::string());
+   auto iter = resolver.resolve(query);
+   auto endpoint = *iter;
+   auto addr = ((ip::tcp::endpoint)endpoint).address();
+   return addr.to_string();
+}
+
+static std::string strip_proto_name(const std::string &url, std::string *schema) {
+   auto index = url.find("://");
+   if (index == std::string::npos) {
+      if (schema)
+         schema->clear();
+      return url;
+   }
+   if (schema)
+      schema->assign(&url[0], &url[index]);
+   return url.substr(index + 3);
+}
+
+}} // namespace graphene::peerplays_sidechain
+
+namespace graphene { namespace peerplays_sidechain {
+
+rpc_client::rpc_client(std::string url, uint32_t _port, std::string _user, std::string _password, bool _debug_rpc_calls) :
       port(_port),
       user(_user),
       password(_password),
       debug_rpc_calls(_debug_rpc_calls),
       request_id(0) {
+
    authorization.key = "Authorization";
    authorization.val = "Basic " + fc::base64_encode(user + ":" + password);
+
+   std::string schema;
+   host = strip_proto_name(url, &schema);
+   boost::algorithm::to_lower(schema);
+
+   try {
+      fc::ip::address(host); // try to convert host string to valid IPv4 address
+      ip = host;
+   } catch (...) {
+      try {
+         ip = resolve_host_addr(host);
+         fc::ip::address(ip);
+      } catch (...) {
+         elog("Failed to resolve Hive node address ${ip}", ("ip", url));
+         FC_ASSERT(false);
+      }
+   }
+
+   if (schema == "https")
+      https = new https_call(host, ip, port, "POST", "/", authorization.key + ":" + authorization.val, "application/json");
+   else
+      https = 0;
 }
 
 std::string rpc_client::retrieve_array_value_from_reply(std::string reply_str, std::string array_path, uint32_t idx) {
@@ -406,7 +422,7 @@ std::string rpc_client::send_post_request(std::string method, std::string params
    boost::property_tree::ptree json;
    boost::property_tree::read_json(ss, json);
 
-   if (reply.status == 200) {
+   if (reply.status_code == 200) {
       return ss.str();
    }
 
@@ -416,43 +432,18 @@ std::string rpc_client::send_post_request(std::string method, std::string params
    return "";
 }
 
-rpc_reply rpc_client::send_post_request(std::string body, bool show_log) {
+http_response rpc_client::send_post_request(std::string body, bool show_log) {
 
-   rpc_reply reply;
-   auto start = ip.substr(0, 6);
-   boost::algorithm::to_lower(start);
+   http_response response;
 
-   if (start == "https:") {
+   if (https) {
 
-      auto host = ip.substr(8); // skip "https://"
-
-      https_call call(host, port);
-      http_request request("POST", "/", authorization.key + ":" + authorization.val, body);
-      http_response response;
-
-      if (call.exec(request, &response)) {
-         reply.status = response.status_code;
-         reply.body.resize(response.body.size());
-         memcpy(&reply.body[0], &response.body[0], response.body.size());
-      }
+      https->exec(body.c_str(), body.size(), &response);
 
    } else {
 
-      std::string host;
-
-      if (start == "http:/")
-         host = ip.substr(7); // skip "http://"
-      else
-         host = ip;
-
       std::string url = "http://" + host + ":" + std::to_string(port);
-      fc::ip::address addr;
-
-      try {
-         addr = fc::ip::address(host);
-      } catch (...) {
-         return reply;
-      }
+      fc::ip::address addr(ip);
 
       try {
 
@@ -464,22 +455,22 @@ rpc_reply rpc_client::send_post_request(std::string body, bool show_log) {
          //}
 
          auto r = conn.request("POST", url, body, fc::http::headers{authorization});
-         reply.status = r.status;
-         reply.body.assign(r.body.begin(), r.body.end());
+         response.status_code = r.status;
+         response.body.assign(r.body.begin(), r.body.end());
 
       } catch (...) {
       }
    }
 
    if (show_log) {
-      std::string url = ip + ":" + std::to_string(port);
+      std::string url = host + ":" + std::to_string(port);
       ilog("### Request URL:    ${url}", ("url", url));
       ilog("### Request:        ${body}", ("body", body));
-      std::stringstream ss(std::string(reply.body.begin(), reply.body.end()));
+      std::stringstream ss(std::string(response.body.begin(), response.body.end()));
       ilog("### Response:       ${ss}", ("ss", ss.str()));
    }
 
-   return reply;
+   return response;
 }
 
 }} // namespace graphene::peerplays_sidechain

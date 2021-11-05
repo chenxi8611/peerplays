@@ -32,33 +32,6 @@
 
 namespace graphene { namespace peerplays_sidechain {
 
-std::string resolve_host_addr(const std::string &host_name) {
-   using namespace boost::asio;
-   io_service service;
-   ip::tcp::resolver resolver(service);
-   auto query = ip::tcp::resolver::query(host_name, std::string());
-   auto iter = resolver.resolve(query);
-   auto endpoint = *iter;
-   auto addr = ((ip::tcp::endpoint)endpoint).address();
-   return addr.to_string();
-}
-
-std::string strip_proto_name(const std::string &url, std::string *schema) {
-   auto index = url.find("://");
-   if (index == std::string::npos) {
-      if (schema)
-         schema->clear();
-      return url;
-   }
-   if (schema)
-      schema->assign(&url[0], &url[index + 3]);
-   return url.substr(index + 3);
-}
-
-}} // namespace graphene::peerplays_sidechain
-
-namespace graphene { namespace peerplays_sidechain {
-
 hive_node_rpc_client::hive_node_rpc_client(std::string _ip, uint32_t _port, std::string _user, std::string _password, bool _debug_rpc_calls) :
       rpc_client(_ip, _port, _user, _password, _debug_rpc_calls) {
 }
@@ -174,35 +147,15 @@ sidechain_net_handler_hive::sidechain_net_handler_hive(peerplays_sidechain_plugi
       }
    }
 
-   std::string schema;
-   auto host = strip_proto_name(node_ip, &schema);
+   node_rpc_client = new hive_node_rpc_client(node_ip, node_rpc_port, node_rpc_user, node_rpc_password, debug_rpc_calls);
 
-   try {
-      fc::ip::address ip_addr;
-      try {
-         // IP address assumed
-         ip_addr = fc::ip::address(host);
-      } catch (...) {
-         try {
-            // host name assumed
-            host = resolve_host_addr(host);
-            ip_addr = fc::ip::address(host);
-         } catch (...) {
-            elog("Failed to resolve Hive node address ${ip}", ("ip", node_ip));
-            FC_ASSERT(false);
-         }
-      }
-      // try to connect to TCP endpoint
-      fc::http::connection conn;
-      conn.connect_to(fc::ip::endpoint(ip_addr, node_rpc_port));
-   } catch (fc::exception &e) {
+   std::string chain_id_str = node_rpc_client->get_chain_id();
+
+   if (chain_id_str.empty()) {
       elog("No Hive node running at ${ip} or wrong rpc port: ${port}", ("ip", node_ip)("port", node_rpc_port));
       FC_ASSERT(false);
    }
 
-   node_rpc_client = new hive_node_rpc_client(schema + host, node_rpc_port, node_rpc_user, node_rpc_password, debug_rpc_calls);
-
-   std::string chain_id_str = node_rpc_client->get_chain_id();
    chain_id = chain_id_type(chain_id_str);
 
    std::string is_test_net = node_rpc_client->get_is_test_net();

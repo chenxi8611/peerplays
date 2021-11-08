@@ -150,12 +150,10 @@ sidechain_net_handler_hive::sidechain_net_handler_hive(peerplays_sidechain_plugi
    node_rpc_client = new hive_node_rpc_client(node_ip, node_rpc_port, node_rpc_user, node_rpc_password, debug_rpc_calls);
 
    std::string chain_id_str = node_rpc_client->get_chain_id();
-
    if (chain_id_str.empty()) {
       elog("No Hive node running at ${ip} or wrong rpc port: ${port}", ("ip", node_ip)("port", node_rpc_port));
       FC_ASSERT(false);
    }
-
    chain_id = chain_id_type(chain_id_str);
 
    std::string is_test_net = node_rpc_client->get_is_test_net();

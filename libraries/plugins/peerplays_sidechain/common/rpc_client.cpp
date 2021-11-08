@@ -3,30 +3,23 @@
 #include <sstream>
 #include <string>
 
-//#include <boost/asio.hpp>
-//#include <boost/asio/ssl.hpp>
+#include <curl/curl.h>
 
+#include <boost/algorithm/string/case_conv.hpp>
+#include <boost/algorithm/string/trim.hpp>
 #include <boost/asio/buffer.hpp>
-
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/property_tree/ptree.hpp>
-
-#include <curl/curl.h>
 
 #include <fc/crypto/base64.hpp>
 #include <fc/log/logger.hpp>
 #include <fc/network/ip.hpp>
-
-#include <boost/algorithm/string/case_conv.hpp>
-#include <boost/algorithm/string/trim.hpp>
 
 namespace graphene { namespace peerplays_sidechain {
 
 using namespace boost::asio;
 
 namespace detail {
-
-// https_call_impl
 
 class https_call_impl {
 public:
@@ -249,8 +242,6 @@ void https_call_impl::process_response() {
 
 } // namespace detail
 
-// https_call
-
 https_call::https_call(const std::string &host, const std::string &ip_addr, uint16_t port, const std::string &method, const std::string &path, const std::string &headers, const std::string &content_type) :
       m_host(host),
       m_method(method),
@@ -274,14 +265,12 @@ bool https_call::exec(const void *body_data, size_t body_size, http_response *re
    m_error_what = decltype(m_error_what)();
 
    try {
-      try {
-         resp.clear();
-         impl.exec();
-      } catch (const std::exception &e) {
-         resp.clear();
-         m_error_what = e.what();
-         return false;
-      }
+      resp.clear();
+      impl.exec();
+   } catch (const std::exception &e) {
+      resp.clear();
+      m_error_what = e.what();
+      return false;
    } catch (...) {
       resp.clear();
       m_error_what = "unknown exception";
@@ -290,10 +279,6 @@ bool https_call::exec(const void *body_data, size_t body_size, http_response *re
 
    return true;
 }
-
-}} // namespace graphene::peerplays_sidechain
-
-namespace graphene { namespace peerplays_sidechain {
 
 static std::string resolve_host_addr(const std::string &host_name) {
    using namespace boost::asio;
@@ -317,10 +302,6 @@ static std::string strip_proto_name(const std::string &url, std::string *schema)
       schema->assign(&url[0], &url[index]);
    return url.substr(index + 3);
 }
-
-}} // namespace graphene::peerplays_sidechain
-
-namespace graphene { namespace peerplays_sidechain {
 
 rpc_client::rpc_client(std::string url, uint32_t _port, std::string _user, std::string _password, bool _debug_rpc_calls) :
       port(_port),
@@ -431,6 +412,87 @@ std::string rpc_client::send_post_request(std::string method, std::string params
    }
    return "";
 }
+
+//fc::http::reply rpc_client::send_post_request(std::string body, bool show_log) {
+//   fc::http::connection conn;
+//   conn.connect_to(fc::ip::endpoint(fc::ip::address(ip), port));
+//
+//   std::string url = "http://" + ip + ":" + std::to_string(port);
+//
+//   //if (wallet.length() > 0) {
+//   //   url = url + "/wallet/" + wallet;
+//   //}
+//
+//   fc::http::reply reply = conn.request("POST", url, body, fc::http::headers{authorization});
+//
+//   if (show_log) {
+//      ilog("### Request URL:    ${url}", ("url", url));
+//      ilog("### Request:        ${body}", ("body", body));
+//      std::stringstream ss(std::string(reply.body.begin(), reply.body.end()));
+//      ilog("### Response:       ${ss}", ("ss", ss.str()));
+//   }
+//
+//   return reply;
+//}
+
+//static size_t write_callback(char *ptr, size_t size, size_t nmemb, rpc_reply *reply) {
+//   size_t retval = 0;
+//   if (reply != nullptr) {
+//      reply->body.append(ptr, size * nmemb);
+//      retval = size * nmemb;
+//   }
+//   return retval;
+//}
+
+//rpc_reply rpc_client::send_post_request(std::string body, bool show_log) {
+//
+//   struct curl_slist *headers = nullptr;
+//   headers = curl_slist_append(headers, "Accept: application/json");
+//   headers = curl_slist_append(headers, "Content-Type: application/json");
+//   headers = curl_slist_append(headers, "charset: utf-8");
+//
+//   CURL *curl = curl_easy_init();
+//   if (ip.find("https://", 0) != 0) {
+//      curl_easy_setopt(curl, CURLOPT_URL, ip.c_str());
+//      curl_easy_setopt(curl, CURLOPT_PORT, port);
+//   } else {
+//      std::string full_address = ip + ":" + std::to_string(port);
+//      curl_easy_setopt(curl, CURLOPT_URL, full_address.c_str());
+//      curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, false);
+//      curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, false);
+//   }
+//   if (!user.empty()) {
+//      curl_easy_setopt(curl, CURLOPT_USERNAME, user.c_str());
+//      curl_easy_setopt(curl, CURLOPT_PASSWORD, password.c_str());
+//   }
+//
+//   curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+//   curl_easy_setopt(curl, CURLOPT_POSTFIELDS, body.c_str());
+//
+//   //curl_easy_setopt(curl, CURLOPT_VERBOSE, true);
+//
+//   rpc_reply reply;
+//
+//   curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
+//   curl_easy_setopt(curl, CURLOPT_WRITEDATA, &reply);
+//
+//   curl_easy_perform(curl);
+//
+//   curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &reply.status);
+//
+//   curl_easy_cleanup(curl);
+//   curl_slist_free_all(headers);
+//
+//   if (show_log) {
+//      std::string url = ip + ":" + std::to_string(port);
+//      ilog("### Request URL:    ${url}", ("url", url));
+//      ilog("### Request:        ${body}", ("body", body));
+//      std::stringstream ss(std::string(reply.body.begin(), reply.body.end()));
+//      ilog("### Response:       ${ss}", ("ss", ss.str()));
+//   }
+//
+//   return reply;
+//}
 
 http_response rpc_client::send_post_request(std::string body, bool show_log) {
 

@@ -3,10 +3,10 @@
 #include <cstdint>
 #include <string>
 
-#include <fc/network/http/connection.hpp>
-
 #include <boost/asio.hpp>
 #include <boost/asio/ssl.hpp>
+
+#include <fc/network/http/connection.hpp>
 
 namespace graphene { namespace peerplays_sidechain {
 
@@ -48,10 +48,6 @@ private:
    boost::asio::ip::tcp::endpoint m_endpoint;
 };
 
-}} // namespace graphene::peerplays_sidechain
-
-namespace graphene { namespace peerplays_sidechain {
-
 class rpc_client {
 public:
    rpc_client(std::string url, uint32_t _port, std::string _user, std::string _password, bool _debug_rpc_calls);
@@ -75,6 +71,7 @@ protected:
 private:
    https_call *https;
    //fc::http::reply send_post_request(std::string body, bool show_log);
+   //rpc_reply send_post_request(std::string body, bool show_log);
    http_response send_post_request(std::string body, bool show_log);
 };
 

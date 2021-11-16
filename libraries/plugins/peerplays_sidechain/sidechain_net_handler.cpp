@@ -183,9 +183,9 @@ void sidechain_net_handler::sidechain_event_data_received(const sidechain_event_
                              enable_peerplays_asset_deposits);
 
    bool withdraw_condition = (sed.peerplays_to == gpo.parameters.son_account()) && (sed.sidechain == sidechain_type::peerplays) &&
-                             ((sed.sidechain_currency == asset_id_to_string(gpo.parameters.btc_asset())) ||
-                              (sed.sidechain_currency == asset_id_to_string(gpo.parameters.hbd_asset())) ||
-                              (sed.sidechain_currency == asset_id_to_string(gpo.parameters.hive_asset())));
+                             ((sed.sidechain_currency == object_id_to_string(gpo.parameters.btc_asset())) ||
+                              (sed.sidechain_currency == object_id_to_string(gpo.parameters.hbd_asset())) ||
+                              (sed.sidechain_currency == object_id_to_string(gpo.parameters.hive_asset())));
 
    // Deposit request
    if (deposit_condition) {
@@ -236,15 +236,15 @@ void sidechain_net_handler::sidechain_event_data_received(const sidechain_event_
 
       std::string withdraw_currency = "";
       price withdraw_currency_price = {};
-      if (sed.sidechain_currency == asset_id_to_string(gpo.parameters.btc_asset())) {
+      if (sed.sidechain_currency == object_id_to_string(gpo.parameters.btc_asset())) {
          withdraw_currency = "BTC";
          withdraw_currency_price = database.get<asset_object>(database.get_global_properties().parameters.btc_asset()).options.core_exchange_rate;
       }
-      if (sed.sidechain_currency == asset_id_to_string(gpo.parameters.hbd_asset())) {
+      if (sed.sidechain_currency == object_id_to_string(gpo.parameters.hbd_asset())) {
          withdraw_currency = "HBD";
          withdraw_currency_price = database.get<asset_object>(database.get_global_properties().parameters.hbd_asset()).options.core_exchange_rate;
       }
-      if (sed.sidechain_currency == asset_id_to_string(gpo.parameters.hive_asset())) {
+      if (sed.sidechain_currency == object_id_to_string(gpo.parameters.hive_asset())) {
          withdraw_currency = "HIVE";
          withdraw_currency_price = database.get<asset_object>(database.get_global_properties().parameters.hive_asset()).options.core_exchange_rate;
       }
@@ -642,7 +642,7 @@ void sidechain_net_handler::on_applied_block(const signed_block &b) {
                continue;
             }
 
-            std::string sidechain_from = account_id_to_string(transfer_op.from);
+            std::string sidechain_from = object_id_to_string(transfer_op.from);
             std::string memo = "";
             if (transfer_op.memo) {
                memo = transfer_op.memo->get_message(fc::ecc::private_key(), public_key_type());
@@ -664,8 +664,8 @@ void sidechain_net_handler::on_applied_block(const signed_block &b) {
             sed.sidechain_uid = sidechain_uid;
             sed.sidechain_transaction_id = trx.id().str();
             sed.sidechain_from = sidechain_from;
-            sed.sidechain_to = account_id_to_string(transfer_op.to);
-            sed.sidechain_currency = asset_id_to_string(transfer_op.amount.asset_id);
+            sed.sidechain_to = object_id_to_string(transfer_op.to);
+            sed.sidechain_currency = object_id_to_string(transfer_op.amount.asset_id);
             sed.sidechain_amount = transfer_op.amount.amount;
             sed.peerplays_from = transfer_op.from;
             sed.peerplays_to = transfer_op.to;

@@ -122,8 +122,20 @@ sidechain_net_handler_hive::sidechain_net_handler_hive(peerplays_sidechain_plugi
       debug_rpc_calls = options.at("debug-rpc-calls").as<bool>();
    }
 
-   node_ip = options.at("hive-node-ip").as<std::string>();
-   node_rpc_port = options.at("hive-node-rpc-port").as<uint32_t>();
+	if ((options.count("hive-node-url") > 0) && (options.count("hive-node-ip") > 0))
+       FC_THROW("both keys are present: hive-node-url and hive-node-ip");
+
+	if (options.count("hive-node-ip"))
+		node_ip = options.at("hive-node-ip").as<std::string>();
+
+	if (options.count("hive-node-url"))
+		node_ip = options.at("hive-node-url").as<std::string>();
+
+
+	if (options.count("hive-node-rpc-port"))
+   		node_rpc_port = options.at("hive-node-rpc-port").as<uint32_t>();
+	else
+		node_rpc_port = 0;
    if (options.count("hive-node-rpc-user")) {
       node_rpc_user = options.at("hive-node-rpc-user").as<std::string>();
    } else {

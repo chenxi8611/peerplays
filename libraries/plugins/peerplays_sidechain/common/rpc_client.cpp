@@ -3,7 +3,7 @@
 #include <sstream>
 #include <string>
 
-#include <curl/curl.h>
+//#include <curl/curl.h>
 
 #include <boost/algorithm/string/case_conv.hpp>
 #include <boost/algorithm/string/trim.hpp>
@@ -17,29 +17,328 @@
 
 namespace graphene { namespace peerplays_sidechain {
 
+constexpr auto http_port = 80;
+constexpr auto https_port = 443;
+
+template <class string>
+void make_trimmed(string *str) {
+   boost::algorithm::trim(*str);
+}
+
+template <class string>
+void make_lower(string *str) {
+   boost::algorithm::to_lower(*str);
+}
+
+bool convert_hex_to_num_helper1(const std::string &str, uint32_t *value) {
+   try {
+      size_t idx;
+      auto v = stol(str, &idx, 16);
+      if (idx != str.size())
+         return false;
+      if (value)
+         *value = v;
+      return true;
+   } catch (...) {
+      return false;
+   }
+}
+
+bool convert_dec_to_num_helper1(const std::string &str, uint32_t *value) {
+   try {
+      size_t idx;
+      auto v = stol(str, &idx, 10);
+      if (idx != str.size())
+         return false;
+      if (value)
+         *value = v;
+      return true;
+   } catch (...) {
+      return false;
+   }
+}
+
+bool convert_dec_to_num_helper1(const std::string &str, uint16_t *value) {
+   try {
+      size_t idx;
+      auto v = stol(str, &idx, 10);
+      if (idx != str.size())
+         return false;
+      if (v > std::numeric_limits<uint16_t>::max())
+         return false;
+      if (value)
+         *value = v;
+      return true;
+   } catch (...) {
+      return false;
+   }
+}
+
+template <typename V, typename D>
+constexpr V ceilDiv(V value, D divider) {
+   return (value + divider - 1) / divider;
+}
+
+template <typename V, typename A>
+constexpr V aligned(V value, A align) {
+   return ceilDiv(value, align) * align;
+}
+
+template <typename Container>
+void reserve(
+      Container *container,
+      typename Container::size_type freeSpaceRequired,
+      typename Container::size_type firstAlloc,
+      typename Container::size_type nextAlloc) {
+   //TSL_ASSERT(container);
+   auto &c = *container;
+   auto required = c.size() + freeSpaceRequired;
+   if (c.capacity() >= required)
+      return;
+   c.reserve((firstAlloc >= required) ? firstAlloc
+                                      : firstAlloc + aligned(required - firstAlloc, nextAlloc));
+}
+
+template <typename Container>
+void reserve(
+      Container *container,
+      typename Container::size_type freeSpaceRequired,
+      typename Container::size_type alloc) {
+   //TSL_ASSERT(container);
+   auto &c = *container;
+   auto required = c.size() + freeSpaceRequired;
+   if (c.capacity() >= required)
+      return;
+   c.reserve(aligned(required, alloc));
+}
+
+bool is_valid(const boost::asio::ip::tcp::endpoint &ep) {
+
+   if (ep.port() == 0)
+      return false;
+
+   if (ep.address().is_unspecified())
+      return false;
+
+   return true;
+}
+
+// utl
+
+url_schema_type identify_url_schema_type(const std::string &schema_name) {
+   // rework
+   auto temp = schema_name;
+   make_lower(&temp);
+   if (temp == "http")
+      return url_schema_type::http;
+   if (temp == "https")
+      return url_schema_type::https;
+   return url_schema_type::unknown;
+}
+
+// url_data
+
+url_data::url_data(const std::string &url) {
+   if (!parse(url))
+      FC_THROW("URL parse failed");
+}
+
+void url_data::clear() {
+   schema_type = url_schema_type::unknown;
+   schema = decltype(schema)();
+   host = decltype(host)();
+   port = 0;
+   path = decltype(path)();
+}
+
+bool url_data::parse(const std::string &url) {
+
+   typedef std::string::size_type size_t;
+   constexpr auto npos = std::string::npos;
+
+   size_t schema_end = url.find("://");
+   size_t host_begin;
+   std::string temp_schema;
+
+   if (schema_end == npos)
+      host_begin = 0; // no schema
+   else {
+      if (schema_end < 3) { // schema too short: less than 3 chars
+         return false;
+      }
+      if (schema_end > 5) { // schema too long: more than 5 chars
+         return false;
+      }
+      host_begin = schema_end + 3;
+      temp_schema = url.substr(0, schema_end);
+   }
+
+   //	ASSERT(url.size() >= host_begin);
+
+   if (url.size() == host_begin) // host is empty
+      return false;
+
+   size_t port_sep = url.find(':', host_begin);
+
+   if (port_sep == host_begin)
+      return false;
+
+   size_t path_sep = url.find('/', host_begin);
+
+   if (path_sep == host_begin)
+      return false;
+
+   if ((port_sep != npos) && (path_sep != npos) && (port_sep > path_sep))
+      port_sep = npos;
+
+   std::string temp_port;
+
+   if (port_sep != npos) {
+      auto port_index = port_sep + 1;
+      if (path_sep == npos)
+         temp_port = url.substr(port_index);
+      else
+         temp_port = url.substr(port_index, path_sep - port_index);
+   }
+
+   if (temp_port.empty())
+      port = 0;
+   else {
+      if (!convert_dec_to_num_helper1(temp_port, &port))
+         return false;
+   }
+
+   std::string temp_path;
+
+   if (path_sep != npos)
+      temp_path = url.substr(path_sep);
+
+   std::string temp_host;
+
+   if (port_sep != npos) {
+      temp_host = url.substr(host_begin, port_sep - host_begin);
+   } else {
+      if (path_sep != npos)
+         temp_host = url.substr(host_begin, path_sep - host_begin);
+      else
+         temp_host = url.substr(host_begin);
+   }
+
+   schema = temp_schema;
+   host = temp_host;
+   path = temp_path;
+   schema_type = identify_url_schema_type(schema);
+
+   return true;
+}
+
+}} // namespace graphene::peerplays_sidechain
+
+namespace graphene { namespace peerplays_sidechain {
+
 using namespace boost::asio;
+using error_code = boost::system::error_code;
+using endpoint = ip::tcp::endpoint;
 
 namespace detail {
 
-class https_call_impl {
+// http_call_impl
+
+struct tcp_socket {
+
+   typedef ip::tcp::socket underlying_type;
+
+   underlying_type underlying;
+
+   tcp_socket(http_call &call) :
+         underlying(call.m_service) {
+   }
+
+   underlying_type &operator()() {
+      return underlying;
+   }
+
+   void connect(const http_call &call, const endpoint &ep, error_code *ec) {
+      // TCP connect
+      underlying.connect(ep, *ec);
+   }
+
+   void shutdown() {
+      error_code ec;
+      underlying.close(ec);
+   }
+};
+
+struct ssl_socket {
+
+   typedef ssl::stream<ip::tcp::socket> underlying_type;
+
+   underlying_type underlying;
+
+   ssl_socket(http_call &call) :
+         underlying(call.m_service, *call.m_context) {
+   }
+
+   underlying_type &operator()() {
+      return underlying;
+   }
+
+   void connect(const http_call &call, const endpoint &ep, error_code *ec) {
+
+      auto &u = underlying;
+
+      // TCP connect
+      u.lowest_layer().connect(ep, *ec);
+
+      // SSL connect
+      if (!SSL_set_tlsext_host_name(u.native_handle(), call.m_host.c_str()))
+         FC_THROW("SSL_set_tlsext_host_name failed");
+
+      u.set_verify_mode(ssl::verify_peer, *ec);
+      u.handshake(ssl::stream_base::client, *ec);
+   }
+
+   void shutdown() {
+      auto &u = underlying;
+      error_code ec;
+      u.shutdown(ec);
+      u.lowest_layer().close(ec);
+   }
+};
+
+template <class socket_type>
+class http_call_impl {
 public:
-   https_call_impl(https_call &call, const void *body_data, size_t body_size, http_response &response);
+   http_call_impl(http_call &call, const void *body_data, size_t body_size, const std::string &content_type_, http_response &response);
    void exec();
 
 private:
-   https_call &m_call;
-   const void *m_body_data;
-   size_t m_body_size;
-   http_response &m_response;
+   http_call &call;
+   const void *body_data;
+   size_t body_size;
+   std::string content_type;
+   http_response &response;
 
-   ssl::stream<ip::tcp::socket> m_socket;
-   streambuf m_response_buf;
-   int32_t m_content_length;
+   socket_type socket;
+   streambuf response_buf;
+
+   int32_t content_length;
+   bool transfer_encoding_chunked;
 
 private:
    void connect();
+   void shutdown();
    void send_request();
+   void on_header(std::string &name, std::string &value);
+   void on_header();
    void process_headers();
+   void append_entity_body(std::istream *stream, size_t size);
+   void append_entity_body_2(std::istream *strm);
+   bool read_next_chunk(std::istream *strm);
+   void skip_footer();
+   void read_body_chunked();
+   void read_body_until_eof();
+   void read_body_exact();
    void process_response();
 };
 
@@ -47,66 +346,102 @@ static const char cr = 0x0D;
 static const char lf = 0x0A;
 static const char *crlf = "\x0D\x0A";
 static const char *crlfcrlf = "\x0D\x0A\x0D\x0A";
+static const auto crlf_uint = (((uint16_t)lf) << 8) + cr;
 
-https_call_impl::https_call_impl(https_call &call, const void *body_data, size_t body_size, http_response &response) :
-      m_call(call),
-      m_body_data(body_data),
-      m_body_size(body_size),
-      m_response(response),
-      m_socket(m_call.m_service, m_call.m_context),
-      m_response_buf(https_call::response_size_limit_bytes) {
+template <class s>
+http_call_impl<s>::http_call_impl(http_call &call_, const void *body_data_, size_t body_size_, const std::string &content_type_, http_response &response_) :
+      call(call_),
+      body_data(body_data_),
+      body_size(body_size_),
+      content_type(content_type_),
+      response(response_),
+      socket(call),
+      response_buf(http_call::response_size_limit_bytes) {
 }
 
-void https_call_impl::exec() {
-   connect();
-   send_request();
-   process_response();
+template <class s>
+void http_call_impl<s>::exec() {
+   try {
+      connect();
+      send_request();
+      process_response();
+      shutdown();
+   } catch (...) {
+      shutdown();
+      throw;
+   }
 }
 
-void https_call_impl::connect() {
+template <class s>
+void http_call_impl<s>::connect() {
 
-   // TCP connect
-
-   m_socket.lowest_layer().connect(m_call.m_endpoint);
-
-   // SSL connect
-
-   if (!SSL_set_tlsext_host_name(m_socket.native_handle(), m_call.m_host.c_str())) {
-      FC_THROW("SSL_set_tlsext_host_name failed");
+   {
+      error_code ec;
+      auto &ep = call.m_endpoint;
+      if (is_valid(ep)) {
+         socket.connect(call, ep, &ec);
+         if (!ec)
+            return;
+      }
    }
 
-   m_socket.set_verify_mode(ssl::verify_peer);
-   m_socket.handshake(ssl::stream_base::client);
+   ip::tcp::resolver resolver(call.m_service);
+
+   auto rng = resolver.resolve(call.m_host, std::string());
+
+   //ASSERT(rng.begin() != rng.end());
+
+   error_code ec;
+
+   for (endpoint ep : rng) {
+      ep.port(call.m_port);
+      socket.connect(call, ep, &ec);
+      if (!ec) {
+         call.m_endpoint = ep;
+         return; // comment to test1
+      }
+   }
+   //	if (!ec) return;	// uncomment to test1
+
+   //ASSERT(ec);
+   throw boost::system::system_error(ec);
 }
 
-void https_call_impl::send_request() {
+template <class s>
+void http_call_impl<s>::shutdown() {
+   socket.shutdown();
+}
+
+template <class s>
+void http_call_impl<s>::send_request() {
 
    streambuf request;
    std::ostream stream(&request);
 
    // start string: <method> <path> HTTP/1.0
 
-   stream << m_call.m_method << " " << m_call.m_path << " HTTP/1.0" << crlf;
+   //ASSERT(!call.m_path.empty());
+
+   stream << call.m_method << " " << call.m_path << " HTTP/1.1" << crlf;
 
    // host
 
-   stream << "Host: " << m_call.m_host << ":" << m_call.m_endpoint.port() << crlf;
+   stream << "Host: " << call.m_host << ":" << call.m_endpoint.port() << crlf;
 
    // content
 
-   if (m_body_size) {
-      stream << "Content-Type: " << m_call.m_content_type << crlf;
-      stream << "Content-Length: " << m_body_size << crlf;
+   if (body_size) {
+      stream << "Content-Type: " << content_type << crlf;
+      stream << "Content-Length: " << body_size << crlf;
    }
 
    // additional headers
 
-   const auto &h = m_call.m_headers;
+   const auto &h = call.m_headers;
 
    if (!h.empty()) {
-      if (h.size() < 2) {
+      if (h.size() < 2)
          FC_THROW("invalid headers data");
-      }
       stream << h;
       // ensure headers finished correctly
       if ((h.substr(h.size() - 2) != crlf))
@@ -125,61 +460,217 @@ void https_call_impl::send_request() {
 
    // send headers
 
-   write(m_socket, request);
+   write(socket(), request);
 
    // send body
 
-   if (m_body_size)
-      write(m_socket, buffer(m_body_data, m_body_size));
+   if (body_size)
+      write(socket(), buffer(body_data, body_size));
 }
 
-void https_call_impl::process_headers() {
+template <class s>
+void http_call_impl<s>::on_header(std::string &name, std::string &value) {
 
-   std::istream stream(&m_response_buf);
+   if (name == "content-length") {
+      uint32_t u;
+      if (!convert_dec_to_num_helper1(value, &u))
+         FC_THROW("invalid content-length header data");
+      content_length = u;
+      return;
+   }
+
+   if (name == "transfer-encoding") {
+      boost::algorithm::to_lower(value);
+      if (value == "chunked")
+         transfer_encoding_chunked = true;
+      return;
+   }
+}
+
+template <class s>
+void http_call_impl<s>::process_headers() {
+
+   std::istream stream(&response_buf);
 
    std::string http_version;
    stream >> http_version;
-   stream >> m_response.status_code;
+   stream >> response.status_code;
 
-   boost::algorithm::trim(http_version);
-   boost::algorithm::to_lower(http_version);
+   make_trimmed(&http_version);
+   make_lower(&http_version);
 
-   if (!stream || http_version.substr(0, 5) != "http/") {
+   if (!stream || http_version.substr(0, 6) != "http/1")
       FC_THROW("invalid response data");
-   }
 
    // read/skip headers
 
-   m_content_length = -1;
+   content_length = -1;
+   transfer_encoding_chunked = false;
 
    for (;;) {
       std::string header;
       if (!std::getline(stream, header, lf) || (header.size() == 1 && header[0] == cr))
          break;
-      if (m_content_length) // if content length is already known
-         continue;          // continue skipping headers
       auto pos = header.find(':');
       if (pos == std::string::npos)
          continue;
       auto name = header.substr(0, pos);
-      boost::algorithm::trim(name);
+      make_trimmed(&name);
       boost::algorithm::to_lower(name);
-      if (name != "content-length")
-         continue;
       auto value = header.substr(pos + 1);
-      boost::algorithm::trim(value);
-      m_content_length = std::stol(value);
+      make_trimmed(&value);
+      on_header(name, value);
    }
 }
 
-void https_call_impl::process_response() {
+template <class s>
+void http_call_impl<s>::append_entity_body(std::istream *strm, size_t size) {
+   if (size == 0)
+      return;
+   auto &body = response.body;
+   reserve(&body, size, http_call::response_first_alloc_bytes, http_call::response_next_alloc_bytes);
+   auto cur = body.size();
+   body.resize(cur + size);
+   auto p = &body[cur];
+   if (!strm->read(p, size))
+      FC_THROW("stream read failed");
+}
 
-   auto &socket = m_socket;
-   auto &buf = m_response_buf;
-   auto &content_length = m_content_length;
-   auto &body = m_response.body;
+template <class s>
+void http_call_impl<s>::append_entity_body_2(std::istream *strm) {
+   auto avail = response_buf.size();
+   if (response.body.size() + avail > http_call::response_size_limit_bytes)
+      FC_THROW("response body size limit exceeded");
+   append_entity_body(strm, avail);
+}
 
-   read_until(socket, buf, crlfcrlf);
+template <class s>
+bool http_call_impl<s>::read_next_chunk(std::istream *strm) {
+
+   // content length info is used as pre-alloc hint only
+   // it is not used inside the reading logic
+
+   auto &buf = response_buf;
+   auto &stream = *strm;
+   auto &body = response.body;
+
+   read_until(socket(), buf, crlf);
+
+   std::string chunk_header;
+
+   if (!std::getline(stream, chunk_header, lf))
+      FC_THROW("failed to read chunk size");
+
+   auto ext_index = chunk_header.find(':');
+
+   if (ext_index != std::string::npos)
+      chunk_header.resize(ext_index);
+
+   make_trimmed(&chunk_header);
+
+   uint32_t chink_size;
+
+   if (!convert_hex_to_num_helper1(chunk_header, &chink_size))
+      FC_THROW("invalid chunk size string");
+
+   if (body.size() + chink_size > http_call::response_size_limit_bytes)
+      FC_THROW("response body size limit exceeded");
+
+   auto avail = buf.size();
+   if (avail < chink_size + 2) {
+      auto rest = chink_size + 2 - avail;
+      read(socket(), buf, transfer_at_least(rest));
+   }
+
+   append_entity_body(&stream, chink_size);
+
+   uint16_t temp;
+   if (!stream.read((char *)(&temp), 2))
+      FC_THROW("stream read failed");
+   if (temp != crlf_uint)
+      FC_THROW("invalid chink end");
+
+   return chink_size != 0;
+}
+
+template <class s>
+void http_call_impl<s>::skip_footer() {
+   // to be implemeted
+}
+
+template <class s>
+void http_call_impl<s>::read_body_chunked() {
+
+   std::istream stream(&response_buf);
+
+   for (;;) {
+      if (!read_next_chunk(&stream))
+         break;
+   }
+
+   skip_footer();
+}
+
+template <class s>
+void http_call_impl<s>::read_body_until_eof() {
+
+   auto &buf = response_buf;
+   std::istream stream(&buf);
+
+   append_entity_body_2(&stream);
+
+   error_code ec;
+
+   for (;;) {
+      auto readed = read(socket(), buf, transfer_at_least(1), ec);
+      append_entity_body_2(&stream);
+      if (ec)
+         break;
+      if (!readed) {
+         //ASSERT(buf.size() == 0);
+         FC_THROW("logic error: read failed but no error conditon");
+      }
+   }
+   if ((ec != error::eof) &&
+       (ec != ssl::error::stream_truncated))
+      throw boost::system::system_error(ec);
+}
+
+template <class s>
+void http_call_impl<s>::read_body_exact() {
+
+   auto &buf = response_buf;
+   auto &body = response.body;
+
+   auto avail = buf.size();
+
+   if (avail > content_length)
+      FC_THROW("invalid response body (content length mismatch)");
+
+   body.resize(content_length);
+
+   if (avail) {
+      if (avail != buf.sgetn(&body[0], avail))
+         FC_THROW("stream read failed");
+   }
+
+   auto rest = content_length - avail;
+
+   if (rest > 0) {
+      auto readed = read(socket(), buffer(&body[avail], rest), transfer_exactly(rest));
+      //ASSERT(readed <= rest);
+      if (readed < rest)
+         FC_THROW("logic error: read failed but no error conditon");
+   }
+}
+
+template <class s>
+void http_call_impl<s>::process_response() {
+
+   auto &buf = response_buf;
+   auto &body = response.body;
+
+   read_until(socket(), buf, crlfcrlf);
 
    process_headers();
 
@@ -189,151 +680,148 @@ void https_call_impl::process_response() {
       if (content_length < 2) { // minimum content is "{}"
          FC_THROW("invalid response body (too short)");
       }
-      if (content_length > https_call::response_size_limit_bytes) {
+      if (content_length > http_call::response_size_limit_bytes)
          FC_THROW("response body size limit exceeded");
+      body.reserve(content_length);
+   }
+
+   if (transfer_encoding_chunked) {
+      read_body_chunked();
+   } else {
+      if (content_length < 0)
+         read_body_until_eof();
+      else {
+         if (content_length > 0)
+            read_body_exact();
       }
-   }
-
-   boost::system::error_code ec;
-
-   for (;;) {
-
-      auto readed = read(socket, buf, transfer_at_least(1), ec);
-
-      if (ec)
-         break;
-
-      if (!readed) {
-         if (buf.size() == buf.max_size())
-            FC_THROW("response body size limit exceeded");
-         else
-            FC_THROW("logic error: read failed but no error conditon");
-      }
-
-      if (content_length >= 0) {
-         if (buf.size() > content_length) {
-            FC_THROW("read more than content-length");
-         }
-      }
-   }
-
-   {
-      boost::system::error_code ec;
-      socket.shutdown(ec);
-   }
-
-   if ((ec != error::eof) &&
-       (ec != ssl::error::stream_truncated)) {
-      throw boost::system::system_error(ec);
-   }
-
-   if (content_length >= 0) {
-      if (buf.size() != content_length) {
-         FC_THROW("actual body size differs from content-length");
-      }
-   }
-
-   auto size = buf.size();
-   body.resize(size);
-   if (size != buf.sgetn(&body[0], size)) {
-      FC_THROW("stream read failed");
    }
 }
 
 } // namespace detail
 
-https_call::https_call(const std::string &host, const std::string &ip_addr, uint16_t port, const std::string &method, const std::string &path, const std::string &headers, const std::string &content_type) :
-      m_host(host),
+// https_call
+
+http_call::http_call(const url_data &url, const std::string &method, const std::string &headers) :
+      m_host(url.host),
       m_method(method),
-      m_path(path),
-      m_headers(headers),
-      m_content_type(content_type),
-      m_service(),
-      m_context(ssl::context::tlsv12_client),
-      m_endpoint(ip::address::from_string(ip_addr), port) {
-   m_context.set_default_verify_paths();
-   m_context.set_options(ssl::context::default_workarounds);
+      m_headers(headers) {
+
+   if (url.schema_type == url_schema_type::https) {
+      m_context = new boost::asio::ssl::context(ssl::context::tlsv12_client);
+   } else {
+      m_context = 0;
+   }
+
+   set_port(url.port);
+   set_path(url.path);
+
+   try {
+      ctor_priv();
+   } catch (...) {
+      if (m_context)
+         delete m_context;
+      throw;
+   }
 }
 
-bool https_call::exec(const void *body_data, size_t body_size, http_response *response) {
+http_call::~http_call() {
+   if (m_context)
+      delete m_context;
+}
+
+bool http_call::is_ssl() const {
+   return m_context != 0;
+}
+
+const std::string &http_call::path() const {
+   return m_path;
+}
+
+void http_call::set_path(const std::string &path) {
+   if (path.empty())
+      m_path = "/";
+   else
+      m_path = path;
+}
+
+void http_call::set_method(const std::string &method) {
+   m_method = method;
+}
+
+void http_call::set_headers(const std::string &headers) {
+   m_headers = headers;
+}
+
+const std::string &http_call::host() const {
+   return m_host;
+}
+
+void http_call::set_host(const std::string &host) {
+   m_host = host;
+}
+
+uint16_t http_call::port() const {
+   return m_port;
+}
+
+void http_call::set_port(uint16_t port) {
+   if (port == 0)
+      m_port = is_ssl() ? https_port : http_port;
+   else
+      m_port = port;
+}
+
+bool http_call::exec(const http_request &request, http_response *response) {
 
    //ASSERT(response);
    auto &resp = *response;
-
-   detail::https_call_impl impl(*this, body_data, body_size, resp);
-
    m_error_what = decltype(m_error_what)();
+   resp.clear();
 
    try {
-      resp.clear();
-      impl.exec();
-   } catch (const std::exception &e) {
-      resp.clear();
-      m_error_what = e.what();
-      return false;
-   } catch (...) {
-      resp.clear();
-      m_error_what = "unknown exception";
-      return false;
-   }
-
-   return true;
-}
-
-static std::string resolve_host_addr(const std::string &host_name) {
-   using namespace boost::asio;
-   io_service service;
-   ip::tcp::resolver resolver(service);
-   auto query = ip::tcp::resolver::query(host_name, std::string());
-   auto iter = resolver.resolve(query);
-   auto endpoint = *iter;
-   auto addr = ((ip::tcp::endpoint)endpoint).address();
-   return addr.to_string();
-}
-
-static std::string strip_proto_name(const std::string &url, std::string *schema) {
-   auto index = url.find("://");
-   if (index == std::string::npos) {
-      if (schema)
-         schema->clear();
-      return url;
-   }
-   if (schema)
-      schema->assign(&url[0], &url[index]);
-   return url.substr(index + 3);
-}
-
-rpc_client::rpc_client(std::string url, uint32_t _port, std::string _user, std::string _password, bool _debug_rpc_calls) :
-      port(_port),
-      user(_user),
-      password(_password),
-      debug_rpc_calls(_debug_rpc_calls),
-      request_id(0) {
-
-   authorization.key = "Authorization";
-   authorization.val = "Basic " + fc::base64_encode(user + ":" + password);
-
-   std::string schema;
-   host = strip_proto_name(url, &schema);
-   boost::algorithm::to_lower(schema);
-
-   try {
-      fc::ip::address temp(host); // try to convert host string to valid IPv4 address
-      ip = host;
-   } catch (...) {
       try {
-         ip = resolve_host_addr(host);
-         fc::ip::address temp(ip);
-      } catch (...) {
-         elog("Failed to resolve Hive node address ${ip}", ("ip", url));
-         FC_ASSERT(false);
+         using namespace detail;
+         if (!m_context)
+            http_call_impl<tcp_socket>(*this, request.body.data(), request.body.size(), request.content_type, resp).exec();
+         else
+            http_call_impl<ssl_socket>(*this, request.body.data(), request.body.size(), request.content_type, resp).exec();
+         return true;
+      } catch (const std::exception &e) {
+         m_error_what = e.what();
       }
+   } catch (...) {
+      m_error_what = "unknown exception";
    }
 
-   if (schema == "https")
-      https = new https_call(host, ip, port, "POST", "/", authorization.key + ":" + authorization.val, "application/json");
-   else
-      https = 0;
+   resp.clear();
+   return false;
+}
+
+const std::string &http_call::error_what() const {
+   return m_error_what;
+}
+
+void http_call::ctor_priv() {
+   if (m_context) {
+      m_context->set_default_verify_paths();
+      m_context->set_options(ssl::context::default_workarounds);
+   }
+}
+
+}} // namespace graphene::peerplays_sidechain
+
+namespace graphene { namespace peerplays_sidechain {
+
+rpc_client::rpc_client(const std::string &url, uint16_t port, const std::string &user_name, const std::string &password, bool debug) :
+      debug_rpc_calls(debug),
+      request_id(0),
+      client(url)
+
+{
+
+   client.set_method("POST");
+   client.set_headers("Authorization : Basic" + fc::base64_encode(user_name + ":" + password));
+   client.set_port(port);
 }
 
 std::string rpc_client::retrieve_array_value_from_reply(std::string reply_str, std::string array_path, uint32_t idx) {
@@ -494,38 +982,16 @@ std::string rpc_client::send_post_request(std::string method, std::string params
 //   return reply;
 //}
 
-http_response rpc_client::send_post_request(std::string body, bool show_log) {
+http_response rpc_client::send_post_request(const std::string &body, bool show_log) {
 
+   http_request request(body, "application/json");
    http_response response;
 
-   if (https) {
-
-      https->exec(body.c_str(), body.size(), &response);
-
-   } else {
-
-      std::string url = "http://" + host + ":" + std::to_string(port);
-      fc::ip::address addr(ip);
-
-      try {
-
-         fc::http::connection conn;
-         conn.connect_to(fc::ip::endpoint(addr, port));
-
-         //if (wallet.length() > 0) {
-         //   url = url + "/wallet/" + wallet;
-         //}
-
-         auto r = conn.request("POST", url, body, fc::http::headers{authorization});
-         response.status_code = r.status;
-         response.body.assign(r.body.begin(), r.body.end());
-
-      } catch (...) {
-      }
-   }
+   client.exec(request, &response);
 
    if (show_log) {
-      std::string url = host + ":" + std::to_string(port);
+      std::string url = client.is_ssl() ? "https" : "http";
+      url = url + "://" + client.host() + std::to_string(client.port()) + client.path();
       ilog("### Request URL:    ${url}", ("url", url));
       ilog("### Request:        ${body}", ("body", body));
       std::stringstream ss(std::string(response.body.begin(), response.body.end()));

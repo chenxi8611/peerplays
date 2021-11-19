@@ -1479,6 +1479,12 @@ class wallet_api
       map<string, son_id_type> list_active_sons();
 
       /**
+       * @brief Get SON network status
+       * @return SON network status description
+       */
+      map<son_id_type, string>  get_son_network_status();
+
+      /**
        * @brief Get active SON wallet
        * @return Active SON wallet object
        */
@@ -2618,6 +2624,7 @@ FC_API( graphene::wallet::wallet_api,
         (update_son_vesting_balances)
         (list_sons)
         (list_active_sons)
+        (get_son_network_status)
         (request_son_maintenance)
         (cancel_request_son_maintenance)
         (get_active_son_wallet)

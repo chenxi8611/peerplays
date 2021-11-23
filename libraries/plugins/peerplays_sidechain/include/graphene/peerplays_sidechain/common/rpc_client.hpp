@@ -6,7 +6,7 @@
 #include <boost/asio.hpp>
 #include <boost/asio/ssl.hpp>
 
-#include <fc/network/http/connection.hpp>
+//#include <fc/network/http/connection.hpp>
 
 namespace graphene { namespace peerplays_sidechain {
 
@@ -93,7 +93,7 @@ private:
    friend class detail::http_call_impl;
    friend detail::tcp_socket;
    friend detail::ssl_socket;
-   static constexpr auto response_size_limit_bytes = 1024 * 1024 * 1024;
+   static constexpr auto response_size_limit_bytes = 16 * 1024 * 1024;
    static constexpr auto response_first_alloc_bytes = 32 * 1024;
    static constexpr auto response_next_alloc_bytes = 256 * 1024;
    std::string m_host;

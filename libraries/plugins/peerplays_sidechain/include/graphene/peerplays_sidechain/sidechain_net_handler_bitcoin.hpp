@@ -116,8 +116,8 @@ private:
    fc::future<void> on_changed_objects_task;
    bitcoin::bitcoin_address::network network_type;
 
-	std::mutex event_handler_mutex;
-	typedef std::lock_guard<decltype(event_handler_mutex)> scoped_lock;
+   std::mutex event_handler_mutex;
+   typedef std::lock_guard<decltype(event_handler_mutex)> scoped_lock;
 
    std::string create_primary_wallet_address(const std::vector<son_info> &son_pubkeys);
 

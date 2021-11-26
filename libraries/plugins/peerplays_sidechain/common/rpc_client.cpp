@@ -712,7 +712,17 @@ http_call::http_call(const url_data &url, const std::string &method, const std::
       m_context = 0;
    }
 
-   set_port(url.port);
+	if (url.port)
+		m_port_default = url.port;
+	else {
+		if (url.schema_type == url_schema_type::https)
+			m_port_default = https_port;
+		else
+			m_port_default = http_port;
+	}
+
+   m_port = m_port_default;
+
    set_path(url.path);
 
    try {
@@ -765,10 +775,10 @@ uint16_t http_call::port() const {
 }
 
 void http_call::set_port(uint16_t port) {
-   if (port == 0)
-      m_port = is_ssl() ? https_port : http_port;
-   else
+   if (port)
       m_port = port;
+   else
+      m_port = m_port_default;
 }
 
 bool http_call::exec(const http_request &request, http_response *response) {
@@ -812,7 +822,7 @@ void http_call::ctor_priv() {
 
 namespace graphene { namespace peerplays_sidechain {
 
-rpc_client::rpc_client(const std::string &url, uint16_t port, const std::string &user_name, const std::string &password, bool debug) :
+rpc_client::rpc_client(const std::string &url, const std::string &user_name, const std::string &password, bool debug) :
       debug_rpc_calls(debug),
       request_id(0),
       client(url)
@@ -821,7 +831,6 @@ rpc_client::rpc_client(const std::string &url, uint16_t port, const std::string 
 
    client.set_method("POST");
    client.set_headers("Authorization : Basic" + fc::base64_encode(user_name + ":" + password));
-   client.set_port(port);
 }
 
 std::string rpc_client::retrieve_array_value_from_reply(std::string reply_str, std::string array_path, uint32_t idx) {

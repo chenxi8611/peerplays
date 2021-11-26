@@ -31,6 +31,7 @@ struct url_data {
          schema_type(url_schema_type::unknown),
          port(0) {
    }
+
    url_data(const std::string &url);
 
    void clear();
@@ -97,6 +98,7 @@ private:
    static constexpr auto response_first_alloc_bytes = 32 * 1024;
    static constexpr auto response_next_alloc_bytes = 256 * 1024;
    std::string m_host;
+   uint16_t m_port_default;
    uint16_t m_port;
    std::string m_path;
    std::string m_method;
@@ -116,7 +118,7 @@ namespace graphene { namespace peerplays_sidechain {
 
 class rpc_client {
 public:
-   rpc_client(const std::string &url, uint16_t port, const std::string &user_name, const std::string &password, bool debug);
+   rpc_client(const std::string &url, const std::string &user_name, const std::string &password, bool debug);
 
 protected:
    std::string retrieve_array_value_from_reply(std::string reply_str, std::string array_path, uint32_t idx);

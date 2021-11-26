@@ -712,14 +712,14 @@ http_call::http_call(const url_data &url, const std::string &method, const std::
       m_context = 0;
    }
 
-	if (url.port)
-		m_port_default = url.port;
-	else {
-		if (url.schema_type == url_schema_type::https)
-			m_port_default = https_port;
-		else
-			m_port_default = http_port;
-	}
+   if (url.port)
+      m_port_default = url.port;
+   else {
+      if (url.schema_type == url_schema_type::https)
+         m_port_default = https_port;
+      else
+         m_port_default = http_port;
+   }
 
    m_port = m_port_default;
 

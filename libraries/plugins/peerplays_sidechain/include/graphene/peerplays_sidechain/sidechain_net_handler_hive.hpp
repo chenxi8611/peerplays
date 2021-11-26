@@ -14,7 +14,7 @@ namespace graphene { namespace peerplays_sidechain {
 
 class hive_node_rpc_client : public rpc_client {
 public:
-   hive_node_rpc_client(const std::string & url, const std::string & user_name, const std::string & password, bool debug_rpc_calls);
+   hive_node_rpc_client(const std::string &url, const std::string &user_name, const std::string &password, bool debug_rpc_calls);
 
    std::string account_history_api_get_transaction(std::string transaction_id);
    std::string block_api_get_block(uint32_t block_number);

@@ -1801,10 +1801,12 @@ std::string sidechain_net_handler_bitcoin::send_transaction(const sidechain_tran
 
 void sidechain_net_handler_bitcoin::handle_event(const std::string &event_data) {
    std::string block = bitcoin_client->getblock(event_data);
-   if (block != "") {
-      const auto &vins = extract_info_from_block(block);
+	if (block.empty())
+	return;
 
-      const auto &sidechain_addresses_idx = database.get_index_type<sidechain_address_index>().indices().get<by_sidechain_and_deposit_address_and_expires>();
+     auto vins = extract_info_from_block(block);
+	scoped_lock interlock(event_handler_mutex);
+      const auto & sidechain_addresses_idx = database.get_index_type<sidechain_address_index>().indices().get<by_sidechain_and_deposit_address_and_expires>();
 
       for (const auto &v : vins) {
          // !!! EXTRACT DEPOSIT ADDRESS FROM SIDECHAIN ADDRESS OBJECT
@@ -1833,7 +1835,7 @@ void sidechain_net_handler_bitcoin::handle_event(const std::string &event_data) 
          sed.peerplays_asset = asset(sed.sidechain_amount * btc_price.base.amount / btc_price.quote.amount);
          sidechain_event_data_received(sed);
       }
-   }
+
 }
 
 std::string sidechain_net_handler_bitcoin::get_redeemscript_for_userdeposit(const std::string &user_address) {

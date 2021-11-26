@@ -991,7 +991,7 @@ http_response rpc_client::send_post_request(const std::string &body, bool show_l
 
    if (show_log) {
       std::string url = client.is_ssl() ? "https" : "http";
-      url = url + "://" + client.host() + std::to_string(client.port()) + client.path();
+      url = url + "://" + client.host() + ":" + std::to_string(client.port()) + client.path();
       ilog("### Request URL:    ${url}", ("url", url));
       ilog("### Request:        ${body}", ("body", body));
       std::stringstream ss(std::string(response.body.begin(), response.body.end()));

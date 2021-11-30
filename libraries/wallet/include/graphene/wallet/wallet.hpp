@@ -1425,7 +1425,7 @@ class wallet_api
                                     flat_map<sidechain_type, string> sidechain_public_keys,
                                     bool broadcast = false);
 
-	string					activate_deregistered_son(const string& id);
+      signed_transaction activate_deregistered_son(const string & owner_account, bool broadcast /* = false */);
 
 
       /**

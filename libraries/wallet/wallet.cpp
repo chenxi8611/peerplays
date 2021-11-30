@@ -2114,7 +2114,24 @@ public:
       return sign_transaction( tx, broadcast );
    } FC_CAPTURE_AND_RETHROW( (owner_account)(url)(block_signing_key)(broadcast) ) }
 
-   signed_transaction update_son_vesting_balances(string owner_account,
+   signed_transaction activate_deregistered_son(const string & owner_account, 
+                                                bool broadcast /* = false */) {
+   { try {
+      son_object son = get_son(owner_account);
+
+      son_update_operation son_update_op;
+      son_update_op.son_id = son.id;
+      son_update_op.owner_account = son.son_account;
+      son_update_op.status = son_status::inactive;
+      signed_transaction tx;
+      tx.operations.push_back( son_update_op );
+      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees );
+      tx.validate();
+
+      return sign_transaction( tx, broadcast );
+   } FC_CAPTURE_AND_RETHROW( (owner_account)(url)(block_signing_key)(broadcast) ) }
+
+signed_transaction update_son_vesting_balances(string owner_account,
                                                   optional<vesting_balance_id_type> new_deposit,
                                                   optional<vesting_balance_id_type> new_pay_vb,
                                                   bool broadcast /* = false */)
@@ -4391,11 +4408,6 @@ vector<asset_object> wallet_api::list_assets(const string& lowerbound, uint32_t 
    return my->_remote_db->list_assets( lowerbound, limit );
 }
 
-string wallet_api::activate_deregistered_son(const string& id)
-{
-   return string("stub for activate_deregistered_son for ( ") + id + " ) ";
-}
-
 uint64_t wallet_api::get_asset_count()const
 {
    return my->_remote_db->get_asset_count();
@@ -5057,6 +5069,11 @@ signed_transaction wallet_api::update_son(string owner_account,
 {
    return my->update_son(owner_account, url, block_signing_key, sidechain_public_keys, broadcast);
 }
+
+signed_transaction wallet_api::activate_deregistered_son(const string & owner_account, bool broadcast) {
+   return my->_remote_db->activate_deregistered_son(owner_account, broadcast);
+}
+
 
 signed_transaction wallet_api::update_son_vesting_balances(string owner_account,
                                                            optional<vesting_balance_id_type> new_deposit,

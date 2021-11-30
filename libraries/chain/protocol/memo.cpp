@@ -61,7 +61,7 @@ void memo_data::set_message(const fc::ecc::private_key& priv, const fc::ecc::pub
 string memo_data::get_message(const fc::ecc::private_key& priv,
                               const fc::ecc::public_key& pub)const
 {
-   if( from != public_key_type() && pub.valid() )
+   if( from != public_key_type() && to != public_key_type() && pub.valid() )
    {
       auto secret = priv.get_shared_secret(pub);
       auto nonce_plus_secret = fc::sha512::hash(fc::to_string(nonce) + secret.str());

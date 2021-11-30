@@ -28,6 +28,8 @@ RUN \
       ntp \
       pkg-config \
       wget \
+      iputils-ping \
+      telnet \
     && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
@@ -43,7 +45,7 @@ RUN \
     tar -zxvf boost_1_67_0.tar.gz && \
     cd boost_1_67_0/ && \
     ./bootstrap.sh "--prefix=$BOOST_ROOT" && \
-    ./b2 install && \
+    ./b2 -j$(nproc) install && \
     cd ..
 
 ADD . /peerplays-core
@@ -61,7 +63,7 @@ RUN \
         -DBOOST_ROOT="$BOOST_ROOT" \
         -DCMAKE_BUILD_TYPE=Debug \
         ../.. && \
-    make witness_node cli_wallet && \
+    make -j$(nproc) witness_node cli_wallet && \
     install -s programs/witness_node/witness_node programs/cli_wallet/cli_wallet /usr/local/bin && \
     #
     # Obtain version
@@ -82,11 +84,17 @@ VOLUME ["/var/lib/peerplays", "/etc/peerplays"]
 # rpc service:
 EXPOSE 8090
 # p2p service:
-EXPOSE 1776
+EXPOSE 9777
+EXPOSE 19777
+EXPOSE 29777
+EXPOSE 39777
+EXPOSE 49777
+EXPOSE 59777
 
 # default exec/config files
 ADD docker/default_config.ini /etc/peerplays/config.ini
 ADD docker/peerplaysentry.sh /usr/local/bin/peerplaysentry.sh
+ADD docker/default_config.ini /usr/local/bin/witness_node_data_dir/config.ini
 RUN chmod a+x /usr/local/bin/peerplaysentry.sh
 
 # Make Docker send SIGINT instead of SIGTERM to the daemon

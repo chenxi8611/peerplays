@@ -4391,6 +4391,11 @@ vector<asset_object> wallet_api::list_assets(const string& lowerbound, uint32_t 
    return my->_remote_db->list_assets( lowerbound, limit );
 }
 
+string wallet_api::activate_deregistered_son(const string& id)
+{
+   return string("stub for activate_deregistered_son for ( ") + id + " ) ";
+}
+
 uint64_t wallet_api::get_asset_count()const
 {
    return my->_remote_db->get_asset_count();

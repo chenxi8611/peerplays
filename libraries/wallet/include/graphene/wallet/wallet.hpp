@@ -1425,6 +1425,9 @@ class wallet_api
                                     flat_map<sidechain_type, string> sidechain_public_keys,
                                     bool broadcast = false);
 
+	string					activate_deregistered_son(const string& id);
+
+
       /**
        * Updates vesting balances of the SON object owned by the given account.
        *
@@ -2622,6 +2625,7 @@ FC_API( graphene::wallet::wallet_api,
         (try_create_son)
         (update_son)
         (update_son_vesting_balances)
+        (activate_deregistered_son)
         (list_sons)
         (list_active_sons)
         (get_son_network_status)

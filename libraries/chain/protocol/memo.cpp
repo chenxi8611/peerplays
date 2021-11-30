@@ -30,7 +30,10 @@ namespace graphene { namespace chain {
 void memo_data::set_message(const fc::ecc::private_key& priv, const fc::ecc::public_key& pub,
                             const string& msg, uint64_t custom_nonce)
 {
-   if( priv != fc::ecc::private_key() && pub.valid() )
+   bool should_encrypt = (priv != fc::ecc::private_key() && pub.valid());
+   should_encrypt = (should_encrypt) && (msg.size()) && (msg.find("#") == 0);
+
+   if( should_encrypt )
    {
       from = priv.get_public_key();
       to = pub;
@@ -49,6 +52,7 @@ void memo_data::set_message(const fc::ecc::private_key& priv, const fc::ecc::pub
    }
    else
    {
+      to = public_key_type();
       auto text = memo_message(0, msg).serialize();
       message = vector<char>(text.begin(), text.end());
    }

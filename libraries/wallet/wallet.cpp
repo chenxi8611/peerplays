@@ -2122,7 +2122,7 @@ public:
       son_update_operation son_update_op;
       son_update_op.son_id = son.id;
       son_update_op.owner_account = son.son_account;
-      son_update_op.status = son_status::inactive;
+      son_update_op.new_status = son_status::inactive;
       signed_transaction tx;
       tx.operations.push_back( son_update_op );
       set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees );
@@ -2131,7 +2131,7 @@ public:
       return sign_transaction( tx, broadcast );
    } FC_CAPTURE_AND_RETHROW( (owner_account)(broadcast) ) }
 
-signed_transaction update_son_vesting_balances(string owner_account,
+   signed_transaction update_son_vesting_balances(string owner_account,
                                                   optional<vesting_balance_id_type> new_deposit,
                                                   optional<vesting_balance_id_type> new_pay_vb,
                                                   bool broadcast /* = false */)

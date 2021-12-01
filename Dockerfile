@@ -93,8 +93,8 @@ EXPOSE 59777
 
 # default exec/config files
 ADD docker/default_config.ini /etc/peerplays/config.ini
+ADD docker/logging.ini /etc/peerplays/logging.ini
 ADD docker/peerplaysentry.sh /usr/local/bin/peerplaysentry.sh
-ADD docker/default_config.ini /usr/local/bin/witness_node_data_dir/config.ini
 RUN chmod a+x /usr/local/bin/peerplaysentry.sh
 
 # Make Docker send SIGINT instead of SIGTERM to the daemon

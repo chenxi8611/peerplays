@@ -208,6 +208,8 @@ static const boost::shared_ptr<bpo::option_description> new_option_description( 
 static void load_config_file(const fc::path& config_ini_path, const bpo::options_description& cfg_options,
                              bpo::variables_map& options )
 {
+   ilog("Loading config file at ${path}", ("path", config_ini_path));
+
    deduplicator dedup;
    bpo::options_description unique_options("Graphene Witness Node");
    for( const boost::shared_ptr<bpo::option_description> opt : cfg_options.options() )
@@ -224,6 +226,7 @@ static void load_config_file(const fc::path& config_ini_path, const bpo::options
 
 static bool load_logging_config_file(const fc::path& config_ini_path)
 {
+   ilog("Loading logging config file at ${path}", ("path", config_ini_path));
    // try to get logging options from the config file.
    try
    {

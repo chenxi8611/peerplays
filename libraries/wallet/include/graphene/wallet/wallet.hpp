@@ -1425,7 +1425,14 @@ class wallet_api
                                     flat_map<sidechain_type, string> sidechain_public_keys,
                                     bool broadcast = false);
 
-      signed_transaction activate_deregistered_son(const string & owner_account, bool broadcast /* = false */);
+      /**
+       * Activate deregistered SON object owned by the given account.
+       *
+       * @param owner_account The name of the SON's owner account.  Also accepts the ID of the owner account or the ID of the SON.
+       * @param broadcast true if you wish to broadcast the transaction.
+       */
+      signed_transaction activate_deregistered_son(const string & owner_account,
+                                                   bool broadcast /* = false */);
 
 
       /**

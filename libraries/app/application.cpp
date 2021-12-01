@@ -160,12 +160,22 @@ namespace detail {
          {
             // t.me/peerplays #seednodes
             vector<string> seeds = {
+#ifdef BUILD_PEERPLAYS_TESTNET
                "pts.blockveritas.co:6666",
                "seed-beatrice01.eifos.org:7777",
                "seed-testnet.ppy.alex-pu.info:7777",
                "seed.ppy-beatrice.blckchnd.com:6666",
                "seed.testnet.peerblock.trade:6666",
                "testnet-ppyapi.spacemx.tech:9777"
+#else
+               "173.249.23.108:9777",
+               "node.peerblock.trade:9777",
+               "peerplays.blockoperations.com:9777",
+               "pms.blockveritas.co:7777",
+               "seed.ppy.alex-pu.info:8888",
+               "seed.ppy.blckchnd.com:6116",
+               "seed01.eifos.org:7777"
+#endif
             };
 
             for( const string& endpoint_string : seeds )
@@ -379,7 +389,7 @@ namespace detail {
          {
             _chain_db->enable_standby_votes_tracking( _options->at("enable-standby-votes-tracking").as<bool>() );
          }
-         
+
          std::string replay_reason = "reason not provided";
 
          if( _options->count("replay-blockchain") )
@@ -794,7 +804,7 @@ namespace detail {
             if (high_block_num == 0)
               return synopsis; // we have no blocks
           }
-          
+
           if( low_block_num == 0)
              low_block_num = 1;
 
@@ -987,7 +997,7 @@ void application::initialize(const fc::path& data_dir, const boost::program_opti
       boost::split(wanted, options.at("plugins").as<std::string>(), [](char c){return c == ' ';});
    }
    else
-   {      
+   {
       wanted.insert("account_history");
       wanted.insert("market_history");
       wanted.insert("accounts_list");

@@ -1,4 +1,4 @@
-FROM ubuntu:18.04
+FROM ubuntu:20.10
 MAINTAINER PeerPlays Blockchain Standards Association
 
 ENV LANG en_US.UTF-8

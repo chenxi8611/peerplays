@@ -2115,7 +2115,7 @@ public:
    } FC_CAPTURE_AND_RETHROW( (owner_account)(url)(block_signing_key)(broadcast) ) }
 
    signed_transaction activate_deregistered_son(const string & owner_account, 
-                                                bool broadcast /* = false */) {
+                                                bool broadcast /* = false */) 
    { try {
       son_object son = get_son(owner_account);
 
@@ -2129,7 +2129,7 @@ public:
       tx.validate();
 
       return sign_transaction( tx, broadcast );
-   } FC_CAPTURE_AND_RETHROW( (owner_account)(url)(block_signing_key)(broadcast) ) }
+   } FC_CAPTURE_AND_RETHROW( (owner_account)(broadcast) ) }
 
 signed_transaction update_son_vesting_balances(string owner_account,
                                                   optional<vesting_balance_id_type> new_deposit,
@@ -5071,7 +5071,7 @@ signed_transaction wallet_api::update_son(string owner_account,
 }
 
 signed_transaction wallet_api::activate_deregistered_son(const string & owner_account, bool broadcast) {
-   return my->_remote_db->activate_deregistered_son(owner_account, broadcast);
+   return my->activate_deregistered_son(owner_account, broadcast);
 }
 
 

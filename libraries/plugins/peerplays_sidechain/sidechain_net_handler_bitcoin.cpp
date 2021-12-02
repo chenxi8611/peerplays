@@ -1360,37 +1360,41 @@ void sidechain_net_handler_bitcoin::process_sidechain_addresses() {
    std::for_each(sidechain_addresses_by_sidechain_range.first, sidechain_addresses_by_sidechain_range.second,
                  [&](const sidechain_address_object &sao) {
                     bool retval = true;
-                    if (sao.expires == time_point_sec::maximum()) {
-                       auto usr_pubkey = fc::ecc::public_key(create_public_key_data(parse_hex(sao.deposit_public_key)));
+                    try {
+                       if (sao.expires == time_point_sec::maximum()) {
+                          auto usr_pubkey = fc::ecc::public_key(create_public_key_data(parse_hex(sao.deposit_public_key)));
 
-                       btc_one_or_weighted_multisig_address addr(usr_pubkey, pubkeys, network_type);
-                       std::string address_data = "{ \"redeemScript\": \"" + fc::to_hex(addr.get_redeem_script()) +
-                                                  "\", \"witnessScript\": \"" + fc::to_hex(addr.get_witness_script()) + "\" }";
+                          btc_one_or_weighted_multisig_address addr(usr_pubkey, pubkeys, network_type);
+                          std::string address_data = "{ \"redeemScript\": \"" + fc::to_hex(addr.get_redeem_script()) +
+                                                     "\", \"witnessScript\": \"" + fc::to_hex(addr.get_witness_script()) + "\" }";
 
-                       if (addr.get_address() != sao.deposit_address) {
-                          sidechain_address_update_operation op;
-                          op.payer = plugin.get_current_son_object().son_account;
-                          op.sidechain_address_id = sao.id;
-                          op.sidechain_address_account = sao.sidechain_address_account;
-                          op.sidechain = sao.sidechain;
-                          op.deposit_public_key = sao.deposit_public_key;
-                          op.deposit_address = addr.get_address();
-                          op.deposit_address_data = address_data;
-                          op.withdraw_public_key = sao.withdraw_public_key;
-                          op.withdraw_address = sao.withdraw_address;
+                          if (addr.get_address() != sao.deposit_address) {
+                             sidechain_address_update_operation op;
+                             op.payer = plugin.get_current_son_object().son_account;
+                             op.sidechain_address_id = sao.id;
+                             op.sidechain_address_account = sao.sidechain_address_account;
+                             op.sidechain = sao.sidechain;
+                             op.deposit_public_key = sao.deposit_public_key;
+                             op.deposit_address = addr.get_address();
+                             op.deposit_address_data = address_data;
+                             op.withdraw_public_key = sao.withdraw_public_key;
+                             op.withdraw_address = sao.withdraw_address;
 
-                          signed_transaction trx = database.create_signed_transaction(plugin.get_private_key(plugin.get_current_son_id()), op);
-                          try {
-                             trx.validate();
-                             database.push_transaction(trx, database::validation_steps::skip_block_size_check);
-                             if (plugin.app().p2p_node())
-                                plugin.app().p2p_node()->broadcast(net::trx_message(trx));
-                             retval = true;
-                          } catch (fc::exception &e) {
-                             elog("Sending transaction for sidechain address update operation failed with exception ${e}", ("e", e.what()));
-                             retval = false;
+                             signed_transaction trx = database.create_signed_transaction(plugin.get_private_key(plugin.get_current_son_id()), op);
+                             try {
+                                trx.validate();
+                                database.push_transaction(trx, database::validation_steps::skip_block_size_check);
+                                if (plugin.app().p2p_node())
+                                   plugin.app().p2p_node()->broadcast(net::trx_message(trx));
+                                retval = true;
+                             } catch (fc::exception &e) {
+                                elog("Sending transaction for sidechain address update operation failed with exception ${e}", ("e", e.what()));
+                                retval = false;
+                             }
                           }
                        }
+                    } catch (fc::exception &e) {
+                       retval = false;
                     }
                     return retval;
                  });
@@ -1801,38 +1805,39 @@ std::string sidechain_net_handler_bitcoin::send_transaction(const sidechain_tran
 
 void sidechain_net_handler_bitcoin::handle_event(const std::string &event_data) {
    std::string block = bitcoin_client->getblock(event_data);
-   if (block != "") {
-      const auto &vins = extract_info_from_block(block);
+   if (block.empty())
+      return;
 
-      const auto &sidechain_addresses_idx = database.get_index_type<sidechain_address_index>().indices().get<by_sidechain_and_deposit_address_and_expires>();
+   auto vins = extract_info_from_block(block);
+   scoped_lock interlock(event_handler_mutex);
+   const auto &sidechain_addresses_idx = database.get_index_type<sidechain_address_index>().indices().get<by_sidechain_and_deposit_address_and_expires>();
 
-      for (const auto &v : vins) {
-         // !!! EXTRACT DEPOSIT ADDRESS FROM SIDECHAIN ADDRESS OBJECT
-         const auto &addr_itr = sidechain_addresses_idx.find(std::make_tuple(sidechain, v.address, time_point_sec::maximum()));
-         if (addr_itr == sidechain_addresses_idx.end())
-            continue;
+   for (const auto &v : vins) {
+      // !!! EXTRACT DEPOSIT ADDRESS FROM SIDECHAIN ADDRESS OBJECT
+      const auto &addr_itr = sidechain_addresses_idx.find(std::make_tuple(sidechain, v.address, time_point_sec::maximum()));
+      if (addr_itr == sidechain_addresses_idx.end())
+         continue;
 
-         std::stringstream ss;
-         ss << "bitcoin"
-            << "-" << v.out.hash_tx << "-" << v.out.n_vout;
-         std::string sidechain_uid = ss.str();
+      std::stringstream ss;
+      ss << "bitcoin"
+         << "-" << v.out.hash_tx << "-" << v.out.n_vout;
+      std::string sidechain_uid = ss.str();
 
-         sidechain_event_data sed;
-         sed.timestamp = database.head_block_time();
-         sed.block_num = database.head_block_num();
-         sed.sidechain = addr_itr->sidechain;
-         sed.sidechain_uid = sidechain_uid;
-         sed.sidechain_transaction_id = v.out.hash_tx;
-         sed.sidechain_from = v.address;
-         sed.sidechain_to = "";
-         sed.sidechain_currency = "BTC";
-         sed.sidechain_amount = v.out.amount;
-         sed.peerplays_from = addr_itr->sidechain_address_account;
-         sed.peerplays_to = database.get_global_properties().parameters.son_account();
-         price btc_price = database.get<asset_object>(database.get_global_properties().parameters.btc_asset()).options.core_exchange_rate;
-         sed.peerplays_asset = asset(sed.sidechain_amount * btc_price.base.amount / btc_price.quote.amount);
-         sidechain_event_data_received(sed);
-      }
+      sidechain_event_data sed;
+      sed.timestamp = database.head_block_time();
+      sed.block_num = database.head_block_num();
+      sed.sidechain = addr_itr->sidechain;
+      sed.sidechain_uid = sidechain_uid;
+      sed.sidechain_transaction_id = v.out.hash_tx;
+      sed.sidechain_from = v.address;
+      sed.sidechain_to = "";
+      sed.sidechain_currency = "BTC";
+      sed.sidechain_amount = v.out.amount;
+      sed.peerplays_from = addr_itr->sidechain_address_account;
+      sed.peerplays_to = database.get_global_properties().parameters.son_account();
+      price btc_price = database.get<asset_object>(database.get_global_properties().parameters.btc_asset()).options.core_exchange_rate;
+      sed.peerplays_asset = asset(sed.sidechain_amount * btc_price.base.amount / btc_price.quote.amount);
+      sidechain_event_data_received(sed);
    }
 }
 

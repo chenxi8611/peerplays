@@ -840,7 +840,7 @@ std::string rpc_client::retrieve_array_value_from_reply(std::string reply_str, s
    boost::property_tree::ptree json;
    boost::property_tree::read_json(ss, json);
    if (json.find("result") == json.not_found()) {
-      return std::string(); 
+      return std::string();
    }
    auto json_result = json.get_child("result");
    if (json_result.find(array_path) == json_result.not_found()) {

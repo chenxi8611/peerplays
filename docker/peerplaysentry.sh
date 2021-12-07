@@ -77,6 +77,7 @@ fi
 ## Link the peerplays config file into home
 ## This link has been created in Dockerfile, already
 ln -f -s /etc/peerplays/config.ini /var/lib/peerplays
+ln -f -s /etc/peerplays/logging.ini /var/lib/peerplays
 
 # Plugins need to be provided in a space-separated list, which
 # makes it necessary to write it like this

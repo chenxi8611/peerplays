@@ -477,6 +477,7 @@ namespace graphene { namespace net { namespace detail {
       // @{
       fc::promise<void>::ptr        _retrigger_advertise_inventory_loop_promise;
       fc::future<void>              _advertise_inventory_loop_done;
+      fc::mutex _new_inventory_mutex; /// mutex to protect _new_inventory
       std::unordered_set<item_id>   _new_inventory; /// list of items we have received but not yet advertised to our peers
       // @}
 
@@ -1239,7 +1240,11 @@ namespace graphene { namespace net { namespace detail {
         dlog("beginning an iteration of advertise inventory");
         // swap inventory into local variable, clearing the node's copy
         std::unordered_set<item_id> inventory_to_advertise;
-        inventory_to_advertise.swap(_new_inventory);
+
+	{
+	    fc::scoped_lock<fc::mutex> lock(_new_inventory_mutex);
+	    inventory_to_advertise.swap(_new_inventory);
+        }
 
         // process all inventory to advertise and construct the inventory messages we'll send
         // first, then send them all in a batch (to avoid any fiber interruption points while
@@ -1295,7 +1300,8 @@ namespace graphene { namespace net { namespace detail {
           iter->first->send_message(iter->second);
         inventory_messages_to_send.clear();
 
-        if (_new_inventory.empty())
+        fc::scoped_lock<fc::mutex> lock(_new_inventory_mutex);
+	if (_new_inventory.empty())
         {
           _retrigger_advertise_inventory_loop_promise = fc::promise<void>::ptr(new fc::promise<void>("graphene::net::retrigger_advertise_inventory_loop"));
           _retrigger_advertise_inventory_loop_promise->wait();
@@ -4964,7 +4970,10 @@ namespace graphene { namespace net { namespace detail {
       message_hash_type hash_of_item_to_broadcast = item_to_broadcast.id();
 
       _message_cache.cache_message( item_to_broadcast, hash_of_item_to_broadcast, propagation_data, hash_of_message_contents );
-      _new_inventory.insert( item_id(item_to_broadcast.msg_type, hash_of_item_to_broadcast ) );
+      {
+          fc::scoped_lock<fc::mutex> lock(_new_inventory_mutex);
+          _new_inventory.insert( item_id(item_to_broadcast.msg_type, hash_of_item_to_broadcast ) );
+      }
       trigger_advertise_inventory_loop();
     }
 

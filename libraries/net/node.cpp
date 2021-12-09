@@ -83,6 +83,12 @@
 
 #include <fc/git_revision.hpp>
 
+#include <sys/types.h>
+
+#include <unistd.h>
+#include <sys/syscall.h>
+#define gettid() syscall(SYS_gettid)
+
 //#define ENABLE_DEBUG_ULOGS
 
 #ifdef DEFAULT_LOGGER
@@ -1237,7 +1243,11 @@ namespace graphene { namespace net { namespace detail {
       while (!_advertise_inventory_loop_done.canceled())
       {
         dlog("beginning an iteration of advertise inventory");
-        // swap inventory into local variable, clearing the node's copy
+
+        pid_t tid = gettid();
+        ilog("thread_id _new_inventory swap ${tid}", ("tid", tid)); 
+
+	// swap inventory into local variable, clearing the node's copy
         std::unordered_set<item_id> inventory_to_advertise;
         inventory_to_advertise.swap(_new_inventory);
 
@@ -1295,7 +1305,10 @@ namespace graphene { namespace net { namespace detail {
           iter->first->send_message(iter->second);
         inventory_messages_to_send.clear();
 
-        if (_new_inventory.empty())
+        tid = gettid();
+
+        ilog("thread_id _new_inventory empty ${tid}", ("tid", tid));
+	if (_new_inventory.empty())
         {
           _retrigger_advertise_inventory_loop_promise = fc::promise<void>::ptr(new fc::promise<void>("graphene::net::retrigger_advertise_inventory_loop"));
           _retrigger_advertise_inventory_loop_promise->wait();
@@ -4964,6 +4977,8 @@ namespace graphene { namespace net { namespace detail {
       message_hash_type hash_of_item_to_broadcast = item_to_broadcast.id();
 
       _message_cache.cache_message( item_to_broadcast, hash_of_item_to_broadcast, propagation_data, hash_of_message_contents );
+      pid_t tid = gettid();
+      ilog("thread_id _new_inventory insert ${tid}", ("tid", tid));
       _new_inventory.insert( item_id(item_to_broadcast.msg_type, hash_of_item_to_broadcast ) );
       trigger_advertise_inventory_loop();
     }

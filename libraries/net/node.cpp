@@ -1320,6 +1320,9 @@ namespace graphene { namespace net { namespace detail {
     void node_impl::trigger_advertise_inventory_loop()
     {
       VERIFY_CORRECT_THREAD();
+      pid_t tid = gettid();
+      ilog("thread_id trigger_advertise_inventory_loop ${tid}", ("tid", tid));
+
       if( _retrigger_advertise_inventory_loop_promise )
         _retrigger_advertise_inventory_loop_promise->set_value();
     }
@@ -4131,6 +4134,7 @@ namespace graphene { namespace net { namespace detail {
 
       try
       {
+	ilog("_advertise_inventory_loop_done.cancel");
         _advertise_inventory_loop_done.cancel("node_impl::close()");
         // cancel() is currently broken, so we need to wake up the task to allow it to finish
         trigger_advertise_inventory_loop();

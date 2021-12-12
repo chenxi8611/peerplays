@@ -46,5 +46,6 @@ object_database/*
 *.pyc
 *.pyo
 .vscode
+.vs
 .DS_Store
 .idea

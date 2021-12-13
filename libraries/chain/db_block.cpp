@@ -570,12 +570,6 @@ signed_block database::_generate_block(
    if( !(skip & skip_witness_signature) )
       pending_block.sign( block_signing_private_key );
 
-   // TODO:  Move this to _push_block() so session is restored.
-   if( !(skip & skip_block_size_check) )
-   {
-      FC_ASSERT( fc::raw::pack_size(pending_block) <= get_global_properties().parameters.maximum_block_size );
-   }
-
    push_block( pending_block, skip | skip_transaction_signatures ); // skip authority check when pushing self-generated blocks
 
    return pending_block;
@@ -663,6 +657,11 @@ void database::_apply_block( const signed_block& next_block )
    uint32_t next_block_num = next_block.block_num();
    uint32_t skip = get_node_properties().skip_flags;
    _applied_ops.clear();
+
+   if( !(skip & skip_block_size_check) )
+   {
+      FC_ASSERT( fc::raw::pack_size(next_block) <= get_global_properties().parameters.maximum_block_size );
+   }
 
    FC_ASSERT( (skip & skip_merkle_check) || next_block.transaction_merkle_root == next_block.calculate_merkle_root(), "", ("next_block.transaction_merkle_root",next_block.transaction_merkle_root)("calc",next_block.calculate_merkle_root())("next_block",next_block)("id",next_block.id()) );
 

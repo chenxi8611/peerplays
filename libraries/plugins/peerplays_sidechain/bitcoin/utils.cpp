@@ -48,6 +48,8 @@ bytes public_key_data_to_bytes(const fc::ecc::public_key_data &key) {
 }
 
 std::vector<bytes> read_byte_arrays_from_string(const std::string &string_buf) {
+   if (string_buf.empty())
+      return std::vector<bytes>();
    std::stringstream ss(string_buf);
    boost::property_tree::ptree json;
    boost::property_tree::read_json(ss, json);
@@ -77,7 +79,7 @@ std::string write_transaction_signatures(const std::vector<bytes> &data) {
 void read_transaction_data(const std::string &string_buf, std::string &tx_hex, std::vector<uint64_t> &in_amounts, std::string &redeem_script) {
    std::stringstream ss(string_buf);
    boost::property_tree::ptree json;
-   boost::property_tree::read_json(ss, json);
+   boost::property_tree::read_json(ss, json);			//! failure if string_buf is empty/invalid #bug-empty-json
    tx_hex = json.get<std::string>("tx_hex");
    in_amounts.clear();
    for (auto &v : json.get_child("in_amounts"))

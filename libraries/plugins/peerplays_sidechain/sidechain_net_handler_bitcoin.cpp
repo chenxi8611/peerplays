@@ -958,7 +958,7 @@ sidechain_net_handler_bitcoin::sidechain_net_handler_bitcoin(peerplays_sidechain
    std::string blockchain_info = bitcoin_client->getblockchaininfo();
    std::stringstream bci_ss(std::string(blockchain_info.begin(), blockchain_info.end()));
    boost::property_tree::ptree bci_json;
-   boost::property_tree::read_json(bci_ss, bci_json);
+   boost::property_tree::read_json(bci_ss, bci_json);		//! failure if blockchain_info is empty/invalid	#bug-empty-json
    using namespace bitcoin;
    network_type = bitcoin_address::network::mainnet;
    if (bci_json.count("chain")) {
@@ -1050,7 +1050,7 @@ bool sidechain_net_handler_bitcoin::process_proposal(const proposal_object &po) 
 
             std::stringstream active_pw_ss(reply_str);
             boost::property_tree::ptree active_pw_pt;
-            boost::property_tree::read_json(active_pw_ss, active_pw_pt);
+            boost::property_tree::read_json(active_pw_ss, active_pw_pt);		//! failure if reply_str is empty/invalid #bug-empty-json
             if (active_pw_pt.count("error") && active_pw_pt.get_child("error").empty()) {
                std::stringstream res;
                boost::property_tree::json_parser::write_json(res, active_pw_pt.get_child("result"));
@@ -1106,7 +1106,7 @@ bool sidechain_net_handler_bitcoin::process_proposal(const proposal_object &po) 
          std::string tx_str = bitcoin_client->getrawtransaction(swdo_txid, true);
          std::stringstream tx_ss(tx_str);
          boost::property_tree::ptree tx_json;
-         boost::property_tree::read_json(tx_ss, tx_json);
+         boost::property_tree::read_json(tx_ss, tx_json);			//! failure if reply_str is empty/invalid #bug-empty-json
 
          if (tx_json.count("error") && tx_json.get_child("error").empty()) {
 
@@ -1290,7 +1290,7 @@ void sidechain_net_handler_bitcoin::process_primary_wallet() {
 
          std::stringstream active_pw_ss(reply_str);
          boost::property_tree::ptree active_pw_pt;
-         boost::property_tree::read_json(active_pw_ss, active_pw_pt);
+         boost::property_tree::read_json(active_pw_ss, active_pw_pt);		//! failure if reply_str is empty/invalid #bug-empty-json
          if (active_pw_pt.count("error") && active_pw_pt.get_child("error").empty()) {
             if (!plugin.can_son_participate(chain::operation::tag<chain::son_wallet_update_operation>::value, active_sw->id)) {
                return;
@@ -1510,7 +1510,7 @@ bool sidechain_net_handler_bitcoin::settle_sidechain_transaction(const sidechain
    std::string tx_str = bitcoin_client->getrawtransaction(sto.sidechain_transaction, true);
    std::stringstream tx_ss(tx_str);
    boost::property_tree::ptree tx_json;
-   boost::property_tree::read_json(tx_ss, tx_json);
+   boost::property_tree::read_json(tx_ss, tx_json);		//! failure if tx_str is empty/invalid #bug-empty-json	
 
    if ((tx_json.count("error")) && (!tx_json.get_child("error").empty())) {
       return false;
@@ -1640,7 +1640,7 @@ std::string sidechain_net_handler_bitcoin::create_deposit_transaction(const son_
 
    std::stringstream ss(pw_address_json);
    boost::property_tree::ptree json;
-   boost::property_tree::read_json(ss, json);
+   boost::property_tree::read_json(ss, json);					//! failure if pw_address_json is empty/invalid #bug-empty-json	
 
    std::string pw_address = json.get<std::string>("address");
 
@@ -1680,7 +1680,7 @@ std::string sidechain_net_handler_bitcoin::create_withdrawal_transaction(const s
 
    std::stringstream ss(pw_address_json);
    boost::property_tree::ptree json;
-   boost::property_tree::read_json(ss, json);
+   boost::property_tree::read_json(ss, json);		//! failure if pw_address_json is empty/invalid #bug-empty-json
 
    std::string pw_address = json.get<std::string>("address");
    std::string redeem_script = json.get<std::string>("redeemScript");
@@ -1869,7 +1869,7 @@ std::string sidechain_net_handler_bitcoin::get_redeemscript_for_userdeposit(cons
 std::vector<info_for_vin> sidechain_net_handler_bitcoin::extract_info_from_block(const std::string &_block) {
    std::stringstream ss(_block);
    boost::property_tree::ptree block;
-   boost::property_tree::read_json(ss, block);
+   boost::property_tree::read_json(ss, block);		//! failure if _block is empty/invalid #bug-empty-json
 
    std::vector<info_for_vin> result;
 
@@ -1919,7 +1919,7 @@ void sidechain_net_handler_bitcoin::on_changed_objects_cb(const vector<object_id
          if (swo != swi.end()) {
             std::stringstream pw_ss(swo->addresses.at(sidechain));
             boost::property_tree::ptree pw_pt;
-            boost::property_tree::read_json(pw_ss, pw_pt);
+            boost::property_tree::read_json(pw_ss, pw_pt);			//! failure if swo->addresses.at(sidechain) is empty/invalid #bug-empty-json
 
             if (pw_pt.count("address")) {
                std::string pw_address = pw_pt.get<std::string>("address");

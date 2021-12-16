@@ -19,41 +19,26 @@ build:
     - mkdir build
     - cd build
     - cmake -DCMAKE_BUILD_TYPE=Release ..
-    - make -j$(nproc)
+    - make -j4
   artifacts:
     untracked: true
     paths:
       - build/libraries/
       - build/programs/
       - build/tests/
-
-build-testnet:
-  stage: build
-  script:
-    - rm -rf .git/modules/docs .git/modules/libraries/fc ./docs ./libraries/fc
-    - git submodule sync
-    - git submodule update --init --recursive
-    - rm -rf build-testnet
-    - mkdir build-testnet
-    - cd build-testnet
-    - cmake -DBOOST_ROOT="$BOOST_ROOT" -DCMAKE_BUILD_TYPE=Release -DBUILD_PEERPLAYS_TESTNET=1
-    - make -j$(nproc)
-  artifacts:
-    untracked: true
-    paths:
-      - build-testnet/libraries/
-      - build-testnet/programs/
-      - build-testnet/tests/      
   tags:
     - builder
 
 dockerize:
   stage: build
+  variables:
+    IMAGE: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHA
+  before_script:
+    - docker info
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
   script:
-    - docker build . -t $DOCKER_REPO:$CI_COMMIT_REF_NAME
-    - docker login -u $DOCKER_USER -p $DOCKER_PASS
-    - docker push $DOCKER_REPO:$CI_COMMIT_REF_NAME
-    - docker logout
+    - docker build -t $IMAGE .
+    - docker push $IMAGE
   tags:
     - builder
   when: manual
@@ -67,8 +52,5 @@ test:
     - ./build/tests/betting_test --log_level=message
     - ./build/tests/chain_test --log_level=message
     - ./build/tests/cli_test --log_level=message
-    - ./build-testnet/tests/betting_test --log_level=message
-    - ./build-testnet/tests/chain_test --log_level=message
-    - ./build-testnet/tests/cli_test --log_level=message    
   tags:
     - builder

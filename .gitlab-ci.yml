@@ -11,6 +11,7 @@ stages:
 
 build:
   stage: build
+  needs: []
   script:
     - rm -rf .git/modules/docs .git/modules/libraries/fc ./docs ./libraries/fc
     - git submodule sync
@@ -19,13 +20,34 @@ build:
     - mkdir build
     - cd build
     - cmake -DCMAKE_BUILD_TYPE=Release ..
-    - make -j4
+    - make -j6    
   artifacts:
     untracked: true
     paths:
       - build/libraries/
       - build/programs/
       - build/tests/
+  tags:
+    - builder
+
+build-testnet:
+  stage: build
+  needs: []
+  script:
+    - rm -rf .git/modules/docs .git/modules/libraries/fc ./docs ./libraries/fc
+    - git submodule sync
+    - git submodule update --init --recursive
+    - rm -rf build-testnet
+    - mkdir build-testnet
+    - cd build-testnet
+    - cmake -DBOOST_ROOT="$BOOST_ROOT" -DCMAKE_BUILD_TYPE=Release -DBUILD_PEERPLAYS_TESTNET=1
+    - make -j6    
+  artifacts:
+    untracked: true
+    paths:
+      - build-testnet/libraries/
+      - build-testnet/programs/
+      - build-testnet/tests/
   tags:
     - builder
 

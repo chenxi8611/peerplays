@@ -39,6 +39,7 @@ dockerize:
   script:
     - docker build -t $IMAGE .
     - docker push $IMAGE
+  needs: ['build']
   tags:
     - builder
   when: manual

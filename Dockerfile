@@ -8,17 +8,6 @@ MAINTAINER PeerPlays Blockchain Standards Association
 RUN \
     apt-get update -y && \
       DEBIAN_FRONTEND=noninteractive apt-get install -y \
-      apt-utils \
-      autoconf \
-      bash \
-      build-essential \
-      ca-certificates \
-      cmake \
-      dnsutils \
-      doxygen \
-      expect \
-      git \
-      graphviz \
       libboost1.67-all-dev \
       libbz2-dev \
       libcurl4-openssl-dev \
@@ -29,16 +18,7 @@ RUN \
       libtool \
       libzip-dev \
       libzmq3-dev \
-      locales \
-      mc \
-      nano \
-      net-tools \
-      ntp \
       openssh-server \
-      pkg-config \
-      perl \
-      python3 \
-      python3-jinja2 \
       sudo \
       wget
 
@@ -57,38 +37,14 @@ EXPOSE 22
 # Peerplays setup
 #===============================================================================
 
-WORKDIR /home/peerplays/
-
-## Clone Peerplays
-#RUN \
-#    git clone https://gitlab.com/PBSA/peerplays.git && \
-#    cd peerplays && \
-#    git checkout develop && \
-#    git submodule update --init --recursive && \
-#    git branch --show-current && \
-#    git log --oneline -n 5
-
-# Add local source
-ADD . peerplays
-
-# Configure Peerplays
-RUN \
-    cd peerplays && \
-    mkdir build && \
-    cd build && \
-    cmake -DCMAKE_BUILD_TYPE=Release ..
-
-# Build Peerplays
-RUN \
-    cd peerplays/build && \
-    make -j$(nproc) cli_wallet witness_node
+ADD build/ /home/peerplays/build
 
 WORKDIR /home/peerplays/peerplays-network
 
 # Setup Peerplays runimage
 RUN \
-    ln -s /home/peerplays/peerplays/build/programs/cli_wallet/cli_wallet ./ && \
-    ln -s /home/peerplays/peerplays/build/programs/witness_node/witness_node ./
+    ln -s /home/peerplays/build/programs/cli_wallet/cli_wallet ./ && \
+    ln -s /home/peerplays/build/programs/witness_node/witness_node ./
 
 RUN ./witness_node --create-genesis-json genesis.json && \
     rm genesis.json

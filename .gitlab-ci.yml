@@ -13,6 +13,7 @@ stages:
 
 code-checkout:
   stage: code-checkout
+  script:
     - rm -rf .git/modules/docs .git/modules/libraries/fc ./docs ./libraries/fc
     - git submodule sync
     - git submodule update --init --recursive

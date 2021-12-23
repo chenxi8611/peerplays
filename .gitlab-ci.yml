@@ -19,8 +19,7 @@ code-checkout:
     - mkdir build
 
 build:
-  stage: build
-  needs: [code-checkout]  
+  stage: build  
   script:
     - mkdir build/mainnet
     - cd build/mainnet
@@ -35,20 +34,11 @@ build:
 
 build-testnet:
   stage: build
-  needs: [code-checkout]
   script:
     - mkdir build/testnet
     - cd build/testnet
     - cmake -DBOOST_ROOT="$BOOST_ROOT" -DCMAKE_BUILD_TYPE=Release -DBUILD_PEERPLAYS_TESTNET=1 ..
     - make -j$(nproc)  
-  artifacts:
-    untracked: true
-    paths:
-      - build/libraries/
-      - build/programs/
-      - build/tests/
-  tags:
-    - builder
   artifacts:
     untracked: true
     paths:

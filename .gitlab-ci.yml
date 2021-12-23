@@ -6,40 +6,28 @@ include:
   - template: Secret-Detection.gitlab-ci.yml
 
 stages:
+  - code-checkout
   - build
   - test
 
+
+code-checkout:
+  stage: code-checkout
+    - rm -rf .git/modules/docs .git/modules/libraries/fc ./docs ./libraries/fc
+    - git submodule sync
+    - git submodule update --init --recursive
+    - rm -rf build
+    - mkdir build
+    - cd build
+
 build:
   stage: build
-  needs: []  
+  needs: [code-checkout]  
   script:
-    - rm -rf .git/modules/docs .git/modules/libraries/fc ./docs ./libraries/fc
-    - git submodule sync
-    - git submodule update --init --recursive
-    - rm -rf build
-    - mkdir build
-    - cd build
     - cmake -DCMAKE_BUILD_TYPE=Release ..
     - make -j$(nproc)
-  artifacts:
-    untracked: true
-    paths:
-      - build/libraries/
-      - build/programs/
-      - build/tests/
-  tags:
-    - builder
-
-build-testnet:
-  stage: build
-  needs: []
-  script:
-    - rm -rf .git/modules/docs .git/modules/libraries/fc ./docs ./libraries/fc
-    - git submodule sync
-    - git submodule update --init --recursive
-    - rm -rf build
-    - mkdir build
-    - cd build
+  parallel:
+    matrix:
     - cmake -DBOOST_ROOT="$BOOST_ROOT" -DCMAKE_BUILD_TYPE=Release -DBUILD_PEERPLAYS_TESTNET=1 ..
     - make -j$(nproc)  
   artifacts:

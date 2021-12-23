@@ -17,12 +17,13 @@ code-checkout:
     - git submodule update --init --recursive
     - rm -rf build
     - mkdir build
-    - cd build
 
 build:
   stage: build
   needs: [code-checkout]  
   script:
+    - mkdir build/mainnet
+    - cd build/mainnet
     - cmake -DCMAKE_BUILD_TYPE=Release ..
     - make -j$(nproc)
   artifacts:
@@ -36,6 +37,8 @@ build-testnet:
   stage: build
   needs: [code-checkout]
   script:
+    - mkdir build/testnet
+    - cd build/testnet
     - cmake -DBOOST_ROOT="$BOOST_ROOT" -DCMAKE_BUILD_TYPE=Release -DBUILD_PEERPLAYS_TESTNET=1 ..
     - make -j$(nproc)  
   artifacts:

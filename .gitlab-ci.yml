@@ -28,9 +28,8 @@ build:
     - cmake -DCMAKE_BUILD_TYPE=Release ..
     - make -j$(nproc)
   parallel:
-    script:
-    - cmake -DBOOST_ROOT="$BOOST_ROOT" -DCMAKE_BUILD_TYPE=Release -DBUILD_PEERPLAYS_TESTNET=1 ..
-    - make -j$(nproc)  
+    matrix:
+    - Testnet: [cmake -DBOOST_ROOT="$BOOST_ROOT" -DCMAKE_BUILD_TYPE=Release -DBUILD_PEERPLAYS_TESTNET=1 .. && make -j$(nproc)]  
   artifacts:
     untracked: true
     paths:

@@ -6,12 +6,11 @@ include:
   - template: Secret-Detection.gitlab-ci.yml
 
 stages:
-  - code-checkout
   - build
   - test
 
 code-checkout:
-  stage: code-checkout
+  stage: build
   script:
     - rm -rf .git/modules/docs .git/modules/libraries/fc ./docs ./libraries/fc
     - git submodule sync
@@ -24,7 +23,6 @@ build:
   stage: build
   needs: [code-checkout]  
   script:
-    - cd build
     - cmake -DCMAKE_BUILD_TYPE=Release ..
     - make -j$(nproc)
   artifacts:
@@ -38,7 +36,6 @@ build-testnet:
   stage: build
   needs: [code-checkout]
   script:
-    - cd build
     - cmake -DBOOST_ROOT="$BOOST_ROOT" -DCMAKE_BUILD_TYPE=Release -DBUILD_PEERPLAYS_TESTNET=1 ..
     - make -j$(nproc)  
   artifacts:

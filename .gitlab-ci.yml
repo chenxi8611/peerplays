@@ -10,7 +10,6 @@ stages:
   - build
   - test
 
-
 code-checkout:
   stage: code-checkout
   script:
@@ -27,9 +26,27 @@ build:
   script:
     - cmake -DCMAKE_BUILD_TYPE=Release ..
     - make -j$(nproc)
-  parallel:
-    matrix:
-    - Testnet: [cmake -DBOOST_ROOT="$BOOST_ROOT" -DCMAKE_BUILD_TYPE=Release -DBUILD_PEERPLAYS_TESTNET=1 .. && make -j$(nproc)]  
+  artifacts:
+  untracked: true
+  paths:
+   - build/libraries/
+   - build/programs/
+   - build/tests/  
+
+build-testnet:
+  stage: build
+  needs: []
+  script:
+    - cmake -DBOOST_ROOT="$BOOST_ROOT" -DCMAKE_BUILD_TYPE=Release -DBUILD_PEERPLAYS_TESTNET=1 ..
+    - make -j$(nproc)  
+  artifacts:
+    untracked: true
+    paths:
+      - build/libraries/
+      - build/programs/
+      - build/tests/
+  tags:
+    - builder
   artifacts:
     untracked: true
     paths:

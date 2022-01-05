@@ -47,8 +47,36 @@ bool checkES(ES& es)
    if(doCurl(curl_request).empty())
       return false;
    return true;
-
 }
+
+const std::string getESVersion(ES& es)
+{
+   graphene::utilities::CurlRequest curl_request;
+   curl_request.handler = es.curl;
+   curl_request.url = es.elasticsearch_url;
+   curl_request.auth = es.auth;
+   curl_request.type = "GET";
+
+   fc::variant response = fc::json::from_string(doCurl(curl_request));
+
+   return response["version"]["number"].as_string();
+}
+
+void checkESVersion7OrAbove(ES& es, bool& result) noexcept
+{
+   static const int64_t version_7 = 7;
+   try {
+      const auto es_version = graphene::utilities::getESVersion(es);
+      auto dot_pos = es_version.find('.');
+      result = ( std::stoi(es_version.substr(0,dot_pos)) >= version_7 );
+   }
+   catch( ... )
+   {
+      wlog( "Unable to get ES version, assuming it is 7 or above" );
+      result = true;
+   }
+}
+
 const std::string simpleQuery(ES& es)
 {
    graphene::utilities::CurlRequest curl_request;

@@ -97,6 +97,7 @@ class es_objects_plugin_impl
 
       uint32_t block_number;
       fc::time_point_sec block_time;
+      bool is_es_version_7_or_above = true;
 
    private:
       template<typename T>
@@ -523,7 +524,8 @@ void es_objects_plugin_impl::remove_from_database( object_id_type id, std::strin
       fc::mutable_variant_object delete_line;
       delete_line["_id"] = string(id);
       delete_line["_index"] = _es_objects_index_prefix + index;
-      delete_line["_type"] = "data";
+      if( !is_es_version_7_or_above )
+         delete_line["_type"] = "_doc";
       fc::mutable_variant_object final_delete_line;
       final_delete_line["delete"] = delete_line;
       prepare.push_back(fc::json::to_string(final_delete_line));
@@ -537,7 +539,8 @@ void es_objects_plugin_impl::prepareTemplate(T blockchain_object, string index_n
 {
    fc::mutable_variant_object bulk_header;
    bulk_header["_index"] = _es_objects_index_prefix + index_name;
-   bulk_header["_type"] = "data";
+   if( !is_es_version_7_or_above )
+      bulk_header["_type"] = "_doc";
    if(_es_objects_keep_only_current)
    {
       bulk_header["_id"] = string(blockchain_object.id);
@@ -721,10 +724,7 @@ void es_objects_plugin::plugin_initialize(const boost::program_options::variable
                "Error deleting object from ES database, we are going to keep trying.");
       }
    });
-}
 
-void es_objects_plugin::plugin_startup()
-{
    graphene::utilities::ES es;
    es.curl = my->curl;
    es.elasticsearch_url = my->_es_objects_elasticsearch_url;
@@ -733,6 +733,15 @@ void es_objects_plugin::plugin_startup()
 
    if(!graphene::utilities::checkES(es))
       FC_THROW_EXCEPTION(fc::exception, "ES database is not up in url ${url}", ("url", my->_es_objects_elasticsearch_url));
+
+   graphene::utilities::checkESVersion7OrAbove(es, my->is_es_version_7_or_above);
+
+   ilog("elasticsearch OBJECTS: plugin_initialize() begin");
+}
+
+void es_objects_plugin::plugin_startup()
+{   
+   // Nothing to do
    ilog("elasticsearch OBJECTS: plugin_startup() begin");
 }
 

@@ -145,13 +145,13 @@ bool handleBulkResponse(long http_code, const std::string& CurlReadBuffer)
    return true;
 }
 
-const std::vector<std::string> createBulk(const fc::mutable_variant_object& bulk_header, const std::string& data)
+const std::vector<std::string> createBulk(const fc::mutable_variant_object& bulk_header, const std::string&& data)
 {
    std::vector<std::string> bulk;
    fc::mutable_variant_object final_bulk_header;
    final_bulk_header["index"] = bulk_header;
    bulk.push_back(fc::json::to_string(final_bulk_header));
-   bulk.push_back(data);
+   bulk.emplace_back(std::move(data));
 
    return bulk;
 }

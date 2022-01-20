@@ -251,13 +251,13 @@ struct adaptor_struct
    {
       fc::mutable_variant_object o(op);
       vector<string> keys_to_rename;
-      for (auto i = o.begin(); i != o.end(); ++i)
+      for (auto& i : o)
       {
-         auto& element = (*i).value();
+         auto& element = i.value();
          if (element.is_object())
          {
-            const string& name = (*i).key();
-            auto& vo = element.get_object();
+            const string& name = i.key();
+            const auto& vo = element.get_object();
             if (vo.contains(name.c_str()))
                keys_to_rename.emplace_back(name);
             element = adapt(vo);
@@ -380,7 +380,7 @@ void elasticsearch_plugin_impl::doBlock(uint32_t trx_in_block, const signed_bloc
 
 struct operation_visitor
 {
-   typedef void result_type;
+   using result_type = void;
 
    share_type fee_amount;
    asset_id_type fee_asset;

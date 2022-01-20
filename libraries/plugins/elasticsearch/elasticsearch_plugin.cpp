@@ -58,6 +58,9 @@ class elasticsearch_plugin_impl
          return _self.database();
       }
 
+      friend class graphene::elasticsearch::elasticsearch_plugin;
+
+   private:
       elasticsearch_plugin& _self;
       primary_index< operation_history_index >* _oho_index;
 
@@ -103,6 +106,7 @@ class elasticsearch_plugin_impl
       void createBulkLine(const account_transaction_history_object& ath);
       void prepareBulk(const account_transaction_history_id_type& ath_id);
       void populateESstruct();
+      void init_program_options(const boost::program_options::variables_map& options);
 };
 
 elasticsearch_plugin_impl::~elasticsearch_plugin_impl()
@@ -603,6 +607,43 @@ void elasticsearch_plugin_impl::populateESstruct()
    es.query = "";
 }
 
+void elasticsearch_plugin_impl::init_program_options(const boost::program_options::variables_map& options)
+{
+   if (options.count("elasticsearch-node-url")) {
+      _elasticsearch_node_url = options["elasticsearch-node-url"].as<std::string>();
+   }
+   if (options.count("elasticsearch-bulk-replay")) {
+      _elasticsearch_bulk_replay = options["elasticsearch-bulk-replay"].as<uint32_t>();
+   }
+   if (options.count("elasticsearch-bulk-sync")) {
+      _elasticsearch_bulk_sync = options["elasticsearch-bulk-sync"].as<uint32_t>();
+   }
+   if (options.count("elasticsearch-visitor")) {
+      _elasticsearch_visitor = options["elasticsearch-visitor"].as<bool>();
+   }
+   if (options.count("elasticsearch-basic-auth")) {
+      _elasticsearch_basic_auth = options["elasticsearch-basic-auth"].as<std::string>();
+   }
+   if (options.count("elasticsearch-index-prefix")) {
+      _elasticsearch_index_prefix = options["elasticsearch-index-prefix"].as<std::string>();
+   }
+   if (options.count("elasticsearch-operation-object")) {
+      _elasticsearch_operation_object = options["elasticsearch-operation-object"].as<bool>();
+   }
+   if (options.count("elasticsearch-start-es-after-block")) {
+      _elasticsearch_start_es_after_block = options["elasticsearch-start-es-after-block"].as<uint32_t>();
+   }
+   if (options.count("elasticsearch-operation-string")) {
+      _elasticsearch_operation_string = options["elasticsearch-operation-string"].as<bool>();
+   }
+   if (options.count("elasticsearch-mode")) {
+      const auto option_number = options["elasticsearch-mode"].as<uint16_t>();
+      if(option_number > mode::all)
+         FC_THROW_EXCEPTION(graphene::chain::plugin_exception, "Elasticsearch mode not valid");
+      _elasticsearch_mode = static_cast<mode>(options["elasticsearch-mode"].as<uint16_t>());
+   }
+}
+
 } // end namespace detail
 
 elasticsearch_plugin::elasticsearch_plugin() :
@@ -655,42 +696,12 @@ void elasticsearch_plugin::plugin_set_program_options(
 
 void elasticsearch_plugin::plugin_initialize(const boost::program_options::variables_map& options)
 {
+   ilog("elasticsearch ACCOUNT HISTORY: plugin_initialize() begin");
+
    my->_oho_index = database().add_index< primary_index< operation_history_index > >();
    database().add_index< primary_index< account_transaction_history_index > >();
 
-   if (options.count("elasticsearch-node-url")) {
-      my->_elasticsearch_node_url = options["elasticsearch-node-url"].as<std::string>();
-   }
-   if (options.count("elasticsearch-bulk-replay")) {
-      my->_elasticsearch_bulk_replay = options["elasticsearch-bulk-replay"].as<uint32_t>();
-   }
-   if (options.count("elasticsearch-bulk-sync")) {
-      my->_elasticsearch_bulk_sync = options["elasticsearch-bulk-sync"].as<uint32_t>();
-   }
-   if (options.count("elasticsearch-visitor")) {
-      my->_elasticsearch_visitor = options["elasticsearch-visitor"].as<bool>();
-   }
-   if (options.count("elasticsearch-basic-auth")) {
-      my->_elasticsearch_basic_auth = options["elasticsearch-basic-auth"].as<std::string>();
-   }
-   if (options.count("elasticsearch-index-prefix")) {
-      my->_elasticsearch_index_prefix = options["elasticsearch-index-prefix"].as<std::string>();
-   }
-   if (options.count("elasticsearch-operation-object")) {
-      my->_elasticsearch_operation_object = options["elasticsearch-operation-object"].as<bool>();
-   }
-   if (options.count("elasticsearch-start-es-after-block")) {
-      my->_elasticsearch_start_es_after_block = options["elasticsearch-start-es-after-block"].as<uint32_t>();
-   }
-   if (options.count("elasticsearch-operation-string")) {
-      my->_elasticsearch_operation_string = options["elasticsearch-operation-string"].as<bool>();
-   }
-   if (options.count("elasticsearch-mode")) {
-      const auto option_number = options["elasticsearch-mode"].as<uint16_t>();
-      if(option_number > mode::all)
-         FC_THROW_EXCEPTION(graphene::chain::plugin_exception, "Elasticsearch mode not valid");
-      my->_elasticsearch_mode = static_cast<mode>(options["elasticsearch-mode"].as<uint16_t>());
-   }
+   my->init_program_options( options );
 
    if(my->_elasticsearch_mode != mode::only_query) {
       if (my->_elasticsearch_mode == mode::all && !my->_elasticsearch_operation_string)
@@ -714,14 +725,14 @@ void elasticsearch_plugin::plugin_initialize(const boost::program_options::varia
 
    graphene::utilities::checkESVersion7OrAbove(es, my->is_es_version_7_or_above);
 
-   ilog("elasticsearch ACCOUNT HISTORY: plugin_initialize() begin");
+   ilog("elasticsearch ACCOUNT HISTORY: plugin_initialize() end");
 }
 
 void elasticsearch_plugin::plugin_startup()
-{   
-   // Nothing to do
-   
+{  
    ilog("elasticsearch ACCOUNT HISTORY: plugin_startup() begin");
+   // Nothing to do
+   ilog("elasticsearch ACCOUNT HISTORY: plugin_startup() end");
 }
 
 operation_history_object elasticsearch_plugin::get_operation_by_id(operation_history_id_type id)

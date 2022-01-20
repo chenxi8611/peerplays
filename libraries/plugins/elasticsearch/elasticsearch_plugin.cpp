@@ -22,6 +22,7 @@
  * THE SOFTWARE.
  */
 
+#include <boost/algorithm/string.hpp>
 #include <graphene/elasticsearch/elasticsearch_plugin.hpp>
 #include <graphene/chain/impacted.hpp>
 #include <graphene/chain/account_evaluator.hpp>
@@ -32,6 +33,15 @@ namespace graphene { namespace elasticsearch {
 
 namespace detail
 {
+
+const std::string generateIndexName(const fc::time_point_sec& block_date, const std::string& _elasticsearch_index_prefix)
+{
+   auto block_date_string = block_date.to_iso_string();
+   std::vector<std::string> parts;
+   boost::split(parts, block_date_string, boost::is_any_of("-"));
+   std::string index_name = _elasticsearch_index_prefix + parts[0] + "-" + parts[1];
+   return index_name;
+}
 
 class elasticsearch_plugin_impl
 {
@@ -107,7 +117,7 @@ elasticsearch_plugin_impl::~elasticsearch_plugin_impl()
 bool elasticsearch_plugin_impl::update_account_histories( const signed_block& b )
 {
    checkState(b.timestamp);
-   index_name = graphene::utilities::generateIndexName(b.timestamp, _elasticsearch_index_prefix);
+   index_name = generateIndexName(b.timestamp, _elasticsearch_index_prefix);
 
    graphene::chain::database& db = database();
    const vector<optional< operation_history_object > >& hist = db.get_applied_operations();
@@ -710,7 +720,7 @@ void elasticsearch_plugin::plugin_initialize(const boost::program_options::varia
 void elasticsearch_plugin::plugin_startup()
 {   
    // Nothing to do
-
+   
    ilog("elasticsearch ACCOUNT HISTORY: plugin_startup() begin");
 }
 

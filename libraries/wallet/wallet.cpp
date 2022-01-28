@@ -2202,11 +2202,8 @@ public:
       vector<std::string> owners;
       for(auto obj: son_objects)
       {
-         if (obj)
-         {
-            std::string acc_id = account_id_to_string(obj->son_account);
-            owners.push_back(acc_id);
-         }
+         std::string acc_id = account_id_to_string(obj->son_account);
+         owners.push_back(acc_id);
       }
       vector< optional< account_object> > accs = _remote_db->get_accounts(owners);
       std::remove_if(son_objects.begin(), son_objects.end(),
@@ -2216,9 +2213,7 @@ public:
                      std::inserter(result, result.end()),
                      [](fc::optional<account_object>& acct, fc::optional<son_object> son) {
                         FC_ASSERT(acct, "Invalid active SONs list in global properties.");
-                        if (son.valid() && son->status != son_status::deregistered)
-                           return std::make_pair<string, son_id_type>(string(acct->name), std::move(son->id));
-                        return std::make_pair<string, son_id_type>(string(acct->name), std::move(son_id_type()));
+                        return std::make_pair<string, son_id_type>(string(acct->name), std::move(son->id));
                      });
       return result;
    } FC_CAPTURE_AND_RETHROW() }
@@ -4184,27 +4179,33 @@ string operation_printer::operator()(const transfer_operation& op) const
    std::string memo;
    if( op.memo )
    {
-      if( wallet.is_locked() )
-      {
-         out << " -- Unlock wallet to see memo.";
-      } else {
-         try {
-            FC_ASSERT(wallet._keys.count(op.memo->to) || wallet._keys.count(op.memo->from), "Memo is encrypted to a key ${to} or ${from} not in this wallet.", ("to", op.memo->to)("from",op.memo->from));
-            if( wallet._keys.count(op.memo->to) ) {
-               auto my_key = wif_to_key(wallet._keys.at(op.memo->to));
-               FC_ASSERT(my_key, "Unable to recover private key to decrypt memo. Wallet may be corrupted.");
-               memo = op.memo->get_message(*my_key, op.memo->from);
-               out << " -- Memo: " << memo;
-            } else {
-               auto my_key = wif_to_key(wallet._keys.at(op.memo->from));
-               FC_ASSERT(my_key, "Unable to recover private key to decrypt memo. Wallet may be corrupted.");
-               memo = op.memo->get_message(*my_key, op.memo->to);
-               out << " -- Memo: " << memo;
+      bool is_encrypted = ((op.memo->from != public_key_type()) && (op.memo->to != public_key_type()));
+      if (is_encrypted) {
+         if( wallet.is_locked() )
+         {
+            out << " -- Unlock wallet to see memo.";
+         } else {
+            try {
+               FC_ASSERT(wallet._keys.count(op.memo->to) || wallet._keys.count(op.memo->from), "Memo is encrypted to a key ${to} or ${from} not in this wallet.", ("to", op.memo->to)("from",op.memo->from));
+               if( wallet._keys.count(op.memo->to) ) {
+                  auto my_key = wif_to_key(wallet._keys.at(op.memo->to));
+                  FC_ASSERT(my_key, "Unable to recover private key to decrypt memo. Wallet may be corrupted.");
+                  memo = op.memo->get_message(*my_key, op.memo->from);
+                  out << " -- Memo: " << memo;
+               } else {
+                  auto my_key = wif_to_key(wallet._keys.at(op.memo->from));
+                  FC_ASSERT(my_key, "Unable to recover private key to decrypt memo. Wallet may be corrupted.");
+                  memo = op.memo->get_message(*my_key, op.memo->to);
+                  out << " -- Memo: " << memo;
+               }
+            } catch (const fc::exception& e) {
+               out << " -- could not decrypt memo";
+               elog("Error when decrypting memo: ${e}", ("e", e.to_detail_string()));
             }
-         } catch (const fc::exception& e) {
-            out << " -- could not decrypt memo";
-            elog("Error when decrypting memo: ${e}", ("e", e.to_detail_string()));
          }
+      } else {
+         memo = op.memo->get_message(private_key_type(), public_key_type());
+         out << " -- Memo: " << memo;
       }
    }
    fee(op.fee);

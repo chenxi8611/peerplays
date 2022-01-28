@@ -29,7 +29,7 @@
 namespace graphene { namespace db {
 
    using std::unordered_map;
-   using fc::flat_set;  
+   using fc::flat_set;
    class object_database;
 
    struct undo_state

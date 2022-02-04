@@ -4,6 +4,9 @@ if( GPERFTOOLS_FOUND )
     list( APPEND PLATFORM_SPECIFIC_LIBS tcmalloc )
 endif()
 
+list( APPEND PLATFORM_SPECIFIC_LIBS asan ubsan )
+add_compile_options(-fsanitize=address)
+
 file(GLOB COMMON_SOURCES "common/*.cpp")
 add_library(graphene_tests_common "${COMMON_SOURCES}" )
 target_link_libraries( graphene_tests_common

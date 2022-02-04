@@ -4,6 +4,8 @@ if( UNIX AND NOT APPLE )
   set(rt_library rt )
 endif()
 
+list( APPEND PLATFORM_SPECIFIC_LIBS asan ubsan)
+
 # we only actually need Boost, but link against FC for now so we don't duplicate it.
 target_link_libraries( cat-parts PRIVATE fc ${PLATFORM_SPECIFIC_LIBS} )
 

@@ -57,6 +57,7 @@
 #include <graphene/chain/nft_object.hpp>
 #include <graphene/chain/offer_object.hpp>
 #include <graphene/chain/votes_info.hpp>
+#include <graphene/chain/voters_info.hpp>
 
 #include <graphene/market_history/market_history_plugin.hpp>
 
@@ -741,7 +742,7 @@ public:
    vector<variant> lookup_vote_ids(const vector<vote_id_type> &votes) const;
 
    /**
-    * @brief Get a list that ID votes for
+    * @brief Get a list of vote_id_type that ID votes for
     * @param account_name_or_id ID or name of the account to get votes for
     * @return The list of vote_id_type ID votes for
     *
@@ -749,26 +750,29 @@ public:
    vector<vote_id_type> get_votes_ids(const string &account_name_or_id) const;
 
    /**
-    * @brief Given a set of votes, return the objects ID votes for
-    *
-    *  This will be a mixture of committee_member_object, witness_objects, and worker_objects
-    *
-    *  The results will be in the same order as the votes.  Null will be returned for
-    *  any vote ids that are not found.
-    *
+    * @brief Return the objects account_name_or_id votes for
     * @param account_name_or_id ID or name of the account to get votes for
-    * @return The set of votes ID votes for
+    * @return The votes_info account_name_or_id votes for
     *
     */
    votes_info get_votes(const string &account_name_or_id) const;
 
    /**
+    *
     * @brief Get a list of accounts that votes for vote_id
     * @param vote_id We search accounts that vote for this ID
     * @return The accounts that votes for provided ID
     *
     */
    vector<account_object> get_voters_by_id(const vote_id_type &vote_id) const;
+
+   /**
+    * @brief Return the accounts that votes for account_name_or_id
+    * @param account_name_or_id ID or name of the account to get voters for
+    * @return The voters_info for account_name_or_id
+    *
+    */
+   voters_info get_voters(const string &account_name_or_id) const;
 
    ////////////////////////////
    // Authority / validation //
@@ -1119,6 +1123,7 @@ FC_API(graphene::app::database_api,
    (get_votes_ids)
    (get_votes)
    (get_voters_by_id)
+   (get_voters)
 
    // Authority / validation
    (get_transaction_hex)

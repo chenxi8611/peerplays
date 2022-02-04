@@ -4109,6 +4109,15 @@ public:
       FC_CAPTURE_AND_RETHROW( (vote_id) )
    }
 
+   voters_info get_voters(const string &account_name_or_id) const
+   {
+      try
+      {
+         return _remote_db->get_voters(account_name_or_id);
+      }
+      FC_CAPTURE_AND_RETHROW( (account_name_or_id) )
+   }
+
    string                  _wallet_filename;
    wallet_data             _wallet;
 
@@ -7623,6 +7632,11 @@ votes_info wallet_api::get_votes(const string &account_name_or_id) const
 vector<account_object> wallet_api::get_voters_by_id(const vote_id_type &vote_id) const
 {
    return my->get_voters_by_id(vote_id);
+}
+
+voters_info wallet_api::get_voters(const string &account_name_or_id) const
+{
+   return my->get_voters(account_name_or_id);
 }
 
 // default ctor necessary for FC_REFLECT

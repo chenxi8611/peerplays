@@ -2513,6 +2513,15 @@ class wallet_api
        */
       vector<account_object> get_voters_by_id(const vote_id_type &vote_id) const;
 
+      /**
+       * @brief Return the accounts that votes for account_name_or_id
+       * @param account_name_or_id ID or name of the account to get voters for
+       * @return The voters_info for account_name_or_id
+       *
+       */
+      voters_info get_voters(const string &account_name_or_id) const;
+
+
       fc::signal<void(bool)> lock_changed;
       std::shared_ptr<detail::wallet_api_impl> my;
       void encrypt_keys();
@@ -2821,4 +2830,5 @@ FC_API( graphene::wallet::wallet_api,
         (get_votes_ids)
         (get_votes)
         (get_voters_by_id)
+        (get_voters)
       )

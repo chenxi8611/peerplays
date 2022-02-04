@@ -1946,7 +1946,7 @@ public:
             try
             {
                account_id_type owner_account_id = get_account_id(owner_account);
-               fc::optional<son_object> son = _remote_db->get_son_by_account(owner_account_id);
+               fc::optional<son_object> son = _remote_db->get_son_by_account_id(owner_account_id);
                if (son)
                   return *son;
                else
@@ -2075,7 +2075,7 @@ public:
       son_create_op.pay_vb = pay_vb_id;
       son_create_op.sidechain_public_keys = sidechain_public_keys;
 
-      if (_remote_db->get_son_by_account(son_create_op.owner_account))
+      if (_remote_db->get_son_by_account_id(son_create_op.owner_account))
          FC_THROW("Account ${owner_account} is already a SON", ("owner_account", owner_account));
 
       signed_transaction tx;
@@ -2712,7 +2712,7 @@ public:
 
       account_object voting_account_object = get_account(voting_account);
       account_id_type son_account_id = get_account_id(son);
-      fc::optional<son_object> son_obj = _remote_db->get_son_by_account(son_account_id);
+      fc::optional<son_object> son_obj = _remote_db->get_son_by_account_id(son_account_id);
       if (!son_obj)
          FC_THROW("Account ${son} is not registered as a son", ("son", son));
       if (approve)
@@ -2756,7 +2756,7 @@ public:
       for (const std::string& son : sons_to_approve)
       {
          account_id_type son_owner_account_id = get_account_id(son);
-         fc::optional<son_object> son_obj = _remote_db->get_son_by_account(son_owner_account_id);
+         fc::optional<son_object> son_obj = _remote_db->get_son_by_account_id(son_owner_account_id);
          if (!son_obj)
             FC_THROW("Account ${son} is not registered as a SON", ("son", son));
          auto insert_result = voting_account_object.options.votes.insert(son_obj->vote_id);
@@ -2766,7 +2766,7 @@ public:
       for (const std::string& son : sons_to_reject)
       {
          account_id_type son_owner_account_id = get_account_id(son);
-         fc::optional<son_object> son_obj = _remote_db->get_son_by_account(son_owner_account_id);
+         fc::optional<son_object> son_obj = _remote_db->get_son_by_account_id(son_owner_account_id);
          if (!son_obj)
             FC_THROW("Account ${son} is not registered as a SON", ("son", son));
          unsigned votes_removed = voting_account_object.options.votes.erase(son_obj->vote_id);

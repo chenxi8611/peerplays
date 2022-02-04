@@ -699,14 +699,25 @@ public:
     */
    uint64_t get_sidechain_addresses_count() const;
 
-   /// WORKERS
+   /////////////
+   // Workers //
+   /////////////
+
+   /**
+    * @brief Get a list of workers by ID
+    * @param worker_ids IDs of the workers to retrieve
+    * @return The workers corresponding to the provided IDs
+    *
+    * This function has semantics identical to @ref get_objects
+    */
+   vector<optional<worker_object>> get_workers(const vector<worker_id_type> &worker_ids) const;
 
    /**
     * @brief Return the worker objects associated with this account.
     * @param account_id_or_name The ID or name of the account whose worker should be retrieved
     * @return The worker object or null if the account does not have a worker
     */
-   vector<worker_object> get_workers_by_account(const std::string account_id_or_name) const;
+   fc::optional<worker_object> get_worker_by_account(const std::string account_id_or_name) const;
 
    ///////////
    // Votes //
@@ -1091,8 +1102,9 @@ FC_API(graphene::app::database_api,
    (get_sidechain_address_by_account_and_sidechain)
    (get_sidechain_addresses_count)
 
-   // workers
-   (get_workers_by_account)
+   // Workers
+   (get_workers)
+   (get_worker_by_account)
 
    // Votes
    (lookup_vote_ids)

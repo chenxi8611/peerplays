@@ -173,6 +173,10 @@ public:
    fc::optional<sidechain_address_object> get_sidechain_address_by_account_and_sidechain(account_id_type account, sidechain_type sidechain) const;
    uint64_t get_sidechain_addresses_count() const;
 
+   // Workers
+   vector<optional<worker_object>> get_workers(const vector<worker_id_type> &witness_ids) const;
+   fc::optional<worker_object> get_worker_by_account(const std::string account_id_or_name) const;
+
    // Votes
    vector<variant> lookup_vote_ids(const vector<vote_id_type> &votes) const;
    vector<vote_id_type> get_votes_ids(const string &account_name_or_id) const;
@@ -1569,20 +1573,6 @@ vector<optional<witness_object>> database_api::get_witnesses(const vector<witnes
    return my->get_witnesses(witness_ids);
 }
 
-vector<worker_object> database_api::get_workers_by_account(const std::string account_id_or_name) const {
-   const auto &idx = my->_db.get_index_type<worker_index>().indices().get<by_account>();
-   const account_id_type account = my->get_account_from_string(account_id_or_name)->id;
-   auto itr = idx.find(account);
-   vector<worker_object> result;
-
-   if (itr != idx.end() && itr->worker_account == account) {
-      result.emplace_back(*itr);
-      ++itr;
-   }
-
-   return result;
-}
-
 vector<optional<witness_object>> database_api_impl::get_witnesses(const vector<witness_id_type> &witness_ids) const {
    vector<optional<witness_object>> result;
    result.reserve(witness_ids.size());
@@ -1890,6 +1880,41 @@ uint64_t database_api::get_sidechain_addresses_count() const {
 
 uint64_t database_api_impl::get_sidechain_addresses_count() const {
    return _db.get_index_type<sidechain_address_index>().indices().size();
+}
+
+//////////////////////////////////////////////////////////////////////
+//                                                                  //
+// Workers                                                          //
+//                                                                  //
+//////////////////////////////////////////////////////////////////////
+
+vector<optional<worker_object>> database_api::get_workers(const vector<worker_id_type> &worker_ids) const {
+   return my->get_workers(worker_ids);
+}
+
+fc::optional<worker_object> database_api::get_worker_by_account(const std::string account_id_or_name) const {
+   return my->get_worker_by_account(account_id_or_name);
+}
+
+vector<optional<worker_object>> database_api_impl::get_workers(const vector<worker_id_type> &worker_ids) const {
+   vector<optional<worker_object>> result;
+   result.reserve(worker_ids.size());
+   std::transform(worker_ids.begin(), worker_ids.end(), std::back_inserter(result),
+                  [this](worker_id_type id) -> optional<worker_object> {
+                     if (auto o = _db.find(id))
+                        return *o;
+                     return {};
+                  });
+   return result;
+}
+
+fc::optional<worker_object> database_api_impl::get_worker_by_account(const std::string account_id_or_name) const {
+   const auto &idx = _db.get_index_type<worker_index>().indices().get<by_account>();
+   const account_id_type account = get_account_from_string(account_id_or_name)->id;
+   auto itr = idx.find(account);
+   if (itr != idx.end())
+      return *itr;
+   return {};
 }
 
 //////////////////////////////////////////////////////////////////////

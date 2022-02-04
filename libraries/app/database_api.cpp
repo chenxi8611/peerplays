@@ -157,7 +157,8 @@ public:
 
    // SON members
    vector<optional<son_object>> get_sons(const vector<son_id_type> &son_ids) const;
-   fc::optional<son_object> get_son_by_account(account_id_type account) const;
+   fc::optional<son_object> get_son_by_account_id(account_id_type account) const;
+   fc::optional<son_object> get_son_by_account(const std::string account_id_or_name) const;
    map<string, son_id_type> lookup_son_accounts(const string &lower_bound_name, uint32_t limit) const;
    uint64_t get_son_count() const;
 
@@ -1719,16 +1720,25 @@ vector<optional<son_object>> database_api_impl::get_sons(const vector<son_id_typ
    return result;
 }
 
-fc::optional<son_object> database_api::get_son_by_account(account_id_type account) const {
-   return my->get_son_by_account(account);
+fc::optional<son_object> database_api::get_son_by_account_id(account_id_type account) const {
+   return my->get_son_by_account_id(account);
 }
 
-fc::optional<son_object> database_api_impl::get_son_by_account(account_id_type account) const {
+fc::optional<son_object> database_api_impl::get_son_by_account_id(account_id_type account) const {
    const auto &idx = _db.get_index_type<son_index>().indices().get<by_account>();
    auto itr = idx.find(account);
    if (itr != idx.end())
       return *itr;
    return {};
+}
+
+fc::optional<son_object> database_api::get_son_by_account(const std::string account_id_or_name) const {
+   return my->get_son_by_account(account_id_or_name);
+}
+
+fc::optional<son_object> database_api_impl::get_son_by_account(const std::string account_id_or_name) const {
+   const account_id_type account = get_account_from_string(account_id_or_name)->id;
+   return get_son_by_account_id(account);
 }
 
 map<string, son_id_type> database_api::lookup_son_accounts(const string &lower_bound_name, uint32_t limit) const {

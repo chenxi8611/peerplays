@@ -620,7 +620,14 @@ public:
     * @param account The ID of the account whose SON should be retrieved
     * @return The SON object, or null if the account does not have a SON
     */
-   fc::optional<son_object> get_son_by_account(account_id_type account) const;
+   fc::optional<son_object> get_son_by_account_id(account_id_type account) const;
+
+   /**
+    * @brief Get the SON owned by a given account
+    * @param account The ID of the account whose SON should be retrieved
+    * @return The SON object, or null if the account does not have a SON
+    */
+   fc::optional<son_object> get_son_by_account(const std::string account_id_or_name) const;
 
    /**
     * @brief Get names and IDs for registered SONs
@@ -1086,6 +1093,7 @@ FC_API(graphene::app::database_api,
 
    // SON members
    (get_sons)
+   (get_son_by_account_id)
    (get_son_by_account)
    (lookup_son_accounts)
    (get_son_count)

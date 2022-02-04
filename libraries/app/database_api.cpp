@@ -175,6 +175,23 @@ public:
 
    // Votes
    vector<variant> lookup_vote_ids(const vector<vote_id_type> &votes) const;
+   vector<vote_id_type> get_votes_ids(const string &account_name_or_id) const;
+   template<typename IndexType, typename Tag>
+   vector<variant> get_votes_objects(const vector<vote_id_type> &votes, unsigned int variant_max_depth = 1) const
+   {
+      static_assert( std::is_base_of<index,IndexType>::value, "Type must be an index type" );
+
+      vector<variant> result;
+      const auto &idx = _db.get_index_type<IndexType>().indices().template get<Tag>();
+      for (auto id : votes) {
+         auto itr = idx.find(id);
+         if (itr != idx.end())
+            result.emplace_back(variant(*itr,variant_max_depth));
+      }
+      return result;
+   }
+   votes_info get_votes(const string &account_name_or_id) const;
+   vector<account_object> get_voters_by_id(const vote_id_type &vote_id) const;
 
    // Authority / validation
    std::string get_transaction_hex(const signed_transaction &trx) const;
@@ -234,6 +251,9 @@ public:
    vector<offer_history_object> get_offer_history_by_item(const offer_history_id_type lower_id, const nft_id_type item, uint32_t limit) const;
    vector<offer_history_object> get_offer_history_by_bidder(const offer_history_id_type lower_id, const account_id_type bidder_account_id, uint32_t limit) const;
 
+   // Account Role
+   vector<account_role_object> get_account_roles_by_owner(account_id_type owner) const;
+
    uint32_t api_limit_get_lower_bound_symbol = 100;
    uint32_t api_limit_get_limit_orders = 300;
    uint32_t api_limit_get_limit_orders_by_account = 101;
@@ -244,9 +264,6 @@ public:
    uint32_t api_limit_lookup_committee_member_accounts = 1000;
    uint32_t api_limit_get_trade_history = 100;
    uint32_t api_limit_get_trade_history_by_sequence = 100;
-
-   // Account Role
-   vector<account_role_object> get_account_roles_by_owner(account_id_type owner) const;
 
    //private:
    const account_object *get_account_from_string(const std::string &name_or_id,
@@ -1885,6 +1902,18 @@ vector<variant> database_api::lookup_vote_ids(const vector<vote_id_type> &votes)
    return my->lookup_vote_ids(votes);
 }
 
+vector<vote_id_type> database_api::get_votes_ids(const string &account_name_or_id) const {
+   return my->get_votes_ids(account_name_or_id);
+}
+
+votes_info database_api::get_votes(const string &account_name_or_id) const {
+   return my->get_votes(account_name_or_id);
+}
+
+vector<account_object> database_api::get_voters_by_id(const vote_id_type &vote_id) const {
+   return my->get_voters_by_id(vote_id);
+}
+
 vector<variant> database_api_impl::lookup_vote_ids(const vector<vote_id_type> &votes) const {
    FC_ASSERT(votes.size() < 1000, "Only 1000 votes can be queried at a time");
 
@@ -1943,6 +1972,78 @@ vector<variant> database_api_impl::lookup_vote_ids(const vector<vote_id_type> &v
          FC_CAPTURE_AND_THROW(fc::out_of_range_exception, (id));
       }
    }
+   return result;
+}
+
+vector<vote_id_type> database_api_impl::get_votes_ids(const string &account_name_or_id) const {
+   vector<vote_id_type> result;
+   const account_object *account = get_account_from_string(account_name_or_id);
+
+   //! Iterate throug votes and fill vector
+   for( const auto& vote : account->options.votes )
+   {
+      result.emplace_back(vote);
+   }
+
+   return result;
+}
+
+votes_info database_api_impl::get_votes(const string &account_name_or_id) const {
+   votes_info result;
+
+   const auto& votes_ids = get_votes_ids(account_name_or_id);
+   const auto& committee_ids = get_votes_objects<committee_member_index, by_vote_id>(votes_ids);
+   const auto& witness_ids = get_votes_objects<witness_index, by_vote_id>(votes_ids);
+   const auto& for_worker_ids = get_votes_objects<worker_index, by_vote_for>(votes_ids);
+   const auto& against_worker_ids = get_votes_objects<worker_index, by_vote_against>(votes_ids);
+   const auto& son_ids = get_votes_objects<son_index, by_vote_id>(votes_ids, 5);
+
+   //! Fill votes info
+   result.votes_for_committee_members.reserve(committee_ids.size());
+   for(const auto& committee : committee_ids)
+   {
+      const auto& committee_obj = committee.as<committee_member_object>(2);
+      result.votes_for_committee_members.emplace_back( votes_info_object<committee_member_id_type>{ committee_obj.vote_id, committee_obj.id.instance() } );
+   }
+   result.votes_for_witnesses.reserve(witness_ids.size());
+   for(const auto& witness : witness_ids)
+   {
+      const auto& witness_obj = witness.as<witness_object>(2);
+      result.votes_for_witnesses.emplace_back( votes_info_object<witness_id_type>{ witness_obj.vote_id, witness_obj.id.instance() } );
+   }
+   result.votes_for_workers.reserve(for_worker_ids.size());
+   for(const auto& for_worker : for_worker_ids)
+   {
+      const auto& for_worker_obj = for_worker.as<worker_object>(2);
+      result.votes_for_workers.emplace_back( votes_info_object<worker_id_type>{ for_worker_obj.vote_for, for_worker_obj.id.instance() } );
+   }
+   result.votes_against_workers.reserve(against_worker_ids.size());
+   for(const auto& against_worker : against_worker_ids)
+   {
+      const auto& against_worker_obj = against_worker.as<worker_object>(2);
+      result.votes_against_workers.emplace_back( votes_info_object<worker_id_type>{ against_worker_obj.vote_against, against_worker_obj.id.instance() } );
+   }
+   result.votes_for_sons.reserve(son_ids.size());
+   for(const auto& son : son_ids)
+   {
+      const auto& son_obj = son.as<son_object>(6);
+      result.votes_for_sons.emplace_back( votes_info_object<son_id_type>{ son_obj.vote_id, son_obj.id.instance() } );
+   }
+
+   return result;
+}
+
+vector<account_object> database_api_impl::get_voters_by_id(const vote_id_type &vote_id) const {
+   vector<account_object> result;
+
+   //! We search all accounts that have voted for this vote_id
+   const auto& account_index = _db.get_index_type<graphene::chain::account_index>().indices().get<by_id>();
+   for( const auto& account: account_index )
+   {
+      if(account.options.votes.count(vote_id) != 0)
+         result.emplace_back(account);
+   }
+
    return result;
 }
 

@@ -56,6 +56,7 @@
 #include <graphene/chain/custom_permission_object.hpp>
 #include <graphene/chain/nft_object.hpp>
 #include <graphene/chain/offer_object.hpp>
+#include <graphene/chain/votes_info.hpp>
 
 #include <graphene/market_history/market_history_plugin.hpp>
 
@@ -721,6 +722,36 @@ public:
     */
    vector<variant> lookup_vote_ids(const vector<vote_id_type> &votes) const;
 
+   /**
+    * @brief Get a list that ID votes for
+    * @param account_name_or_id ID or name of the account to get votes for
+    * @return The list of vote_id_type ID votes for
+    *
+    */
+   vector<vote_id_type> get_votes_ids(const string &account_name_or_id) const;
+
+   /**
+    * @brief Given a set of votes, return the objects ID votes for
+    *
+    *  This will be a mixture of committee_member_object, witness_objects, and worker_objects
+    *
+    *  The results will be in the same order as the votes.  Null will be returned for
+    *  any vote ids that are not found.
+    *
+    * @param account_name_or_id ID or name of the account to get votes for
+    * @return The set of votes ID votes for
+    *
+    */
+   votes_info get_votes(const string &account_name_or_id) const;
+
+   /**
+    * @brief Get a list of accounts that votes for vote_id
+    * @param vote_id We search accounts that vote for this ID
+    * @return The accounts that votes for provided ID
+    *
+    */
+   vector<account_object> get_voters_by_id(const vote_id_type &vote_id) const;
+
    ////////////////////////////
    // Authority / validation //
    ////////////////////////////
@@ -1062,8 +1093,12 @@ FC_API(graphene::app::database_api,
 
    // workers
    (get_workers_by_account)
+
    // Votes
    (lookup_vote_ids)
+   (get_votes_ids)
+   (get_votes)
+   (get_voters_by_id)
 
    // Authority / validation
    (get_transaction_hex)

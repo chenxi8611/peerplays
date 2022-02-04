@@ -4082,6 +4082,33 @@ public:
       return it->second;
    }
 
+   vector<vote_id_type> get_votes_ids(const string &account_name_or_id) const
+   {
+      try
+      {
+         return _remote_db->get_votes_ids(account_name_or_id);
+      }
+      FC_CAPTURE_AND_RETHROW( (account_name_or_id) )
+   }
+
+   votes_info get_votes(const string &account_name_or_id) const
+   {
+      try
+      {
+         return _remote_db->get_votes(account_name_or_id);
+      }
+      FC_CAPTURE_AND_RETHROW( (account_name_or_id) )
+   }
+
+   vector<account_object> get_voters_by_id(const vote_id_type &vote_id) const
+   {
+      try
+      {
+         return _remote_db->get_voters_by_id(vote_id);
+      }
+      FC_CAPTURE_AND_RETHROW( (vote_id) )
+   }
+
    string                  _wallet_filename;
    wallet_data             _wallet;
 
@@ -7581,6 +7608,21 @@ std::vector<matched_bet_object> wallet_api::get_matched_bets_for_bettor(account_
 std::vector<matched_bet_object> wallet_api::get_all_matched_bets_for_bettor(account_id_type bettor_id, bet_id_type start, unsigned limit) const
 {
     return( my->_remote_bookie->get_all_matched_bets_for_bettor(bettor_id, start, limit) );
+}
+
+vector<vote_id_type> wallet_api::get_votes_ids(const string &account_name_or_id) const
+{
+   return my->get_votes_ids(account_name_or_id);
+}
+
+votes_info wallet_api::get_votes(const string &account_name_or_id) const
+{
+   return my->get_votes(account_name_or_id);
+}
+
+vector<account_object> wallet_api::get_voters_by_id(const vote_id_type &vote_id) const
+{
+   return my->get_voters_by_id(vote_id);
 }
 
 // default ctor necessary for FC_REFLECT

@@ -178,6 +178,7 @@ public:
    vector<optional<committee_member_object>> get_committee_members(const vector<committee_member_id_type> &committee_member_ids) const;
    fc::optional<committee_member_object> get_committee_member_by_account(const std::string account_id_or_name) const;
    map<string, committee_member_id_type> lookup_committee_member_accounts(const string &lower_bound_name, uint32_t limit) const;
+   uint64_t get_committee_member_count() const;
 
    // SON members
    vector<optional<son_object>> get_sons(const vector<son_id_type> &son_ids) const;
@@ -1721,6 +1722,14 @@ map<string, committee_member_id_type> database_api_impl::lookup_committee_member
       ++end_iter;
    committee_members_by_account_name.erase(end_iter, committee_members_by_account_name.end());
    return committee_members_by_account_name;
+}
+
+uint64_t database_api::get_committee_member_count() const {
+   return my->get_committee_member_count();
+}
+
+uint64_t database_api_impl::get_committee_member_count() const {
+   return _db.get_index_type<committee_member_index>().indices().size();
 }
 
 //////////////////////////////////////////////////////////////////////

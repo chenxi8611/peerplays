@@ -603,6 +603,11 @@ public:
     */
    map<string, committee_member_id_type> lookup_committee_member_accounts(const string &lower_bound_name, uint32_t limit) const;
 
+   /**
+    * @brief Get the total number of committee_members registered with the blockchain
+    */
+   uint64_t get_committee_member_count() const;
+
    /////////////////
    // SON members //
    /////////////////
@@ -625,7 +630,7 @@ public:
 
    /**
     * @brief Get the SON owned by a given account
-    * @param account The ID of the account whose SON should be retrieved
+    * @param account_id_or_name The ID of the account whose SON should be retrieved
     * @return The SON object, or null if the account does not have a SON
     */
    fc::optional<son_object> get_son_by_account(const std::string account_id_or_name) const;
@@ -1094,6 +1099,7 @@ FC_API(graphene::app::database_api,
    (get_committee_members)
    (get_committee_member_by_account)
    (lookup_committee_member_accounts)
+   (get_committee_member_count)
 
    // SON members
    (get_sons)

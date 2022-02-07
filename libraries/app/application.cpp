@@ -1010,7 +1010,7 @@ void application::shutdown() {
    if (my->_p2p_network)
       my->_p2p_network->close();
    if (my->_chain_db)
-      my->_chain_db->close();
+      my->_chain_db->close(false);
 }
 
 void application::initialize_plugins(const boost::program_options::variables_map &options) {

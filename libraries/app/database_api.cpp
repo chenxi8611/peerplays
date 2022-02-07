@@ -293,6 +293,7 @@ public:
    uint32_t api_limit_lookup_accounts = 1000;
    uint32_t api_limit_lookup_witness_accounts = 1000;
    uint32_t api_limit_lookup_committee_member_accounts = 1000;
+   uint32_t api_limit_lookup_son_accounts = 1000;
    uint32_t api_limit_get_trade_history = 100;
    uint32_t api_limit_get_trade_history_by_sequence = 100;
 
@@ -1780,7 +1781,10 @@ map<string, son_id_type> database_api::lookup_son_accounts(const string &lower_b
 }
 
 map<string, son_id_type> database_api_impl::lookup_son_accounts(const string &lower_bound_name, uint32_t limit) const {
-   FC_ASSERT(limit <= 1000);
+   FC_ASSERT(limit <= api_limit_lookup_son_accounts,
+             "Number of querying accounts can not be greater than ${configured_limit}",
+             ("configured_limit", api_limit_lookup_son_accounts));
+
    const auto &sons_by_id = _db.get_index_type<son_index>().indices().get<by_id>();
 
    // we want to order sons by account name, but that name is in the account object

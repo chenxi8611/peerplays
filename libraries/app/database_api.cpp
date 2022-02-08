@@ -202,6 +202,8 @@ public:
    // Workers
    vector<optional<worker_object>> get_workers(const vector<worker_id_type> &witness_ids) const;
    fc::optional<worker_object> get_worker_by_account(const std::string account_id_or_name) const;
+   map<string, worker_id_type> lookup_worker_accounts(const string &lower_bound_name, uint32_t limit) const;
+   uint64_t get_worker_count() const;
 
    // Votes
    vector<variant> lookup_vote_ids(const vector<vote_id_type> &votes) const;
@@ -294,6 +296,7 @@ public:
    uint32_t api_limit_lookup_witness_accounts = 1000;
    uint32_t api_limit_lookup_committee_member_accounts = 1000;
    uint32_t api_limit_lookup_son_accounts = 1000;
+   uint32_t api_limit_lookup_worker_accounts = 1000;
    uint32_t api_limit_get_trade_history = 100;
    uint32_t api_limit_get_trade_history_by_sequence = 100;
 
@@ -1944,6 +1947,14 @@ fc::optional<worker_object> database_api::get_worker_by_account(const std::strin
    return my->get_worker_by_account(account_id_or_name);
 }
 
+map<string, worker_id_type> database_api::lookup_worker_accounts(const string &lower_bound_name, uint32_t limit) const {
+   return my->lookup_worker_accounts(lower_bound_name, limit);
+}
+
+uint64_t database_api::get_worker_count() const {
+   return my->get_worker_count();
+}
+
 vector<optional<worker_object>> database_api_impl::get_workers(const vector<worker_id_type> &worker_ids) const {
    vector<optional<worker_object>> result;
    result.reserve(worker_ids.size());
@@ -1963,6 +1974,35 @@ fc::optional<worker_object> database_api_impl::get_worker_by_account(const std::
    if (itr != idx.end())
       return *itr;
    return {};
+}
+
+map<string, worker_id_type> database_api_impl::lookup_worker_accounts(const string &lower_bound_name, uint32_t limit) const {
+   FC_ASSERT(limit <= api_limit_lookup_worker_accounts,
+             "Number of querying accounts can not be greater than ${configured_limit}",
+             ("configured_limit", api_limit_lookup_worker_accounts));
+
+   const auto &workers_by_id = _db.get_index_type<worker_index>().indices().get<by_id>();
+
+   // we want to order workers by account name, but that name is in the account object
+   // so the worker_index doesn't have a quick way to access it.
+   // get all the names and look them all up, sort them, then figure out what
+   // records to return.  This could be optimized, but we expect the
+   // number of witnesses to be few and the frequency of calls to be rare
+   std::map<std::string, worker_id_type> workers_by_account_name;
+   for (const worker_object &worker : workers_by_id)
+      if (auto account_iter = _db.find(worker.worker_account))
+         if (account_iter->name >= lower_bound_name) // we can ignore anything below lower_bound_name
+            workers_by_account_name.insert(std::make_pair(account_iter->name, worker.id));
+
+   auto end_iter = workers_by_account_name.begin();
+   while (end_iter != workers_by_account_name.end() && limit--)
+      ++end_iter;
+   workers_by_account_name.erase(end_iter, workers_by_account_name.end());
+   return workers_by_account_name;
+}
+
+uint64_t database_api_impl::get_worker_count() const {
+   return _db.get_index_type<worker_index>().indices().size();
 }
 
 //////////////////////////////////////////////////////////////////////

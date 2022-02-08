@@ -5027,6 +5027,11 @@ map<string,committee_member_id_type> wallet_api::list_committee_members(const st
    return my->_remote_db->lookup_committee_member_accounts(lowerbound, limit);
 }
 
+map<string, worker_id_type> wallet_api::list_workers(const string& lowerbound, uint32_t limit)
+{
+   return my->_remote_db->lookup_worker_accounts(lowerbound, limit);
+}
+
 son_object wallet_api::get_son(string owner_account)
 {
    return my->get_son(owner_account);

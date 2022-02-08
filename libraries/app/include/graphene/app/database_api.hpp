@@ -732,6 +732,19 @@ public:
     */
    fc::optional<worker_object> get_worker_by_account(const std::string account_id_or_name) const;
 
+   /**
+    * @brief Get names and IDs for registered workers
+    * @param lower_bound_name Lower bound of the first name to return
+    * @param limit Maximum number of results to return -- must not exceed 1000
+    * @return Map of worker names to corresponding IDs
+    */
+   map<string, worker_id_type> lookup_worker_accounts(const string &lower_bound_name, uint32_t limit) const;
+
+   /**
+    * @brief Get the total number of workers registered with the blockchain
+    */
+   uint64_t get_worker_count() const;
+
    ///////////
    // Votes //
    ///////////
@@ -1123,6 +1136,8 @@ FC_API(graphene::app::database_api,
    // Workers
    (get_workers)
    (get_worker_by_account)
+   (lookup_worker_accounts)
+   (get_worker_count)
 
    // Votes
    (lookup_vote_ids)

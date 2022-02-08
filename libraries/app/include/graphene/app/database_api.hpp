@@ -730,7 +730,7 @@ public:
     * @param account_id_or_name The ID or name of the account whose worker should be retrieved
     * @return The worker object or null if the account does not have a worker
     */
-   fc::optional<worker_object> get_worker_by_account(const std::string account_id_or_name) const;
+   vector<worker_object> get_workers_by_account(const std::string account_id_or_name) const;
 
    /**
     * @brief Get names and IDs for registered workers
@@ -1135,7 +1135,7 @@ FC_API(graphene::app::database_api,
 
    // Workers
    (get_workers)
-   (get_worker_by_account)
+   (get_workers_by_account)
    (lookup_worker_accounts)
    (get_worker_count)
 

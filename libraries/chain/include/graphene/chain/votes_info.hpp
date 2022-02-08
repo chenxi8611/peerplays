@@ -27,11 +27,11 @@ namespace graphene { namespace chain {
        * @ingroup object
     */
    struct votes_info {
-      vector< votes_info_object<committee_member_id_type> > votes_for_committee_members;
-      vector< votes_info_object<witness_id_type> > votes_for_witnesses;
-      vector< votes_info_object<worker_id_type> > votes_for_workers;
-      vector< votes_info_object<worker_id_type> > votes_against_workers;
-      vector< votes_info_object<son_id_type> > votes_for_sons;
+      optional< vector< votes_info_object<committee_member_id_type> > > votes_for_committee_members;
+      optional< vector< votes_info_object<witness_id_type> > > votes_for_witnesses;
+      optional< vector< votes_info_object<worker_id_type> > > votes_for_workers;
+      optional< vector< votes_info_object<worker_id_type> > > votes_against_workers;
+      optional< vector< votes_info_object<son_id_type> > > votes_for_sons;
    };
 
 } } // graphene::chain

@@ -249,19 +249,22 @@ BOOST_AUTO_TEST_CASE( son_voting )
 
       //! Check son1account voters
       auto voters_for_son1account = con.wallet_api_ptr->get_voters("son1account");
-      BOOST_CHECK_EQUAL(voters_for_son1account.voters_for_son.voters.size(), 1);
-      BOOST_CHECK_EQUAL((uint32_t)voters_for_son1account.voters_for_son.voters[0].instance, nathan_account_object.id.instance());
+      BOOST_REQUIRE(voters_for_son1account.voters_for_son);
+      BOOST_CHECK_EQUAL(voters_for_son1account.voters_for_son->voters.size(), 1);
+      BOOST_CHECK_EQUAL((uint32_t)voters_for_son1account.voters_for_son->voters[0].instance, nathan_account_object.id.instance());
 
       //! Check son2account voters
       auto voters_for_son2account = con.wallet_api_ptr->get_voters("son2account");
-      BOOST_CHECK_EQUAL(voters_for_son2account.voters_for_son.voters.size(), 1);
-      BOOST_CHECK_EQUAL((uint32_t)voters_for_son2account.voters_for_son.voters[0].instance, nathan_account_object.id.instance());
+      BOOST_REQUIRE(voters_for_son2account.voters_for_son);
+      BOOST_CHECK_EQUAL(voters_for_son2account.voters_for_son->voters.size(), 1);
+      BOOST_CHECK_EQUAL((uint32_t)voters_for_son2account.voters_for_son->voters[0].instance, nathan_account_object.id.instance());
 
       //! Check votes of nathan
       auto nathan_votes = con.wallet_api_ptr->get_votes("nathan");
-      BOOST_CHECK_EQUAL(nathan_votes.votes_for_sons.size(), 2);
-      BOOST_CHECK_EQUAL((uint32_t)nathan_votes.votes_for_sons[0].id.instance, son1_obj.id.instance());
-      BOOST_CHECK_EQUAL((uint32_t)nathan_votes.votes_for_sons[1].id.instance, son2_obj.id.instance());
+      BOOST_REQUIRE(nathan_votes.votes_for_sons);
+      BOOST_CHECK_EQUAL(nathan_votes.votes_for_sons->size(), 2);
+      BOOST_CHECK_EQUAL((uint32_t)nathan_votes.votes_for_sons->at(0).id.instance, son1_obj.id.instance());
+      BOOST_CHECK_EQUAL((uint32_t)nathan_votes.votes_for_sons->at(1).id.instance, son2_obj.id.instance());
 
       // Withdraw vote for a son1account
       BOOST_TEST_MESSAGE("Withdraw vote for a son1account");
@@ -275,12 +278,14 @@ BOOST_AUTO_TEST_CASE( son_voting )
 
       //! Check son1account voters
       voters_for_son1account = con.wallet_api_ptr->get_voters("son1account");
-      BOOST_CHECK_EQUAL(voters_for_son1account.voters_for_son.voters.size(), 0);
+      BOOST_REQUIRE(voters_for_son1account.voters_for_son);
+      BOOST_CHECK_EQUAL(voters_for_son1account.voters_for_son->voters.size(), 0);
 
       //! Check votes of nathan
       nathan_votes = con.wallet_api_ptr->get_votes("nathan");
-      BOOST_CHECK_EQUAL(nathan_votes.votes_for_sons.size(), 1);
-      BOOST_CHECK_EQUAL((uint32_t)nathan_votes.votes_for_sons[0].id.instance, son2_obj.id.instance());
+      BOOST_REQUIRE(nathan_votes.votes_for_sons);
+      BOOST_CHECK_EQUAL(nathan_votes.votes_for_sons->size(), 1);
+      BOOST_CHECK_EQUAL((uint32_t)nathan_votes.votes_for_sons->at(0).id.instance, son2_obj.id.instance());
 
       // Withdraw vote for a son2account
       BOOST_TEST_MESSAGE("Withdraw vote for a son2account");
@@ -294,11 +299,12 @@ BOOST_AUTO_TEST_CASE( son_voting )
 
       //! Check son2account voters
       voters_for_son2account = con.wallet_api_ptr->get_voters("son2account");
-      BOOST_CHECK_EQUAL(voters_for_son2account.voters_for_son.voters.size(), 0);
+      BOOST_REQUIRE(voters_for_son2account.voters_for_son);
+      BOOST_CHECK_EQUAL(voters_for_son2account.voters_for_son->voters.size(), 0);
 
       //! Check votes of nathan
       nathan_votes = con.wallet_api_ptr->get_votes("nathan");
-      BOOST_CHECK_EQUAL(nathan_votes.votes_for_sons.size(), 0);
+      BOOST_CHECK(!nathan_votes.votes_for_sons.valid());
 
    } catch( fc::exception& e ) {
       BOOST_TEST_MESSAGE("SON cli wallet tests exception");

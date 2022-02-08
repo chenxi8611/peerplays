@@ -1385,6 +1385,12 @@ class wallet_api
        */
       committee_member_object get_committee_member(string owner_account);
 
+      /** Returns information about the given worker.
+       * @param owner_account the name or id of the worker account owner, or the id of the worker
+       * @returns the information about the workers stored in the block chain
+       */
+      vector<worker_object> get_workers(string owner_account);
+
 
       /** Creates a SON object owned by the given account.
        *
@@ -2673,6 +2679,7 @@ FC_API( graphene::wallet::wallet_api,
         (get_witness)
         (is_witness)
         (get_committee_member)
+        (get_workers)
         (list_witnesses)
         (list_committee_members)
         (list_workers)

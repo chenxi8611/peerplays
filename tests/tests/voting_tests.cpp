@@ -330,8 +330,9 @@ BOOST_AUTO_TEST_CASE(track_votes_witnesses_enabled)
 
       //! Check votes of account
       const auto account_votes = db_api1.get_votes("1.2.18");
-      BOOST_CHECK_EQUAL(account_votes.votes_for_witnesses.size(), 1);
-      BOOST_CHECK_EQUAL((uint32_t)account_votes.votes_for_witnesses[0].id.instance, witness1_object->id.instance());
+      BOOST_REQUIRE(account_votes.votes_for_witnesses);
+      BOOST_CHECK_EQUAL(account_votes.votes_for_witnesses->size(), 1);
+      BOOST_CHECK_EQUAL((uint32_t)account_votes.votes_for_witnesses->at(0).id.instance, witness1_object->id.instance());
 
    } FC_LOG_AND_RETHROW()
 }
@@ -520,7 +521,8 @@ BOOST_AUTO_TEST_CASE(track_votes_committee_enabled)
 
       //! Check votes of account
       const auto account_votes = db_api1.get_votes("1.2.18");
-      BOOST_CHECK_EQUAL((uint32_t)account_votes.votes_for_committee_members.back().id.instance, committee1_object->id.instance());
+      BOOST_REQUIRE(account_votes.votes_for_committee_members);
+      BOOST_CHECK_EQUAL((uint32_t)account_votes.votes_for_committee_members->back().id.instance, committee1_object->id.instance());
 
    } FC_LOG_AND_RETHROW()
 }

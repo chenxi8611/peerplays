@@ -324,8 +324,9 @@ BOOST_AUTO_TEST_CASE(track_votes_witnesses_enabled)
 
       //! Check witness1 voters
       const auto voters_for_witness1 = db_api1.get_voters("witness1");
-      BOOST_CHECK_EQUAL(voters_for_witness1.voters_for_witness.voters.size(), 1);
-      BOOST_CHECK_EQUAL((uint32_t)voters_for_witness1.voters_for_witness.voters[0].instance, 18);
+      BOOST_REQUIRE(voters_for_witness1.voters_for_witness);
+      BOOST_CHECK_EQUAL(voters_for_witness1.voters_for_witness->voters.size(), 1);
+      BOOST_CHECK_EQUAL((uint32_t)voters_for_witness1.voters_for_witness->voters[0].instance, 18);
 
       //! Check votes of account
       const auto account_votes = db_api1.get_votes("1.2.18");
@@ -513,8 +514,9 @@ BOOST_AUTO_TEST_CASE(track_votes_committee_enabled)
 
       //! Check committee1 voters
       const auto voters_for_committee1 = db_api1.get_voters("committee1");
-      BOOST_CHECK_EQUAL(voters_for_committee1.voters_for_committee_member.voters.size(), 1);
-      BOOST_CHECK_EQUAL((uint32_t)voters_for_committee1.voters_for_committee_member.voters[0].instance, 18);
+      BOOST_REQUIRE(voters_for_committee1.voters_for_committee_member);
+      BOOST_CHECK_EQUAL(voters_for_committee1.voters_for_committee_member->voters.size(), 1);
+      BOOST_CHECK_EQUAL((uint32_t)voters_for_committee1.voters_for_committee_member->voters[0].instance, 18);
 
       //! Check votes of account
       const auto account_votes = db_api1.get_votes("1.2.18");

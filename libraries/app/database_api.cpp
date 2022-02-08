@@ -2224,54 +2224,64 @@ voters_info database_api_impl::get_voters(const string &account_name_or_id) cons
    //! Info for committee member voters
    if(committee_member_object) {
       const auto& committee_member_voters = get_voters_by_id(committee_member_object->vote_id);
-      result.voters_for_committee_member.vote_id = committee_member_object->vote_id;
-      result.voters_for_committee_member.voters.reserve(committee_member_voters.size());
+      voters_info_object voters_for_committee_member;
+      voters_for_committee_member.vote_id = committee_member_object->vote_id;
+      voters_for_committee_member.voters.reserve(committee_member_voters.size());
       for(const auto& voter: committee_member_voters) {
-         result.voters_for_committee_member.voters.emplace_back(voter.get_id());
+         voters_for_committee_member.voters.emplace_back(voter.get_id());
       }
+      result.voters_for_committee_member = std::move(voters_for_committee_member);
    }
 
    //! Info for witness voters
    if(witness_object) {
       const auto& witness_voters = get_voters_by_id(witness_object->vote_id);
-      result.voters_for_witness.vote_id = witness_object->vote_id;
-      result.voters_for_witness.voters.reserve(witness_voters.size());
+      voters_info_object voters_for_witness;
+      voters_for_witness.vote_id = witness_object->vote_id;
+      voters_for_witness.voters.reserve(witness_voters.size());
       for(const auto& voter: witness_voters) {
-         result.voters_for_witness.voters.emplace_back(voter.get_id());
+         voters_for_witness.voters.emplace_back(voter.get_id());
       }
+      result.voters_for_witness = std::move(voters_for_witness);
    }
 
    //! Info for worker voters
-   result.voters_for_workers.reserve(worker_objects.size());
-   result.voters_against_workers.reserve(worker_objects.size());
-   for(const auto& worker_object : worker_objects) {
-      voters_info_object voters_for_worker;
-      const auto& for_worker_voters = get_voters_by_id(worker_object.vote_for);
-      voters_for_worker.vote_id = worker_object.vote_for;
-      voters_for_worker.voters.reserve(for_worker_voters.size());
-      for(const auto& voter: for_worker_voters) {
-         voters_for_worker.voters.emplace_back(voter.get_id());
-      }
-      result.voters_for_workers.emplace_back(std::move(voters_for_worker));
+   if(!worker_objects.empty()) {
+      vector<voters_info_object> voters_for_workers(worker_objects.size());
+      vector<voters_info_object> voters_against_workers(worker_objects.size());
+      for (const auto &worker_object : worker_objects) {
+         voters_info_object voters_for_worker;
+         const auto &for_worker_voters = get_voters_by_id(worker_object.vote_for);
+         voters_for_worker.vote_id = worker_object.vote_for;
+         voters_for_worker.voters.reserve(for_worker_voters.size());
+         for (const auto &voter : for_worker_voters) {
+            voters_for_worker.voters.emplace_back(voter.get_id());
+         }
+         voters_for_workers.emplace_back(std::move(voters_for_worker));
 
-      voters_info_object voters_against_worker;
-      const auto& against_worker_voters = get_voters_by_id(worker_object.vote_against);
-      voters_against_worker.vote_id = worker_object.vote_against;
-      voters_against_worker.voters.reserve(against_worker_voters.size());
-      for(const auto& voter: against_worker_voters) {
-         voters_against_worker.voters.emplace_back(voter.get_id());
+         voters_info_object voters_against_worker;
+         const auto &against_worker_voters = get_voters_by_id(worker_object.vote_against);
+         voters_against_worker.vote_id = worker_object.vote_against;
+         voters_against_worker.voters.reserve(against_worker_voters.size());
+         for (const auto &voter : against_worker_voters) {
+            voters_against_worker.voters.emplace_back(voter.get_id());
+         }
+         voters_against_workers.emplace_back(std::move(voters_against_worker));
       }
-      result.voters_against_workers.emplace_back(std::move(voters_against_worker));
+      result.voters_for_workers = std::move(voters_for_workers);
+      result.voters_against_workers = std::move(voters_against_workers);
    }
 
    //! Info for son voters
    if(son_object) {
       const auto& son_voters = get_voters_by_id(son_object->vote_id);
-      result.voters_for_son.vote_id = son_object->vote_id;
-      result.voters_for_son.voters.reserve(son_voters.size());
+      voters_info_object voters_for_son;
+      voters_for_son.vote_id = son_object->vote_id;
+      voters_for_son.voters.reserve(son_voters.size());
       for(const auto& voter: son_voters) {
-         result.voters_for_son.voters.emplace_back(voter.get_id());
+         voters_for_son.voters.emplace_back(voter.get_id());
       }
+      result.voters_for_son = std::move(voters_for_son);
    }
 
    return result;

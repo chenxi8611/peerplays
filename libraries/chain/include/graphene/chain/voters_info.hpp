@@ -19,11 +19,11 @@ namespace graphene { namespace chain {
        * @ingroup object
     */
    struct voters_info {
-      voters_info_object         voters_for_committee_member;
-      voters_info_object         voters_for_witness;
-      vector<voters_info_object> voters_for_workers;
-      vector<voters_info_object> voters_against_workers;
-      voters_info_object         voters_for_son;
+      optional<voters_info_object>           voters_for_committee_member;
+      optional<voters_info_object>           voters_for_witness;
+      optional<vector<voters_info_object> >  voters_for_workers;
+      optional<vector<voters_info_object> >  voters_against_workers;
+      optional<voters_info_object>           voters_for_son;
    };
 
 } } // graphene::chain

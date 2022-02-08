@@ -200,7 +200,7 @@ public:
 
    // Workers
    vector<optional<worker_object>> get_workers(const vector<worker_id_type> &witness_ids) const;
-   fc::optional<worker_object> get_worker_by_account(const std::string account_id_or_name) const;
+   vector<worker_object> get_workers_by_account(const std::string account_id_or_name) const;
 
    // Votes
    vector<variant> lookup_vote_ids(const vector<vote_id_type> &votes) const;
@@ -1927,8 +1927,8 @@ vector<optional<worker_object>> database_api::get_workers(const vector<worker_id
    return my->get_workers(worker_ids);
 }
 
-fc::optional<worker_object> database_api::get_worker_by_account(const std::string account_id_or_name) const {
-   return my->get_worker_by_account(account_id_or_name);
+vector<worker_object> database_api::get_workers_by_account(const std::string account_id_or_name) const {
+   return my->get_workers_by_account(account_id_or_name);
 }
 
 vector<optional<worker_object>> database_api_impl::get_workers(const vector<worker_id_type> &worker_ids) const {
@@ -1943,13 +1943,18 @@ vector<optional<worker_object>> database_api_impl::get_workers(const vector<work
    return result;
 }
 
-fc::optional<worker_object> database_api_impl::get_worker_by_account(const std::string account_id_or_name) const {
+vector<worker_object> database_api_impl::get_workers_by_account(const std::string account_id_or_name) const {
    const auto &idx = _db.get_index_type<worker_index>().indices().get<by_account>();
    const account_id_type account = get_account_from_string(account_id_or_name)->id;
    auto itr = idx.find(account);
-   if (itr != idx.end())
-      return *itr;
-   return {};
+   vector<worker_object> result;
+
+   if (itr != idx.end() && itr->worker_account == account) {
+      result.emplace_back(*itr);
+      ++itr;
+   }
+
+   return result;
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -2213,7 +2218,7 @@ voters_info database_api_impl::get_voters(const string &account_name_or_id) cons
    //! Fill voters_info
    const auto& committee_member_object = get_committee_member_by_account(owner_account_id);
    const auto& witness_object = get_witness_by_account(owner_account_id);
-   const auto& worker_object = get_worker_by_account(owner_account_id);
+   const auto& worker_objects = get_workers_by_account(owner_account_id);
    const auto& son_object = get_son_by_account(owner_account_id);
 
    //! Info for committee member voters
@@ -2237,19 +2242,26 @@ voters_info database_api_impl::get_voters(const string &account_name_or_id) cons
    }
 
    //! Info for worker voters
-   if(worker_object) {
-      const auto& for_worker_voters = get_voters_by_id(worker_object->vote_for);
-      result.voters_for_worker.vote_id = worker_object->vote_for;
-      result.voters_for_worker.voters.reserve(for_worker_voters.size());
+   result.voters_for_workers.reserve(worker_objects.size());
+   result.voters_against_workers.reserve(worker_objects.size());
+   for(const auto& worker_object : worker_objects) {
+      voters_info_object voters_for_worker;
+      const auto& for_worker_voters = get_voters_by_id(worker_object.vote_for);
+      voters_for_worker.vote_id = worker_object.vote_for;
+      voters_for_worker.voters.reserve(for_worker_voters.size());
       for(const auto& voter: for_worker_voters) {
-         result.voters_for_worker.voters.emplace_back(voter.get_id());
+         voters_for_worker.voters.emplace_back(voter.get_id());
       }
-      const auto& against_worker_voters = get_voters_by_id(worker_object->vote_against);
-      result.voters_against_worker.vote_id = worker_object->vote_against;
-      result.voters_against_worker.voters.reserve(against_worker_voters.size());
+      result.voters_for_workers.emplace_back(std::move(voters_for_worker));
+
+      voters_info_object voters_against_worker;
+      const auto& against_worker_voters = get_voters_by_id(worker_object.vote_against);
+      voters_against_worker.vote_id = worker_object.vote_against;
+      voters_against_worker.voters.reserve(against_worker_voters.size());
       for(const auto& voter: against_worker_voters) {
-         result.voters_against_worker.voters.emplace_back(voter.get_id());
+         voters_against_worker.voters.emplace_back(voter.get_id());
       }
+      result.voters_against_workers.emplace_back(std::move(voters_against_worker));
    }
 
    //! Info for son voters

@@ -170,12 +170,14 @@ public:
 
    // Witnesses
    vector<optional<witness_object>> get_witnesses(const vector<witness_id_type> &witness_ids) const;
+   fc::optional<witness_object> get_witness_by_account_id(account_id_type account) const;
    fc::optional<witness_object> get_witness_by_account(const std::string account_id_or_name) const;
    map<string, witness_id_type> lookup_witness_accounts(const string &lower_bound_name, uint32_t limit) const;
    uint64_t get_witness_count() const;
 
    // Committee members
    vector<optional<committee_member_object>> get_committee_members(const vector<committee_member_id_type> &committee_member_ids) const;
+   fc::optional<committee_member_object> get_committee_member_by_account_id(account_id_type account) const;
    fc::optional<committee_member_object> get_committee_member_by_account(const std::string account_id_or_name) const;
    map<string, committee_member_id_type> lookup_committee_member_accounts(const string &lower_bound_name, uint32_t limit) const;
    uint64_t get_committee_member_count() const;
@@ -201,6 +203,7 @@ public:
 
    // Workers
    vector<optional<worker_object>> get_workers(const vector<worker_id_type> &witness_ids) const;
+   vector<worker_object> get_workers_by_account_id(account_id_type account) const;
    vector<worker_object> get_workers_by_account(const std::string account_id_or_name) const;
    map<string, worker_id_type> lookup_worker_accounts(const string &lower_bound_name, uint32_t limit) const;
    uint64_t get_worker_count() const;
@@ -1616,17 +1619,25 @@ vector<optional<witness_object>> database_api_impl::get_witnesses(const vector<w
    return result;
 }
 
+fc::optional<witness_object> database_api::get_witness_by_account_id(account_id_type account) const {
+   return my->get_witness_by_account_id(account);
+}
+
+fc::optional<witness_object> database_api_impl::get_witness_by_account_id(account_id_type account) const {
+   const auto &idx = _db.get_index_type<witness_index>().indices().get<by_account>();
+   auto itr = idx.find(account);
+   if (itr != idx.end())
+      return *itr;
+   return {};
+}
+
 fc::optional<witness_object> database_api::get_witness_by_account(const std::string account_id_or_name) const {
    return my->get_witness_by_account(account_id_or_name);
 }
 
 fc::optional<witness_object> database_api_impl::get_witness_by_account(const std::string account_id_or_name) const {
-   const auto &idx = _db.get_index_type<witness_index>().indices().get<by_account>();
    const account_id_type account = get_account_from_string(account_id_or_name)->id;
-   auto itr = idx.find(account);
-   if (itr != idx.end())
-      return *itr;
-   return {};
+   return get_witness_by_account_id(account);
 }
 
 map<string, witness_id_type> database_api::lookup_witness_accounts(const string &lower_bound_name, uint32_t limit) const {
@@ -1687,17 +1698,25 @@ vector<optional<committee_member_object>> database_api_impl::get_committee_membe
    return result;
 }
 
+fc::optional<committee_member_object> database_api::get_committee_member_by_account_id(account_id_type account) const {
+   return my->get_committee_member_by_account_id(account);
+}
+
+fc::optional<committee_member_object> database_api_impl::get_committee_member_by_account_id(account_id_type account) const {
+   const auto &idx = _db.get_index_type<committee_member_index>().indices().get<by_account>();
+   auto itr = idx.find(account);
+   if (itr != idx.end())
+      return *itr;
+   return {};
+}
+
 fc::optional<committee_member_object> database_api::get_committee_member_by_account(const std::string account_id_or_name) const {
    return my->get_committee_member_by_account(account_id_or_name);
 }
 
 fc::optional<committee_member_object> database_api_impl::get_committee_member_by_account(const std::string account_id_or_name) const {
-   const auto &idx = _db.get_index_type<committee_member_index>().indices().get<by_account>();
    const account_id_type account = get_account_from_string(account_id_or_name)->id;
-   auto itr = idx.find(account);
-   if (itr != idx.end())
-      return *itr;
-   return {};
+   return get_committee_member_by_account_id(account);
 }
 
 map<string, committee_member_id_type> database_api::lookup_committee_member_accounts(const string &lower_bound_name, uint32_t limit) const {
@@ -1943,6 +1962,10 @@ vector<optional<worker_object>> database_api::get_workers(const vector<worker_id
    return my->get_workers(worker_ids);
 }
 
+vector<worker_object> database_api::get_workers_by_account_id(account_id_type account) const {
+   return my->get_workers_by_account_id(account);
+}
+
 vector<worker_object> database_api::get_workers_by_account(const std::string account_id_or_name) const {
    return my->get_workers_by_account(account_id_or_name);
 }
@@ -1967,9 +1990,8 @@ vector<optional<worker_object>> database_api_impl::get_workers(const vector<work
    return result;
 }
 
-vector<worker_object> database_api_impl::get_workers_by_account(const std::string account_id_or_name) const {
+vector<worker_object> database_api_impl::get_workers_by_account_id(account_id_type account) const {
    const auto &idx = _db.get_index_type<worker_index>().indices().get<by_account>();
-   const account_id_type account = get_account_from_string(account_id_or_name)->id;
    auto itr = idx.find(account);
    vector<worker_object> result;
 
@@ -1979,6 +2001,11 @@ vector<worker_object> database_api_impl::get_workers_by_account(const std::strin
    }
 
    return result;
+}
+
+vector<worker_object> database_api_impl::get_workers_by_account(const std::string account_id_or_name) const {
+   const account_id_type account = get_account_from_string(account_id_or_name)->id;
+   return get_workers_by_account_id(account);
 }
 
 map<string, worker_id_type> database_api_impl::lookup_worker_accounts(const string &lower_bound_name, uint32_t limit) const {

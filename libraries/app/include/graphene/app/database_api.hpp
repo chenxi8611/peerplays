@@ -560,6 +560,13 @@ public:
     * @param account The ID of the account whose witness should be retrieved
     * @return The witness object, or null if the account does not have a witness
     */
+   fc::optional<witness_object> get_witness_by_account_id(account_id_type account) const;
+
+   /**
+    * @brief Get the witness owned by a given account
+    * @param account_id_or_name The ID or name of the account whose witness should be retrieved
+    * @return The witness object, or null if the account does not have a witness
+    */
    fc::optional<witness_object> get_witness_by_account(const std::string account_name_or_id) const;
 
    /**
@@ -587,6 +594,13 @@ public:
     * This function has semantics identical to @ref get_objects
     */
    vector<optional<committee_member_object>> get_committee_members(const vector<committee_member_id_type> &committee_member_ids) const;
+
+   /**
+    * @brief Get the committee_member owned by a given account
+    * @param account The ID of the account whose committee_member should be retrieved
+    * @return The committee_member object, or null if the account does not have a committee_member
+    */
+   fc::optional<committee_member_object> get_committee_member_by_account_id(account_id_type account) const;
 
    /**
     * @brief Get the committee_member owned by a given account
@@ -727,7 +741,14 @@ public:
 
    /**
     * @brief Return the worker objects associated with this account.
-    * @param account_id_or_name The ID or name of the account whose worker should be retrieved
+    * @param account The ID of the account whose workers should be retrieved
+    * @return The worker object or null if the account does not have a worker
+    */
+   vector<worker_object> get_workers_by_account_id(account_id_type account) const;
+
+   /**
+    * @brief Return the worker objects associated with this account.
+    * @param account_id_or_name The ID or name of the account whose workers should be retrieved
     * @return The worker object or null if the account does not have a worker
     */
    vector<worker_object> get_workers_by_account(const std::string account_id_or_name) const;
@@ -1104,12 +1125,14 @@ FC_API(graphene::app::database_api,
 
    // Witnesses
    (get_witnesses)
+   (get_witness_by_account_id)
    (get_witness_by_account)
    (lookup_witness_accounts)
    (get_witness_count)
 
    // Committee members
    (get_committee_members)
+   (get_committee_member_by_account_id)
    (get_committee_member_by_account)
    (lookup_committee_member_accounts)
    (get_committee_member_count)
@@ -1135,6 +1158,7 @@ FC_API(graphene::app::database_api,
 
    // Workers
    (get_workers)
+   (get_workers_by_account_id)
    (get_workers_by_account)
    (lookup_worker_accounts)
    (get_worker_count)

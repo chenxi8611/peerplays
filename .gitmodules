@@ -4,6 +4,6 @@
     ignore = dirty
 [submodule "libraries/fc"]
     path = libraries/fc
-    url = https://github.com/peerplays-network/peerplays-fc.git
-    branch = latest-fc
+    url = https://gitlab.com/PBSA/tools-libs/peerplays-fc
+    branch = bug/issue34
     ignore = dirty

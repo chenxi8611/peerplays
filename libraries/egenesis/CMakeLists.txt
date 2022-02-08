@@ -57,3 +57,5 @@ INSTALL( TARGETS
    LIBRARY DESTINATION lib
    ARCHIVE DESTINATION lib
 )
+file(GLOB HEADERS "include/graphene/egenesis/*.hpp")
+INSTALL( FILES ${HEADERS} DESTINATION "include/graphene/egenesis" )

@@ -209,8 +209,8 @@ bool btc_multisig_segwit_address::operator==(const btc_multisig_segwit_address &
    return true;
 }
 
-std::vector<public_key_type> btc_multisig_segwit_address::get_keys() {
-   std::vector<public_key_type> keys;
+std::vector<graphene::protocol::public_key_type> btc_multisig_segwit_address::get_keys() {
+   std::vector<graphene::protocol::public_key_type> keys;
    for (const auto &k : witnesses_keys) {
       keys.push_back(k.second);
    }

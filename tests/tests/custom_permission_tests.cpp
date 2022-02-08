@@ -1,7 +1,6 @@
-#include <boost/test/unit_test.hpp>
 #include <graphene/chain/hardfork.hpp>
 #include <graphene/chain/database.hpp>
-#include <graphene/chain/protocol/protocol.hpp>
+#include <graphene/protocol/protocol.hpp>
 #include <graphene/chain/exceptions.hpp>
 
 #include <graphene/chain/account_object.hpp>
@@ -13,7 +12,12 @@
 
 #include <graphene/db/simple_index.hpp>
 
+#include <graphene/protocol/protocol.hpp>
+
 #include <fc/crypto/digest.hpp>
+
+#include <boost/test/unit_test.hpp>
+
 #include "../common/database_fixture.hpp"
 
 using namespace graphene::chain;

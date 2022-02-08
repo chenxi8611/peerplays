@@ -1,3 +1,4 @@
+// The value should be harmonized with the protcol constant named GPOS_PERIOD_START
 #ifndef HARDFORK_GPOS_TIME
 #ifdef BUILD_PEERPLAYS_TESTNET
 #define HARDFORK_GPOS_TIME (fc::time_point_sec::from_iso_string("2020-01-06T01:00:00"))

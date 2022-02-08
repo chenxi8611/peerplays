@@ -317,7 +317,7 @@ namespace graphene { namespace chain {
 
                share_type rake_amount = 0;
                if (dividend_id)
-                  rake_amount = (fc::uint128_t(tournament_obj.prize_pool.value) * rake_fee_percentage / GRAPHENE_1_PERCENT / 100).to_uint64();
+                  rake_amount = (fc::uint128_t(tournament_obj.prize_pool.value) * rake_fee_percentage / GRAPHENE_1_PERCENT / 100);
                asset won_prize(tournament_obj.prize_pool - rake_amount, tournament_obj.options.buy_in.asset_id);
                tournament_payout_operation op;
 
@@ -646,13 +646,6 @@ namespace graphene { namespace chain {
       }
    }
 
-   fc::sha256 rock_paper_scissors_throw::calculate_hash() const
-   {
-      std::vector<char> full_throw_packed(fc::raw::pack(*this));
-      return fc::sha256::hash(full_throw_packed.data(), full_throw_packed.size());
-   }
-
-
    vector<tournament_id_type> tournament_players_index::get_registered_tournaments_for_account( const account_id_type& a )const
    {
       auto iter = account_to_joined_tournaments.find(a);
@@ -661,7 +654,12 @@ namespace graphene { namespace chain {
       return vector<tournament_id_type>();
    }
 
-   void tournament_players_index::object_inserted(const object& obj)
+   void tournament_players_index::object_loaded(const object& obj)
+   {
+       object_created(obj);
+   }
+
+   void tournament_players_index::object_created(const object& obj)
    {
        assert( dynamic_cast<const tournament_details_object*>(&obj) ); // for debug only
        const tournament_details_object& details = static_cast<const tournament_details_object&>(obj);

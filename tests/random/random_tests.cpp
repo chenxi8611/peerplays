@@ -21,6 +21,9 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+
+#define BOOST_TEST_MODULE Random Tests
+
 #include <boost/test/unit_test.hpp>
 //#include <fc/crypto/openssl.hpp>
 //#include <openssl/rand.h>
@@ -131,24 +134,24 @@ BOOST_FIXTURE_TEST_CASE( basic, database_fixture )
 
 BOOST_AUTO_TEST_SUITE_END()
 
-//#define BOOST_TEST_MODULE "C++ Unit Tests for Graphene Blockchain Database"
-#include <cstdlib>
-#include <iostream>
-#include <boost/test/included/unit_test.hpp>
-
-boost::unit_test::test_suite* init_unit_test_suite(int argc, char* argv[]) {
-    for (int i=1; i<argc; i++)
-    {
-       const std::string arg = argv[i];
-       std::cout << "#" << i << " " <<  arg << std::endl;
-       if(arg == "-R")
-          test_standard_rand = true;
-       else if(arg == "-A")
-          all_tests = true;
+struct GlobalInitializationFixture {
+    GlobalInitializationFixture() {
+       auto argc = boost::unit_test::framework::master_test_suite().argc;
+       auto argv = boost::unit_test::framework::master_test_suite().argv;
+       for (int i=1; i<argc; i++)
+       {
+          const std::string arg = argv[i];
+          std::cout << "#" << i << " " <<  arg << std::endl;
+          if(arg == "-R")
+             test_standard_rand = true;
+          else if(arg == "-A")
+             all_tests = true;
+       }
+       std::srand(time(NULL));
+       std::cout << "Random number generator seeded to " << time(NULL) << std::endl;
+       if (signal(SIGPIPE, sig_handler) == SIG_ERR)
+           std::cout << "Can't catch SIGPIPE signal!" << std::endl;
     }
-    std::srand(time(NULL));
-    std::cout << "Random number generator seeded to " << time(NULL) << std::endl;
-    if (signal(SIGPIPE, sig_handler) == SIG_ERR)
-        std::cout << "Can't catch SIGPIPE signal!" << std::endl;
-    return nullptr;
-}
+};
+BOOST_TEST_GLOBAL_FIXTURE(GlobalInitializationFixture);
+

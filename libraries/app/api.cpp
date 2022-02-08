@@ -29,14 +29,16 @@
 #include <graphene/chain/confidential_object.hpp>
 #include <graphene/chain/database.hpp>
 #include <graphene/chain/get_config.hpp>
+#include <graphene/utilities/key_conversion.hpp>
+#include <graphene/protocol/fee_schedule.hpp>
+#include <graphene/chain/confidential_object.hpp>
 #include <graphene/chain/market_object.hpp>
-#include <graphene/chain/protocol/fee_schedule.hpp>
-#include <graphene/chain/tournament_object.hpp>
-#include <graphene/chain/transaction_object.hpp>
+#include <graphene/chain/transaction_history_object.hpp>
 #include <graphene/chain/withdraw_permission_object.hpp>
 #include <graphene/chain/worker_object.hpp>
 #include <graphene/utilities/key_conversion.hpp>
 
+#include <fc/crypto/base64.hpp>
 #include <fc/crypto/hex.hpp>
 #include <fc/rpc/api_connection.hpp>
 #include <fc/thread/future.hpp>
@@ -144,7 +146,7 @@ void network_broadcast_api::on_applied_block(const signed_block &b) {
          if (itr != _callbacks.end()) {
             auto block_num = b.block_num();
             auto &callback = _callbacks.find(id)->second;
-            fc::async([capture_this, this, id, block_num, trx_num, trx, callback]() {
+            fc::async([capture_this, id, block_num, trx_num, trx, callback]() {
                callback(fc::variant(transaction_confirmation{id, block_num, trx_num, trx},
                                     GRAPHENE_MAX_NESTED_OBJECTS));
             });
@@ -164,7 +166,7 @@ void network_broadcast_api::broadcast_transaction(const signed_transaction &trx)
 fc::variant network_broadcast_api::broadcast_transaction_synchronous(const signed_transaction &trx) {
    _app.chain_database()->check_transaction_for_duplicated_operations(trx);
 
-   fc::promise<fc::variant>::ptr prom(new fc::promise<fc::variant>());
+   fc::promise<fc::variant>::ptr prom(fc::promise<fc::variant>::create());
    broadcast_transaction_with_callback([=](const fc::variant &v) {
       prom->set_value(v);
    },

@@ -5,11 +5,12 @@
 #include <boost/range/algorithm_ext/insert.hpp>
 
 #include <fc/log/logger.hpp>
+
 #include <graphene/chain/proposal_object.hpp>
-#include <graphene/chain/protocol/transfer.hpp>
 #include <graphene/chain/sidechain_address_object.hpp>
 #include <graphene/chain/son_wallet_object.hpp>
 #include <graphene/chain/son_wallet_withdraw_object.hpp>
+#include <graphene/protocol/transfer.hpp>
 #include <graphene/peerplays_sidechain/sidechain_net_manager.hpp>
 #include <graphene/utilities/key_conversion.hpp>
 

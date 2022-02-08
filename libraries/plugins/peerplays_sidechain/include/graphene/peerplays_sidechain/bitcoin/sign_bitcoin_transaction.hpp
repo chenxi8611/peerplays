@@ -6,7 +6,7 @@
 
 namespace graphene { namespace peerplays_sidechain { namespace bitcoin {
 
-class bitcoin_transaction;
+struct bitcoin_transaction;
 
 const secp256k1_context_t *btc_context();
 

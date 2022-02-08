@@ -24,14 +24,17 @@
 #pragma once
 #include <graphene/chain/exceptions.hpp>
 #include <graphene/chain/transaction_evaluation_state.hpp>
-#include <graphene/chain/protocol/operations.hpp>
+#include <graphene/protocol/operations.hpp>
 
 namespace graphene { namespace chain {
 
    class database;
-   struct signed_transaction;
    class generic_evaluator;
    class transaction_evaluation_state;
+   class account_object;
+   class account_statistics_object;
+   class asset_object;
+   class asset_dynamic_data_object;
 
    class generic_evaluator
    {
@@ -119,8 +122,41 @@ namespace graphene { namespace chain {
 
    class op_evaluator
    {
+   protected:
+       unique_ptr<op_evaluator> next_evaluator;
    public:
+       class evaluator_handle {
+           // Move-only semantics, and only friends can construct
+           evaluator_handle(const op_evaluator* pointer, operation::tag_type type)
+               : pointer(pointer), operation_type(type) {}
+           evaluator_handle(const evaluator_handle&) = delete;
+           evaluator_handle& operator=(const evaluator_handle&) = delete;
+
+           friend class op_evaluator;
+           template<typename>
+           friend class op_evaluator_impl;
+
+           // Pointer to the handled evaluator
+           const op_evaluator* pointer;
+           // Tag of the handled evaluator
+           operation::tag_type operation_type;
+
+       public:
+           evaluator_handle(evaluator_handle&&) = default;
+           evaluator_handle& operator=(evaluator_handle&&) = default;
+
+           operation::tag_type get_operation_type() const { return operation_type; }
+       };
+
       virtual ~op_evaluator(){}
+      virtual evaluator_handle append_evaluator(unique_ptr<op_evaluator> next_evaluator) = 0;
+      virtual void delete_evaluator(evaluator_handle&& handle) {
+         if (next_evaluator.get() == handle.pointer)
+             // Next evaluator in chain is the one to delete. Move its next pointer into ours, and unique_ptr will delete the one that's going away.
+             next_evaluator = std::move(next_evaluator->next_evaluator);
+         else
+             next_evaluator->delete_evaluator(std::move(handle));
+      }
       virtual operation_result evaluate(transaction_evaluation_state& eval_state, const operation& op, bool apply) = 0;
    };
 
@@ -128,10 +164,21 @@ namespace graphene { namespace chain {
    class op_evaluator_impl : public op_evaluator
    {
    public:
+      virtual evaluator_handle append_evaluator(unique_ptr<op_evaluator> next_evaluator) override {
+         if (this->next_evaluator == nullptr) {
+             this->next_evaluator = std::move(next_evaluator);
+             return evaluator_handle(this->next_evaluator.get(), operation::tag<typename T::operation_type>::value);
+         } else {
+             return this->next_evaluator->append_evaluator(std::move(next_evaluator));
+         }
+      }
       virtual operation_result evaluate(transaction_evaluation_state& eval_state, const operation& op, bool apply = true) override
       {
          T eval;
-         return eval.start_evaluate(eval_state, op, apply);
+         auto result = eval.start_evaluate(eval_state, op, apply);
+         if (this->next_evaluator != nullptr)
+             this->next_evaluator->evaluate(eval_state, op, apply);
+         return result;
       }
    };
 

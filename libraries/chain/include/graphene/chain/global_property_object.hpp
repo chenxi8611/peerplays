@@ -24,10 +24,12 @@
 #pragma once
 #include <fc/uint128.hpp>
 
-#include <graphene/chain/protocol/chain_parameters.hpp>
-#include <graphene/chain/protocol/types.hpp>
-#include <graphene/chain/database.hpp>
-#include <graphene/chain/son_info.hpp>
+#include <graphene/protocol/chain_parameters.hpp>
+#include <graphene/protocol/son_info.hpp>
+
+#include <graphene/chain/types.hpp>
+#include <graphene/chain/hardfork.hpp>
+
 #include <graphene/db/object.hpp>
 
 namespace graphene { namespace chain {
@@ -89,8 +91,6 @@ namespace graphene { namespace chain {
           *  every time a block is found it decreases by
           *  RECENTLY_MISSED_COUNT_DECREMENT.  It is
           *  never less than 0.
-          *
-          *  If the recently_missed_count hits 2*UNDO_HISTORY then no new blocks may be pushed.
           */
          uint32_t          recently_missed_count = 0;
 
@@ -129,6 +129,9 @@ namespace graphene { namespace chain {
          };
    };
 }}
+
+MAP_OBJECT_ID_TO_TYPE(graphene::chain::dynamic_global_property_object)
+MAP_OBJECT_ID_TO_TYPE(graphene::chain::global_property_object)
 
 FC_REFLECT_DERIVED( graphene::chain::dynamic_global_property_object, (graphene::db::object),
                     (head_block_number)

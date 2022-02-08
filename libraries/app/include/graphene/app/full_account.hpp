@@ -24,9 +24,11 @@
 #pragma once
 
 #include <graphene/chain/account_object.hpp>
+#include <graphene/chain/market_object.hpp>
 #include <graphene/chain/market_evaluator.hpp>
 #include <graphene/chain/vesting_balance_object.hpp>
 #include <graphene/chain/withdraw_permission_object.hpp>
+#include <graphene/chain/proposal_object.hpp>
 
 namespace graphene { namespace app {
 using namespace graphene::chain;

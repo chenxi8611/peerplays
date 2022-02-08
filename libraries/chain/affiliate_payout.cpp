@@ -62,15 +62,15 @@ namespace graphene { namespace chain {
              //ilog("Paying ${p} of ${P} for ${s} of ${r}", ("p",payout.to_uint64())("P",to_pay.value)("s",share)("r",remaining) );
              remaining -= share;
           }
-          FC_ASSERT( payout.to_uint64() <= to_pay );
+          FC_ASSERT( payout <= to_pay );
           if( payout > 0 )
           {
              if ( accumulator.find(affiliate) == accumulator.end() )
-                accumulator[affiliate] = payout.to_uint64();
+                accumulator[affiliate] = payout;
              else
-                accumulator[affiliate] += payout.to_uint64();
-             to_pay -= payout.to_uint64();
-             paid += payout.to_uint64();
+                accumulator[affiliate] += payout;
+             to_pay -= payout;
+             paid += payout;
           }
       }
       FC_ASSERT( to_pay == 0 );

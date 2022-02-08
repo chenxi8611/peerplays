@@ -1,9 +1,9 @@
 #include <boost/test/unit_test.hpp>
 #include <fc/reflect/variant.hpp>
-#include <graphene/chain/protocol/operations.hpp>
+#include <graphene/protocol/operations.hpp>
 #include <graphene/chain/hardfork.hpp>
 #include <graphene/chain/database.hpp>
-#include <graphene/chain/protocol/protocol.hpp>
+#include <graphene/protocol/protocol.hpp>
 #include <graphene/chain/exceptions.hpp>
 
 #include <graphene/chain/account_object.hpp>
@@ -15,6 +15,9 @@
 #include <graphene/chain/nft_object.hpp>
 #include <graphene/chain/account_role_object.hpp>
 #include <graphene/chain/offer_object.hpp>
+
+#include <graphene/protocol/operations.hpp>
+#include <graphene/protocol/protocol.hpp>
 
 #include <graphene/db/simple_index.hpp>
 

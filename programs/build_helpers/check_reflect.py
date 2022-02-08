@@ -108,8 +108,8 @@ def validate_members(name2members_ref, name2members_test):
             error_items.append(name)
             print("")
             print("error in", name)
-            print("doxygen:", name2members_ref[name])
-            print("fc     :", name2members_test[name])
+            print("doxygen:", sorted(name2members_ref[name]))
+            print("fc     :", sorted(name2members_test[name]))
         else:
             ok_items.append(name)
     return

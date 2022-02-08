@@ -27,8 +27,8 @@
 #include <fc/api.hpp>
 #include <fc/variant_object.hpp>
 
-#include <graphene/chain/protocol/types.hpp>
-#include <graphene/chain/protocol/asset.hpp>
+#include <graphene/protocol/types.hpp>
+#include <graphene/protocol/asset.hpp>
 #include <graphene/chain/event_object.hpp>
 #include <graphene/chain/operation_history_object.hpp>
 

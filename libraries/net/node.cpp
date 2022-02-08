@@ -79,7 +79,10 @@
 #include <graphene/net/exceptions.hpp>
 
 #include <graphene/chain/config.hpp>
-#include <graphene/chain/protocol/fee_schedule.hpp>
+// Nasty hack: A circular dependency around fee_schedule is resolved by fwd-declaring it and using a shared_ptr
+// to it in chain_parameters, which is used in an operation and thus must be serialized by the net library.
+// Resolving that forward declaration doesn't happen until now:
+#include <graphene/protocol/fee_schedule.hpp>
 
 #include <fc/git_revision.hpp>
 
@@ -827,7 +830,7 @@ namespace graphene { namespace net { namespace detail {
       _maximum_blocks_per_peer_during_syncing(GRAPHENE_NET_MAX_BLOCKS_PER_PEER_DURING_SYNCING)
     {
       _rate_limiter.set_actual_rate_time_constant(fc::seconds(2));
-      fc::rand_bytes(&_node_id.data[0], (int)_node_id.size());
+      fc::rand_bytes((char*) _node_id.data(), (int)_node_id.size());
     }
 
     node_impl::~node_impl()
@@ -948,7 +951,7 @@ namespace graphene { namespace net { namespace detail {
 #if 0
           try
           {
-            _retrigger_connect_loop_promise = fc::promise<void>::ptr( new fc::promise<void>("graphene::net::retrigger_connect_loop") );
+            _retrigger_connect_loop_promise = fc::promise<void>::create("graphene::net::retrigger_connect_loop");
             if( is_wanting_new_connections() || !_add_once_node_list.empty() )
             {
               if( is_wanting_new_connections() )
@@ -1078,7 +1081,7 @@ namespace graphene { namespace net { namespace detail {
         if( !_sync_items_to_fetch_updated )
         {
           dlog( "no sync items to fetch right now, going to sleep" );
-          _retrigger_fetch_sync_items_loop_promise = fc::promise<void>::ptr( new fc::promise<void>("graphene::net::retrigger_fetch_sync_items_loop") );
+          _retrigger_fetch_sync_items_loop_promise = fc::promise<void>::create("graphene::net::retrigger_fetch_sync_items_loop");
           _retrigger_fetch_sync_items_loop_promise->wait();
           _retrigger_fetch_sync_items_loop_promise.reset();
         }
@@ -1205,7 +1208,7 @@ namespace graphene { namespace net { namespace detail {
 
         if (!_items_to_fetch_updated)
         {
-          _retrigger_fetch_item_loop_promise = fc::promise<void>::ptr(new fc::promise<void>("graphene::net::retrigger_fetch_item_loop"));
+          _retrigger_fetch_item_loop_promise = fc::promise<void>::create("graphene::net::retrigger_fetch_item_loop");
           fc::microseconds time_until_retrigger = fc::microseconds::maximum();
           if (next_peer_unblocked_time != fc::time_point::maximum())
             time_until_retrigger = next_peer_unblocked_time - fc::time_point::now();
@@ -1297,7 +1300,7 @@ namespace graphene { namespace net { namespace detail {
 
         if (_new_inventory.empty())
         {
-          _retrigger_advertise_inventory_loop_promise = fc::promise<void>::ptr(new fc::promise<void>("graphene::net::retrigger_advertise_inventory_loop"));
+          _retrigger_advertise_inventory_loop_promise = fc::promise<void>::create("graphene::net::retrigger_advertise_inventory_loop");
           _retrigger_advertise_inventory_loop_promise->wait();
           _retrigger_advertise_inventory_loop_promise.reset();
         }
@@ -1337,7 +1340,7 @@ namespace graphene { namespace net { namespace detail {
 
         uint32_t handshaking_timeout = _peer_inactivity_timeout;
         fc::time_point handshaking_disconnect_threshold = fc::time_point::now() - fc::seconds(handshaking_timeout);
-        for( const peer_connection_ptr handshaking_peer : _handshaking_connections )
+        for( const peer_connection_ptr& handshaking_peer : _handshaking_connections )
           if( handshaking_peer->connection_initiation_time < handshaking_disconnect_threshold &&
               handshaking_peer->get_last_message_received_time() < handshaking_disconnect_threshold &&
               handshaking_peer->get_last_message_sent_time() < handshaking_disconnect_threshold )
@@ -1702,13 +1705,13 @@ namespace graphene { namespace net { namespace detail {
         dlog("is_already_connected_to_id returning true because the peer is us");
         return true;
       }
-      for (const peer_connection_ptr active_peer : _active_connections)
+      for (const peer_connection_ptr& active_peer : _active_connections)
         if (node_id == active_peer->node_id)
         {
           dlog("is_already_connected_to_id returning true because the peer is already in our active list");
           return true;
         }
-      for (const peer_connection_ptr handshaking_peer : _handshaking_connections)
+      for (const peer_connection_ptr& handshaking_peer : _handshaking_connections)
         if (node_id == handshaking_peer->node_id)
         {
           dlog("is_already_connected_to_id returning true because the peer is already in our handshaking list");
@@ -2876,7 +2879,7 @@ namespace graphene { namespace net { namespace detail {
         item_id advertised_item_id(item_ids_inventory_message_received.item_type, item_hash);
         bool we_advertised_this_item_to_a_peer = false;
         bool we_requested_this_item_from_a_peer = false;
-        for (const peer_connection_ptr peer : _active_connections)
+        for (const peer_connection_ptr& peer : _active_connections)
         {
           if (peer->inventory_advertised_to_peer.find(advertised_item_id) != peer->inventory_advertised_to_peer.end())
           {

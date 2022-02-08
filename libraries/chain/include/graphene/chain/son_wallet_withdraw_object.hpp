@@ -1,10 +1,11 @@
 #pragma once
-#include <graphene/chain/protocol/asset.hpp>
-#include <graphene/chain/protocol/types.hpp>
-#include <graphene/chain/sidechain_defs.hpp>
+#include <graphene/protocol/asset.hpp>
+#include <graphene/protocol/types.hpp>
+#include <graphene/protocol/sidechain_defs.hpp>
 
 namespace graphene { namespace chain {
    using namespace graphene::db;
+   using namespace graphene::protocol;
 
    /**
     * @class son_wallet_withdraw_object
@@ -59,6 +60,8 @@ namespace graphene { namespace chain {
    >;
    using son_wallet_withdraw_index = generic_index<son_wallet_withdraw_object, son_wallet_withdraw_multi_index_type>;
 } } // graphene::chain
+
+MAP_OBJECT_ID_TO_TYPE(graphene::chain::son_wallet_withdraw_object)
 
 FC_REFLECT_DERIVED( graphene::chain::son_wallet_withdraw_object, (graphene::db::object),
                     (timestamp) (block_num) (sidechain)

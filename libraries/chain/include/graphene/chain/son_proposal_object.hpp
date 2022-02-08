@@ -1,8 +1,9 @@
 #pragma once
 
-#include <graphene/chain/protocol/types.hpp>
 #include <graphene/db/object.hpp>
 #include <graphene/db/generic_index.hpp>
+
+#include <graphene/protocol/types.hpp>
 
 namespace graphene { namespace chain {
 
@@ -36,6 +37,8 @@ using son_proposal_multi_index_container = multi_index_container<
 using son_proposal_index = generic_index<son_proposal_object, son_proposal_multi_index_container>;
 
 } } // graphene::chain
+
+MAP_OBJECT_ID_TO_TYPE(graphene::chain::son_proposal_object)
 
 FC_REFLECT_ENUM( graphene::chain::son_proposal_type, (son_deregister_proposal)(son_report_down_proposal) )
 

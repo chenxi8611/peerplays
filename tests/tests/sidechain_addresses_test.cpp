@@ -5,7 +5,8 @@
 #include <graphene/chain/hardfork.hpp>
 #include <graphene/chain/son_object.hpp>
 #include <graphene/chain/sidechain_address_object.hpp>
-#include <graphene/chain/sidechain_defs.hpp>
+
+#include <graphene/protocol/sidechain_defs.hpp>
 
 using namespace graphene::chain;
 using namespace graphene::chain::test;

@@ -26,11 +26,14 @@
 
 #include <string>
 
+#include <graphene/chain/types.hpp>
+
+#include <graphene/protocol/rock_paper_scissors.hpp>
+
 #include <fc/crypto/sha256.hpp>
 #include <fc/reflect/reflect.hpp>
 #include <fc/optional.hpp>
 #include <fc/static_variant.hpp>
-#include <fc/array.hpp>
 
 namespace graphene { namespace chain {
    struct rock_paper_scissors_game_details

@@ -24,6 +24,7 @@
 #pragma once
 #include <graphene/chain/evaluator.hpp>
 #include <graphene/chain/committee_member_object.hpp>
+#include <graphene/chain/global_property_object.hpp>
 
 namespace graphene { namespace chain {
 

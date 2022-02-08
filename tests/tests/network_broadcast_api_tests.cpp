@@ -5,10 +5,11 @@
 #include <graphene/chain/event_group_object.hpp>
 #include <graphene/chain/betting_market_object.hpp>
 #include <graphene/chain/exceptions.hpp>
-#include <graphene/chain/protocol/proposal.hpp>
+#include <graphene/protocol/proposal.hpp>
 #include <graphene/chain/proposal_object.hpp>
 #include <graphene/chain/witness_object.hpp>
-#include <graphene/chain/protocol/committee_member.hpp>
+#include <graphene/protocol/committee_member.hpp>
+#include <graphene/protocol/sport.hpp>
 #include <graphene/app/api.hpp>
 #include <fc/crypto/digest.hpp>
 

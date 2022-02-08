@@ -1,6 +1,10 @@
 #include <graphene/chain/nft_evaluator.hpp>
+
+#include <graphene/protocol/nft_ops.hpp>
+#include <graphene/protocol/vote.hpp>
+#include <graphene/protocol/operations.hpp>
+
 #include <graphene/chain/nft_object.hpp>
-#include <graphene/chain/protocol/operations.hpp>
 #include <graphene/chain/account_role_object.hpp>
 #include <graphene/chain/hardfork.hpp>
 

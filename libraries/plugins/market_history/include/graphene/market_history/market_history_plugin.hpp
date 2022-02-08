@@ -123,7 +123,6 @@ typedef multi_index_container<
    >
 > order_history_multi_index_type;
 
-
 typedef generic_index<bucket_object, bucket_object_multi_index_type> bucket_index;
 typedef generic_index<order_history_object, order_history_multi_index_type> history_index;
 

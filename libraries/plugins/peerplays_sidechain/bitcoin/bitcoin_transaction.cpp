@@ -1,4 +1,5 @@
 #include <fc/crypto/base58.hpp>
+#include <fc/crypto/sha256.hpp>
 #include <fc/io/raw.hpp>
 #include <graphene/peerplays_sidechain/bitcoin/bitcoin_script.hpp>
 #include <graphene/peerplays_sidechain/bitcoin/bitcoin_transaction.hpp>
@@ -180,7 +181,7 @@ void bitcoin_transaction_builder::add_out(payment_type type, int64_t amount, con
       const auto pubkey_bytes = bytes(pubkey.begin(), pubkey.begin() + pubkey.size());
       add_out(type, amount, pubkey_bytes, front);
    } else {
-      const auto hash256 = fc::sha256::hash(pubkey.begin(), pubkey.size());
+      const auto hash256 = fc::sha256::hash((const char*)pubkey.begin(), pubkey.size());
       const auto hash160 = fc::ripemd160::hash(hash256.data(), hash256.data_size());
       add_out(type, amount, bytes(hash160.data(), hash160.data() + hash160.data_size()), front);
    }

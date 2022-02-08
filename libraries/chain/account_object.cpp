@@ -36,10 +36,10 @@ share_type cut_fee(share_type a, uint16_t p)
    if( p == GRAPHENE_100_PERCENT )
       return a;
 
-   fc::uint128 r(a.value);
+   fc::uint128_t r = a.value;
    r *= p;
    r /= GRAPHENE_100_PERCENT;
-   return r.to_uint64();
+   return r;
 }
 
 void account_balance_object::adjust_balance(const asset& delta)
@@ -142,7 +142,12 @@ set<address> account_member_index::get_address_members(const account_object& a)c
    return result;
 }
 
-void account_member_index::object_inserted(const object& obj)
+void account_member_index::object_loaded(const object& obj)
+{
+    object_created(obj);
+}
+
+void account_member_index::object_created(const object& obj)
 {
     assert( dynamic_cast<const account_object*>(&obj) ); // for debug only
     const account_object& a = static_cast<const account_object&>(obj);
@@ -256,7 +261,10 @@ void account_member_index::object_modified(const object& after)
 
 }
 
-void account_referrer_index::object_inserted( const object& obj )
+void account_referrer_index::object_loaded( const object& obj )
+{
+}
+void account_referrer_index::object_created( const object& obj )
 {
 }
 void account_referrer_index::object_removed( const object& obj )
@@ -272,7 +280,12 @@ void account_referrer_index::object_modified( const object& after  )
 const uint8_t  balances_by_account_index::bits = 20;
 const uint64_t balances_by_account_index::mask = (1ULL << balances_by_account_index::bits) - 1;
 
-void balances_by_account_index::object_inserted( const object& obj )
+void balances_by_account_index::object_loaded( const object& obj )
+{
+   object_created(obj);
+}
+
+void balances_by_account_index::object_created( const object& obj )
 {
    const auto& abo = dynamic_cast< const account_balance_object& >( obj );
    while( balances.size() < (abo.owner.instance.value >> bits) + 1 )

@@ -26,8 +26,10 @@
 #include <graphene/app/application.hpp>
 #include <graphene/app/plugin.hpp>
 
-#include <graphene/chain/protocol/fee_schedule.hpp>
-#include <graphene/chain/protocol/types.hpp>
+#include <graphene/chain/db_with.hpp>
+#include <graphene/chain/genesis_state.hpp>
+#include <graphene/protocol/fee_schedule.hpp>
+#include <graphene/protocol/types.hpp>
 
 #include <graphene/egenesis/egenesis.hpp>
 
@@ -306,10 +308,10 @@ public:
 
          auto initial_state = [this] {
             ilog("Initializing database...");
-            if (_options->count("genesis-json")) {
-               std::string genesis_str;
-               fc::read_file_contents(_options->at("genesis-json").as<boost::filesystem::path>(), genesis_str);
-               genesis_state_type genesis = fc::json::from_string(genesis_str).as<genesis_state_type>(20);
+            if( _options->count("genesis-json") )
+            {
+               genesis_state_type genesis = fc::json::from_file( _options->at("genesis-json").as<boost::filesystem::path>()).as<genesis_state_type>( 20 );
+               std::string genesis_str = fc::json::to_string(genesis) + "\n";
                bool modified_genesis = false;
                if (_options->count("genesis-timestamp")) {
                   genesis.initial_timestamp = fc::time_point_sec(fc::time_point::now()) + genesis.initial_parameters.block_interval + _options->at("genesis-timestamp").as<uint32_t>();
@@ -359,7 +361,7 @@ public:
          if (_options->count("enable-standby-votes-tracking")) {
             _chain_db->enable_standby_votes_tracking(_options->at("enable-standby-votes-tracking").as<bool>());
          }
-
+         
          std::string replay_reason = "reason not provided";
 
          if (_options->count("replay-blockchain"))

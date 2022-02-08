@@ -1,8 +1,9 @@
 #pragma once
-#include <graphene/chain/protocol/types.hpp>
 #include <graphene/db/object.hpp>
 #include <graphene/db/generic_index.hpp>
-#include <graphene/chain/sidechain_defs.hpp>
+
+#include <graphene/protocol/types.hpp>
+#include <graphene/protocol/sidechain_defs.hpp>
 
 namespace graphene { namespace chain {
    using namespace graphene::db;
@@ -112,6 +113,9 @@ namespace graphene { namespace chain {
    using son_stats_index = generic_index<son_statistics_object, son_stats_multi_index_type>;
 
 } } // graphene::chain
+
+MAP_OBJECT_ID_TO_TYPE(graphene::chain::son_object)
+MAP_OBJECT_ID_TO_TYPE(graphene::chain::son_statistics_object)
 
 FC_REFLECT_ENUM(graphene::chain::son_status, (inactive)(active)(request_maintenance)(in_maintenance)(deregistered) )
 

@@ -648,7 +648,7 @@ BOOST_AUTO_TEST_CASE( voting )
       // default gpos values
       BOOST_CHECK_EQUAL(db.get_global_properties().parameters.gpos_period(), 15552000);
       BOOST_CHECK_EQUAL(db.get_global_properties().parameters.gpos_subperiod(), 2592000);
-      BOOST_CHECK_EQUAL(db.get_global_properties().parameters.gpos_period_start(), HARDFORK_GPOS_TIME.sec_since_epoch());
+      BOOST_CHECK_EQUAL(db.get_global_properties().parameters.gpos_period_start(), GPOS_PERIOD_START.sec_since_epoch());
 
       // update default gpos for test speed
       // 5184000 = 60x60x24x60 = 60 days

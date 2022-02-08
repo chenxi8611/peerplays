@@ -8,9 +8,9 @@
 #include <fc/safe.hpp>
 #include <fc/time.hpp>
 
-#include <graphene/chain/protocol/asset.hpp>
-#include <graphene/chain/protocol/types.hpp>
-#include <graphene/chain/sidechain_defs.hpp>
+#include <graphene/protocol/asset.hpp>
+#include <graphene/protocol/types.hpp>
+#include <graphene/protocol/sidechain_defs.hpp>
 
 namespace graphene { namespace peerplays_sidechain {
 

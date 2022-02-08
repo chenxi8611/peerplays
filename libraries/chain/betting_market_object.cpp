@@ -75,7 +75,7 @@ namespace mpl = boost::mpl;
          amount_to_match_128 += backer_multiplier - GRAPHENE_BETTING_ODDS_PRECISION - 1;
        amount_to_match_128 /= backer_multiplier - GRAPHENE_BETTING_ODDS_PRECISION;
    }
-   return amount_to_match_128.to_uint64();
+   return amount_to_match_128;
 }
 
 share_type bet_object::get_approximate_matching_amount(bool round_up /* = false */) const

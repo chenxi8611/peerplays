@@ -5,14 +5,14 @@
 #include <string>
 #include <vector>
 
-#include <graphene/chain/protocol/types.hpp>
+#include <graphene/protocol/types.hpp>
 
 namespace graphene { namespace peerplays_sidechain { namespace bitcoin {
 
-class bitcoin_transaction;
+struct bitcoin_transaction;
 
 using bytes = std::vector<char>;
-using accounts_keys = std::map<graphene::chain::son_id_type, graphene::chain::public_key_type>;
+using accounts_keys = std::map<graphene::protocol::son_id_type, graphene::protocol::public_key_type>;
 using full_btc_transaction = std::pair<bitcoin_transaction, uint64_t>;
 
 enum class payment_type {

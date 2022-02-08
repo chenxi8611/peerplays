@@ -40,7 +40,7 @@
 #include <graphene/chain/operation_history_object.hpp>
 #include <graphene/chain/proposal_object.hpp>
 #include <graphene/chain/special_authority_object.hpp>
-#include <graphene/chain/transaction_object.hpp>
+#include <graphene/chain/transaction_history_object.hpp>
 #include <graphene/chain/vesting_balance_object.hpp>
 #include <graphene/chain/withdraw_permission_object.hpp>
 #include <graphene/chain/witness_object.hpp>
@@ -104,7 +104,7 @@
 #include <graphene/chain/sidechain_transaction_evaluator.hpp>
 #include <graphene/chain/random_number_evaluator.hpp>
 
-#include <graphene/chain/protocol/fee_schedule.hpp>
+#include <graphene/protocol/fee_schedule.hpp>
 
 #include <fc/uint128.hpp>
 #include <fc/crypto/digest.hpp>
@@ -152,8 +152,8 @@ const uint8_t operation_history_object::type_id;
 const uint8_t proposal_object::space_id;
 const uint8_t proposal_object::type_id;
 
-const uint8_t transaction_object::space_id;
-const uint8_t transaction_object::type_id;
+const uint8_t transaction_history_object::space_id;
+const uint8_t transaction_history_object::type_id;
 
 const uint8_t vesting_balance_object::space_id;
 const uint8_t vesting_balance_object::type_id;
@@ -680,7 +680,7 @@ void database::init_genesis(const genesis_state_type& genesis_state)
       p.time = genesis_state.initial_timestamp;
       p.dynamic_flags = 0;
       p.witness_budget = 0;
-      p.recent_slots_filled = fc::uint128::max_value();
+      p.recent_slots_filled = std::numeric_limits<fc::uint128_t>::max();
    });
    create<global_betting_statistics_object>([&](global_betting_statistics_object& betting_statistics) {
       betting_statistics.number_of_active_events = 0;
@@ -903,7 +903,7 @@ void database::init_genesis(const genesis_state_type& genesis_state)
    for( const auto& handout : genesis_state.initial_balances )
    {
       const auto asset_id = get_asset_id(handout.asset_symbol);
-      create<balance_object>([&handout,&get_asset_id,total_allocation,asset_id](balance_object& b) {
+      create<balance_object>([&handout,total_allocation,asset_id](balance_object& b) {
          b.balance = asset(handout.amount, asset_id);
          b.owner = handout.owner;
       });
@@ -1049,7 +1049,7 @@ void database::init_genesis(const genesis_state_type& genesis_state)
 
       _wso.last_scheduling_block = 0;
 
-      _wso.recent_slots_filled = fc::uint128::max_value();
+      _wso.recent_slots_filled = std::numeric_limits<fc::uint128_t>::max();
 
       // for shuffled
       for( const witness_id_type& wid : get_global_properties().active_witnesses )
@@ -1076,7 +1076,7 @@ void database::init_genesis(const genesis_state_type& genesis_state)
 
       _sso.last_scheduling_block = 0;
 
-      _sso.recent_slots_filled = fc::uint128::max_value();
+      _sso.recent_slots_filled = std::numeric_limits<fc::uint128_t>::max();
    });
    assert( sso.id == son_schedule_id_type() );
 

@@ -1,6 +1,7 @@
 #pragma once
 
-#include <graphene/chain/sidechain_defs.hpp>
+#include <graphene/protocol/sidechain_defs.hpp>
+
 #include <graphene/peerplays_sidechain/peerplays_sidechain_plugin.hpp>
 #include <graphene/peerplays_sidechain/sidechain_net_handler.hpp>
 

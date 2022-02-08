@@ -6,7 +6,12 @@ namespace graphene
     namespace chain
     {
 
-        void offer_item_index::object_inserted(const object &obj)
+        void offer_item_index::object_loaded(const object &obj)
+        {
+            object_created(obj);
+        }
+
+        void offer_item_index::object_created(const object &obj)
         {
             assert(dynamic_cast<const offer_object *>(&obj));
             const offer_object &oo = static_cast<const offer_object &>(obj);

@@ -23,9 +23,11 @@
  */
 #pragma once
 
-#include <graphene/chain/protocol/types.hpp>
+#include <graphene/chain/types.hpp>
+
 #include <graphene/db/object.hpp>
 #include <graphene/db/generic_index.hpp>
+
 #include <boost/multi_index/composite_key.hpp>
 
 namespace graphene { namespace chain {
@@ -57,5 +59,7 @@ typedef multi_index_container<
 
 typedef generic_index<event_group_object, event_group_object_multi_index_type> event_group_object_index;
 } } // graphene::chain
+
+MAP_OBJECT_ID_TO_TYPE(graphene::chain::event_group_object)
 
 FC_REFLECT_DERIVED( graphene::chain::event_group_object, (graphene::db::object), (name)(sport_id) )

@@ -22,10 +22,6 @@
  * THE SOFTWARE.
  */
 
-#include <boost/multiprecision/integer.hpp>
-
-#include <fc/uint128.hpp>
-
 #include <graphene/chain/database.hpp>
 #include <graphene/chain/fba_accumulator_id.hpp>
 #include <graphene/chain/hardfork.hpp>
@@ -50,6 +46,8 @@
 #include <graphene/chain/witness_object.hpp>
 #include <graphene/chain/witness_schedule_object.hpp>
 #include <graphene/chain/worker_object.hpp>
+
+#include <numeric>
 
 namespace graphene { namespace chain {
 
@@ -427,7 +425,7 @@ void database::pay_workers( share_type& budget )
 
    // worker with more votes is preferred
    // if two workers exactly tie for votes, worker with lower ID is preferred
-   std::sort(active_workers.begin(), active_workers.end(), [this](const worker_object& wa, const worker_object& wb) {
+   std::sort(active_workers.begin(), active_workers.end(), [](const worker_object& wa, const worker_object& wb) {
       share_type wa_vote = wa.approving_stake();
       share_type wb_vote = wb.approving_stake();
       if( wa_vote != wb_vote )
@@ -447,10 +445,10 @@ void database::pay_workers( share_type& budget )
       // Note: if there is a good chance that passed_time_count == day_count,
       //       for better performance, can avoid the 128 bit calculation by adding a check.
       //       Since it's not the case on BitShares mainnet, we're not using a check here.
-      fc::uint128 pay(requested_pay.value);
+      fc::uint128_t pay = requested_pay.value;
       pay *= passed_time_count;
       pay /= day_count;
-      requested_pay = pay.to_uint64();
+      requested_pay = pay;
 
       share_type actual_pay = std::min(budget, requested_pay);
       //ilog(" ==> Paying ${a} to worker ${w}", ("w", active_worker.id)("a", actual_pay));
@@ -839,7 +837,7 @@ void database::initialize_budget_record( fc::time_point_sec now, budget_record& 
    budget_u128 >>= GRAPHENE_CORE_ASSET_CYCLE_RATE_BITS;
    share_type budget;
    if( budget_u128 < reserve.value )
-      rec.total_budget = share_type(budget_u128.to_uint64());
+      rec.total_budget = share_type(budget_u128);
    else
       rec.total_budget = reserve;
 
@@ -905,7 +903,7 @@ void database::process_budget()
       if( worker_budget_u128 >= available_funds.value )
          worker_budget = available_funds;
       else
-         worker_budget = worker_budget_u128.to_uint64();
+         worker_budget = worker_budget_u128;
       rec.worker_budget = worker_budget;
       available_funds -= worker_budget;
 
@@ -1050,12 +1048,12 @@ void split_fba_balance(
    fc::uint128_t buyback_amount_128 = fba.accumulated_fba_fees.value;
    buyback_amount_128 *= designated_asset_buyback_pct;
    buyback_amount_128 /= GRAPHENE_100_PERCENT;
-   share_type buyback_amount = buyback_amount_128.to_uint64();
+   share_type buyback_amount = buyback_amount_128;
 
    fc::uint128_t issuer_amount_128 = fba.accumulated_fba_fees.value;
    issuer_amount_128 *= designated_asset_issuer_pct;
    issuer_amount_128 /= GRAPHENE_100_PERCENT;
-   share_type issuer_amount = issuer_amount_128.to_uint64();
+   share_type issuer_amount = issuer_amount_128;
 
    // this assert should never fail
    FC_ASSERT( buyback_amount + issuer_amount <= fba.accumulated_fba_fees );
@@ -1532,7 +1530,7 @@ void schedule_pending_dividend_balances(database& db,
             minimum_amount_to_distribute *= 100 * GRAPHENE_1_PERCENT;
             minimum_amount_to_distribute /= dividend_data.options.minimum_fee_percentage;
             wdump((total_fee_per_asset_in_payout_asset)(dividend_data.options));
-            minimum_shares_to_distribute = minimum_amount_to_distribute.to_uint64();
+            minimum_shares_to_distribute = minimum_amount_to_distribute;
          }
 
          dlog("Processing dividend payments of asset type ${payout_asset_type}, delta balance is ${delta_balance}", ("payout_asset_type", payout_asset_type(db).symbol)("delta_balance", delta_balance));
@@ -1594,7 +1592,7 @@ void schedule_pending_dividend_balances(database& db,
                      fc::uint128_t amount_to_credit(delta_balance.value);
                      amount_to_credit *= holder_balance.amount.value;
                      amount_to_credit /= total_balance_of_dividend_asset.value;
-                     share_type full_shares_to_credit((int64_t) amount_to_credit.to_uint64());
+                     share_type full_shares_to_credit((int64_t) amount_to_credit);
                      share_type shares_to_credit = (uint64_t) floor(full_shares_to_credit.value * vesting_factor);
 
                      if (shares_to_credit < full_shares_to_credit) {
@@ -1631,7 +1629,7 @@ void schedule_pending_dividend_balances(database& db,
                      fc::uint128_t amount_to_credit(delta_balance.value);
                      amount_to_credit *= holder_balance.value;
                      amount_to_credit /= total_balance_of_dividend_asset.value;
-                     share_type shares_to_credit((int64_t) amount_to_credit.to_uint64());
+                     share_type shares_to_credit((int64_t) amount_to_credit);
 
                      remaining_amount_to_distribute = credit_account(db,
                                                                      holder_balance_object.owner,
@@ -1691,7 +1689,7 @@ void schedule_pending_dividend_balances(database& db,
                fc::uint128_t amount_to_debit(remaining_amount_to_recover.value);
                amount_to_debit *= pending_balance_object.pending_balance.value;
                amount_to_debit /= remaining_pending_balances.value;
-               share_type shares_to_debit((int64_t)amount_to_debit.to_uint64());
+               share_type shares_to_debit((int64_t)amount_to_debit);
 
                remaining_amount_to_recover -= shares_to_debit;
                remaining_pending_balances -= pending_balance_object.pending_balance;

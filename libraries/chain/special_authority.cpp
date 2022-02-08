@@ -22,7 +22,7 @@
  * THE SOFTWARE.
  */
 
-#include <graphene/chain/protocol/special_authority.hpp>
+#include <graphene/chain/special_authority.hpp>
 #include <graphene/chain/database.hpp>
 
 #include <fc/io/raw.hpp>

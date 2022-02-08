@@ -34,6 +34,8 @@
 #include <graphene/chain/vesting_balance_object.hpp>
 #include <graphene/chain/exceptions.hpp>
 
+#include <fc/uint128.hpp>
+
 #include <boost/test/unit_test.hpp>
 
 #include "../common/database_fixture.hpp"
@@ -244,7 +246,7 @@ uint64_t pct( uint64_t percentage, uint64_t val )
    fc::uint128_t x = percentage;
    x *= val;
    x /= GRAPHENE_100_PERCENT;
-   return x.to_uint64();
+   return static_cast<uint64_t>(x);
 }
 
 uint64_t pct( uint64_t percentage0, uint64_t percentage1, uint64_t val )

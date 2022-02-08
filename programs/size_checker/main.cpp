@@ -23,10 +23,12 @@
  */
 
 #include <fc/io/json.hpp>
+#include <fc/io/raw.hpp>
 #include <fc/variant.hpp>
 #include <fc/variant_object.hpp>
 
-#include <graphene/chain/protocol/protocol.hpp>
+#include <graphene/protocol/block.hpp>
+#include <graphene/protocol/fee_schedule.hpp>
 
 #include <algorithm>
 #include <iostream>
@@ -34,7 +36,7 @@
 #include <string>
 #include <vector>
 
-using namespace graphene::chain;
+using namespace graphene::protocol;
 
 vector< fc::variant_object > g_op_types;
 
@@ -67,7 +69,7 @@ int main( int argc, char** argv )
 {
    try
    {
-      graphene::chain::operation op;
+      graphene::protocol::operation op;
 
 
       vector<uint64_t> witnesses; witnesses.resize(50);

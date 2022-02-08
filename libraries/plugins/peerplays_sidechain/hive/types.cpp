@@ -25,7 +25,7 @@ public_key_type::public_key_type(const std::string &base58str) {
    auto bin = fc::from_base58(base58str.substr(prefix_len));
    auto bin_key = fc::raw::unpack<binary_key>(bin);
    key_data = bin_key.data;
-   FC_ASSERT(fc::ripemd160::hash(key_data.data, key_data.size())._hash[0] == bin_key.check);
+   FC_ASSERT(fc::ripemd160::hash((const char*)key_data.data(), key_data.size())._hash[0].value() == bin_key.check);
 };
 
 public_key_type::operator fc::ecc::public_key_data() const {
@@ -39,7 +39,7 @@ public_key_type::operator fc::ecc::public_key() const {
 public_key_type::operator std::string() const {
    binary_key k;
    k.data = key_data;
-   k.check = fc::ripemd160::hash(k.data.data, k.data.size())._hash[0];
+   k.check = fc::ripemd160::hash((const char*)k.data.data(), k.data.size())._hash[0].value();
    auto data = fc::raw::pack(k);
    return prefix + fc::to_base58(data.data(), data.size());
 }

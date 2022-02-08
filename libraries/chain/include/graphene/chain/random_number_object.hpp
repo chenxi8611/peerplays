@@ -1,5 +1,7 @@
 #pragma once
 
+#include <graphene/chain/types.hpp>
+
 namespace graphene { namespace chain {
    using namespace graphene::db;
 

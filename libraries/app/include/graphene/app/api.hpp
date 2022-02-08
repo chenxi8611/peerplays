@@ -25,8 +25,8 @@
 
 #include <graphene/app/database_api.hpp>
 
-#include <graphene/chain/protocol/confidential.hpp>
-#include <graphene/chain/protocol/types.hpp>
+#include <graphene/protocol/types.hpp>
+#include <graphene/protocol/confidential.hpp>
 
 #include <graphene/accounts_list/accounts_list_plugin.hpp>
 #include <graphene/market_history/market_history_plugin.hpp>

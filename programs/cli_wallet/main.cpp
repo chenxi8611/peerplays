@@ -29,16 +29,13 @@
 
 #include <fc/io/json.hpp>
 #include <fc/io/stdio.hpp>
-#include <fc/network/http/server.hpp>
 #include <fc/network/http/websocket.hpp>
 #include <fc/rpc/cli.hpp>
-#include <fc/rpc/http_api.hpp>
 #include <fc/rpc/websocket_api.hpp>
-#include <fc/smart_ref_impl.hpp>
 
 #include <graphene/app/api.hpp>
 #include <graphene/chain/config.hpp>
-#include <graphene/chain/protocol/protocol.hpp>
+#include <graphene/protocol/protocol.hpp>
 #include <graphene/egenesis/egenesis.hpp>
 #include <graphene/utilities/key_conversion.hpp>
 #include <graphene/wallet/wallet.hpp>
@@ -82,7 +79,8 @@ int main( int argc, char** argv )
          ("rpc-endpoint,r", bpo::value<string>()->implicit_value("127.0.0.1:8091"), "Endpoint for wallet websocket RPC to listen on")
          ("rpc-tls-endpoint,t", bpo::value<string>()->implicit_value("127.0.0.1:8092"), "Endpoint for wallet websocket TLS RPC to listen on")
          ("rpc-tls-certificate,c", bpo::value<string>()->implicit_value("server.pem"), "PEM certificate for wallet websocket TLS RPC")
-         ("rpc-http-endpoint,H", bpo::value<string>()->implicit_value("127.0.0.1:8093"), "Endpoint for wallet HTTP RPC to listen on")
+         ("rpc-http-endpoint,H", bpo::value<string>()->implicit_value("127.0.0.1:8093"),
+                                 "Endpoint for wallet HTTP RPC to listen on (DEPRECATED, use rpc-endpoint instead)")
          ("daemon,d", "Run the wallet in daemon mode" )
          ("wallet-file,w", bpo::value<string>()->implicit_value("wallet.json"), "wallet to load")
          ("chain-id", bpo::value<string>(), "chain ID to connect to");
@@ -235,7 +233,7 @@ int main( int argc, char** argv )
             wsc->register_api(wapi);
             c->set_session_data( wsc );
          });
-         ilog( "Listening for incoming RPC requests on ${p}", ("p", options.at("rpc-endpoint").as<string>() ));
+         ilog( "Listening for incoming HTTP and WS RPC requests on ${p}", ("p", options.at("rpc-endpoint").as<string>() ));
          _websocket_server->listen( fc::ip::endpoint::from_string(options.at("rpc-endpoint").as<string>()) );
          _websocket_server->start_accept();
       }
@@ -244,36 +242,32 @@ int main( int argc, char** argv )
       if( options.count( "rpc-tls-certificate" ) )
          cert_pem = options.at("rpc-tls-certificate").as<string>();
 
-      std::shared_ptr<fc::http::websocket_tls_server> _websocket_tls_server;
+      auto _websocket_tls_server = std::make_shared<fc::http::websocket_tls_server>(cert_pem, "");
       if( options.count("rpc-tls-endpoint") )
       {
-         _websocket_tls_server = std::make_shared<fc::http::websocket_tls_server>(cert_pem);
          _websocket_tls_server->on_connection([&]( const fc::http::websocket_connection_ptr& c ){
             auto wsc = std::make_shared<fc::rpc::websocket_api_connection>(c, GRAPHENE_MAX_NESTED_OBJECTS);
             wsc->register_api(wapi);
             c->set_session_data( wsc );
          });
-         ilog( "Listening for incoming TLS RPC requests on ${p}", ("p", options.at("rpc-tls-endpoint").as<string>() ));
+         ilog( "Listening for incoming HTTPS and WSS RPC requests on ${p}",
+               ("p", options.at("rpc-tls-endpoint").as<string>()) );
          _websocket_tls_server->listen( fc::ip::endpoint::from_string(options.at("rpc-tls-endpoint").as<string>()) );
          _websocket_tls_server->start_accept();
       }
 
-      auto _http_server = std::make_shared<fc::http::server>();
+      auto _http_ws_server = std::make_shared<fc::http::websocket_server>();
       if( options.count("rpc-http-endpoint" ) )
       {
-         ilog( "Listening for incoming HTTP RPC requests on ${p}", ("p", options.at("rpc-http-endpoint").as<string>() ) );
-         _http_server->listen( fc::ip::endpoint::from_string( options.at( "rpc-http-endpoint" ).as<string>() ) );
-         //
-         // due to implementation, on_request() must come AFTER listen()
-         //
-         _http_server->on_request(
-            [&wapi]( const fc::http::request& req, const fc::http::server::response& resp )
-            {
-               std::shared_ptr< fc::rpc::http_api_connection > conn =
-                  std::make_shared< fc::rpc::http_api_connection >( GRAPHENE_MAX_NESTED_OBJECTS );
-               conn->register_api( wapi );
-               conn->on_request( req, resp );
-            } );
+         ilog( "Listening for incoming HTTP and WS RPC requests on ${p}",
+               ("p", options.at("rpc-http-endpoint").as<string>()) );
+         _http_ws_server->on_connection([&wapi]( const fc::http::websocket_connection_ptr& c ){
+            auto wsc = std::make_shared<fc::rpc::websocket_api_connection>(c, GRAPHENE_MAX_NESTED_OBJECTS);
+            wsc->register_api(wapi);
+            c->set_session_data( wsc );
+         });
+         _http_ws_server->listen( fc::ip::endpoint::from_string(options.at("rpc-http-endpoint").as<string>()) );
+         _http_ws_server->start_accept();
       }
 
       if( !options.count( "daemon" ) )
@@ -284,7 +278,7 @@ int main( int argc, char** argv )
       }
       else
       {
-        fc::promise<int>::ptr exit_promise = new fc::promise<int>("UNIX Signal Handler");
+        fc::promise<int>::ptr exit_promise = fc::promise<int>::create("UNIX Signal Handler");
         fc::set_signal_handler([&exit_promise](int signal) {
            exit_promise->set_value(signal);
         }, SIGINT);

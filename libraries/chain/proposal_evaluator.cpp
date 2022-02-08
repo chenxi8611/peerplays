@@ -26,9 +26,9 @@
 #include <graphene/chain/proposal_object.hpp>
 #include <graphene/chain/account_object.hpp>
 #include <graphene/chain/son_proposal_object.hpp>
-#include <graphene/chain/protocol/account.hpp>
-#include <graphene/chain/protocol/fee_schedule.hpp>
-#include <graphene/chain/protocol/tournament.hpp>
+#include <graphene/protocol/account.hpp>
+#include <graphene/protocol/fee_schedule.hpp>
+#include <graphene/protocol/tournament.hpp>
 #include <graphene/chain/exceptions.hpp>
 #include <graphene/chain/hardfork.hpp>
 
@@ -402,7 +402,7 @@ void_result proposal_update_evaluator::do_apply(const proposal_update_operation&
    // Potential optimization: if _executed_proposal is true, we can skip the modify step and make push_proposal skip
    // signature checks. This isn't done now because I just wrote all the proposals code, and I'm not yet 100% sure the
    // required approvals are sufficient to authorize the transaction.
-   d.modify(*_proposal, [&o, &d](proposal_object& p) {
+   d.modify(*_proposal, [&o](proposal_object& p) {
       p.available_active_approvals.insert(o.active_approvals_to_add.begin(), o.active_approvals_to_add.end());
       p.available_owner_approvals.insert(o.owner_approvals_to_add.begin(), o.owner_approvals_to_add.end());
       for( account_id_type id : o.active_approvals_to_remove )

@@ -21,6 +21,9 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+
+#define BOOST_TEST_MODULE Peerplays Betting Tests
+
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 // disable auto_ptr deprecated warning, see https://svn.boost.org/trac10/ticket/11622
@@ -35,7 +38,7 @@
 #include <fc/log/appender.hpp>
 #include <openssl/rand.h>
 
-#include <graphene/chain/protocol/proposal.hpp>
+#include <graphene/protocol/proposal.hpp>
 
 #include <graphene/utilities/tempdir.hpp>
 #include <graphene/chain/asset_object.hpp>
@@ -2403,6 +2406,7 @@ BOOST_AUTO_TEST_CASE(event_driven_progression_errors_2)
       // as soon as a block is generated, the betting market group will settle, and the market
       // and group will cease to exist.  The event should transition to "settled", then removed
       fc::variants objects_from_bookie = bookie_api.get_objects({capitals_vs_blackhawks_id});
+      wdump((objects_from_bookie)(capitals_vs_blackhawks_id(db)));
       BOOST_CHECK_EQUAL(objects_from_bookie[0]["status"].as<std::string>(1), "settled");
 
       // we can't go back to upcoming, in_progress, frozen, or finished once we're canceled.
@@ -2855,21 +2859,20 @@ BOOST_AUTO_TEST_CASE( wimbledon_2017_gentelmen_singles_final_test )
 
 BOOST_AUTO_TEST_SUITE_END()
 
+struct GlobalInitializationFixture {
+    GlobalInitializationFixture() {
+        std::srand(time(NULL));
+        std::cout << "Random number generator seeded to " << time(NULL) << std::endl;
 
-
-//#define BOOST_TEST_MODULE "C++ Unit Tests for Graphene Blockchain Database"
-#include <cstdlib>
-#include <iostream>
-#include <boost/test/included/unit_test.hpp>
-
-boost::unit_test::test_suite* init_unit_test_suite(int argc, char* argv[]) {
-    std::srand(time(NULL));
-    std::cout << "Random number generator seeded to " << time(NULL) << std::endl;
-
-    // betting operations don't take effect until HARDFORK 1000
-    GRAPHENE_TESTING_GENESIS_TIMESTAMP =
-            (HARDFORK_1000_TIME.sec_since_epoch() + 15) / GRAPHENE_DEFAULT_BLOCK_INTERVAL * GRAPHENE_DEFAULT_BLOCK_INTERVAL;
-
-    return nullptr;
-}
+        // The genesis timestamp (GRAPHENE_TESTING_GENESIS_TIMESTAMP),
+        // which is verified by database::init_genesis(),
+        // should maintain compatibility with the periodicity
+        // expected from the GRAPHENE_DEFAULT_BLOCK_INTERVAL.
+        //
+        // betting operations don't take effect until HARDFORK 1000
+        GRAPHENE_TESTING_GENESIS_TIMESTAMP =
+               (HARDFORK_1000_TIME.sec_since_epoch() + 15) / GRAPHENE_DEFAULT_BLOCK_INTERVAL * GRAPHENE_DEFAULT_BLOCK_INTERVAL;
+    }
+};
+BOOST_TEST_GLOBAL_FIXTURE(GlobalInitializationFixture);
 

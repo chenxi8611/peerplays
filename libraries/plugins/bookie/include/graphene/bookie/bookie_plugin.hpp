@@ -23,8 +23,10 @@
  */
 #pragma once
 
-#include <graphene/app/plugin.hpp>
 #include <graphene/chain/database.hpp>
+#include <graphene/chain/event_object.hpp>
+
+#include <graphene/app/plugin.hpp>
 
 #include <fc/thread/future.hpp>
 

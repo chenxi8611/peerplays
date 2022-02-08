@@ -1,6 +1,7 @@
-#include <graphene/chain/protocol/operations.hpp>
 #include <graphene/chain/evaluator.hpp>
 #include <graphene/chain/database.hpp>
+
+#include <graphene/protocol/operations.hpp>
 
 namespace graphene
 {

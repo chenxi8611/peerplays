@@ -1,4 +1,4 @@
-#include <graphene/chain/protocol/tournament.hpp>
+#include <graphene/protocol/tournament.hpp>
 #include <graphene/chain/tournament_object.hpp>
 #include <graphene/chain/game_object.hpp>
 #include <graphene/chain/tournament_evaluator.hpp>
@@ -106,8 +106,7 @@ namespace graphene { namespace chain {
    object_id_type tournament_create_evaluator::do_apply( const tournament_create_operation& op )
    { try {
       const tournament_details_object& tournament_details =
-        db().create<tournament_details_object>( [&]( tournament_details_object& a ) {
-        });
+        db().create<tournament_details_object>( [&]( tournament_details_object& ) { });
 
       const tournament_object& new_tournament =
         db().create<tournament_object>( [&]( tournament_object& t ) {

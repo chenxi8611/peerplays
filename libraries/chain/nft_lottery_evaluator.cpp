@@ -1,8 +1,9 @@
 #include <graphene/chain/nft_lottery_evaluator.hpp>
 #include <graphene/chain/nft_object.hpp>
-#include <graphene/chain/protocol/operations.hpp>
 #include <graphene/chain/account_role_object.hpp>
 #include <graphene/chain/hardfork.hpp>
+
+#include <graphene/protocol/operations.hpp>
 
 namespace graphene
 {

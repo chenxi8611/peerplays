@@ -8,6 +8,15 @@ set( CLI_CLIENT_EXECUTABLE_NAME graphene_client )
 set( GUI_CLIENT_EXECUTABLE_NAME Peerplays )
 set( CUSTOM_URL_SCHEME "gcs" )
 set( INSTALLER_APP_ID "68ad7005-8eee-49c9-95ce-9eed97e5b347" )
+set( CMAKE_CXX_STANDARD 14 )
+
+set( GRAPHENE_BUILD_DYNAMIC_LIBRARIES OFF CACHE BOOL
+     "Whether to build dynamic libraries instead of static. Applies only to chain, db, protocol, net, and utilities" )
+if( GRAPHENE_BUILD_DYNAMIC_LIBRARIES )
+    set( CMAKE_POSITION_INDEPENDENT_CODE ON )
+    set( CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib" )
+endif()
+set( FC_BUILD_DYNAMIC_LIBRARIES ${GRAPHENE_BUILD_DYNAMIC_LIBRARIES} CACHE BOOL "Whether FC should build as a dynamic library rather than static" )
 
 # http://stackoverflow.com/a/18369825
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
@@ -83,13 +92,17 @@ LIST(APPEND BOOST_COMPONENTS thread
                              system
                              filesystem
                              program_options
-                             signals
                              serialization
                              chrono
                              unit_test_framework
                              context
                              locale)
-SET( Boost_USE_STATIC_LIBS ON CACHE STRING "ON or OFF" )
+
+IF( ${GRAPHENE_BUILD_DYNAMIC_LIBRARIES} )
+  SET( Boost_USE_STATIC_LIBS OFF CACHE STRING "ON or OFF" )
+ELSE()
+  SET( Boost_USE_STATIC_LIBS ON CACHE STRING "ON or OFF" )
+ENDIF()
 
 IF( WIN32 )
   SET(BOOST_ROOT $ENV{BOOST_ROOT})
@@ -143,11 +156,11 @@ else( WIN32 ) # Apple AND Linux
     if( APPLE )
         # Apple Specific Options Here
         message( STATUS "Configuring Peerplays on OS X" )
-        set( CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -std=c++11 -stdlib=libc++ -Wall" )
+        set( CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -stdlib=libc++ -Wall" )
     else( APPLE )
         # Linux Specific Options Here
         message( STATUS "Configuring Peerplays on Linux" )
-        set( CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -std=c++11 -Wall" )
+        set( CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -Wall" )
         set( rt_library rt )
         #set( pthread_library pthread)
         set(CMAKE_LINKER_FLAGS "-pthread" CACHE STRING "Linker Flags" FORCE)

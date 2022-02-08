@@ -152,7 +152,7 @@ fc::variants bookie_api_impl::get_objects(const vector<object_id_type>& ids) con
    result.reserve(ids.size());
 
    std::transform(ids.begin(), ids.end(), std::back_inserter(result),
-                  [this, &db](object_id_type id) -> fc::variant {
+                  [&db](object_id_type id) -> fc::variant {
       switch (id.type())
       {
       case event_id_type::type_id:

@@ -152,8 +152,8 @@ static optional<std::pair<account_id_type, operation_history_id_type>> get_accou
 {
    FC_ASSERT( dynamic_cast<const account_transaction_history_object*>(&obj) );
    const account_transaction_history_object& ath = static_cast<const account_transaction_history_object&>(obj);
-   const operation_history_object& oho = db.get<operation_history_object>( ath.operation_id );
-   if( oho.op.which() == operation::tag<affiliate_payout_operation>::value )
+   const operation_history_object* oho = db.find( ath.operation_id );
+   if( oho != nullptr && oho->op.which() == operation::tag<affiliate_payout_operation>::value )
       return std::make_pair( ath.account, ath.operation_id );
    return optional<std::pair<account_id_type, operation_history_id_type>>();
 }

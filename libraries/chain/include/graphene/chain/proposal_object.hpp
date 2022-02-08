@@ -23,13 +23,16 @@
  */
 #pragma once
 
-#include <graphene/chain/protocol/transaction.hpp>
+#include <graphene/protocol/transaction.hpp>
 #include <graphene/chain/transaction_evaluation_state.hpp>
 
 #include <graphene/db/generic_index.hpp>
 #include <boost/multi_index/composite_key.hpp>
 
 namespace graphene { namespace chain {
+   using namespace graphene::protocol;
+   using namespace graphene::db;
+
    class database;
 
 /**
@@ -59,7 +62,7 @@ class proposal_object : public abstract_object<proposal_object>
 };
 
 /**
- *  @brief tracks all of the proposal objects that requrie approval of
+ *  @brief tracks all of the proposal objects that require approval of
  *  an individual account.   
  *
  *  @ingroup object
@@ -72,7 +75,8 @@ class proposal_object : public abstract_object<proposal_object>
 class required_approval_index : public secondary_index
 {
    public:
-      virtual void object_inserted( const object& obj ) override;
+      virtual void object_loaded( const object& obj ) override;
+      virtual void object_created( const object& obj ) override;
       virtual void object_removed( const object& obj ) override;
       virtual void about_to_modify( const object& before ) override{};
       virtual void object_modified( const object& after  ) override{};
@@ -93,6 +97,8 @@ typedef boost::multi_index_container<
 typedef generic_index<proposal_object, proposal_multi_index_container> proposal_index;
 
 } } // graphene::chain
+
+MAP_OBJECT_ID_TO_TYPE(graphene::chain::proposal_object)
 
 FC_REFLECT_DERIVED( graphene::chain::proposal_object, (graphene::chain::object),
                     (expiration_time)(review_period_time)(proposed_transaction)(required_active_approvals)

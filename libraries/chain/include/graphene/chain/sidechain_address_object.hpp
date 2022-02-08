@@ -1,13 +1,15 @@
 #pragma once
-#include <graphene/chain/protocol/types.hpp>
 #include <graphene/db/object.hpp>
 #include <graphene/db/generic_index.hpp>
 
-#include <graphene/chain/sidechain_defs.hpp>
+#include <graphene/protocol/types.hpp>
+#include <graphene/protocol/sidechain_defs.hpp>
+
 #include <boost/multi_index/composite_key.hpp>
 
 namespace graphene { namespace chain {
    using namespace graphene::db;
+   using namespace graphene::protocol;
 
    /**
     * @class sidechain_address_object
@@ -85,6 +87,8 @@ namespace graphene { namespace chain {
    using sidechain_address_index = generic_index<sidechain_address_object, sidechain_address_multi_index_type>;
 
 } } // graphene::chain
+
+MAP_OBJECT_ID_TO_TYPE(graphene::chain::sidechain_address_object)
 
 FC_REFLECT_DERIVED( graphene::chain::sidechain_address_object, (graphene::db::object),
                     (sidechain_address_account) (sidechain)

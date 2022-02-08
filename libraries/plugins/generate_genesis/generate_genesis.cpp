@@ -296,12 +296,12 @@ void generate_genesis_plugin::generate_snapshot()
     auto balance_iter = by_effective_balance_index.begin();
     for (; balance_iter != by_effective_balance_index.end(); ++balance_iter)
     {
-        fc::uint128 share_drop_amount = total_amount_to_distribute.value;
+        fc::uint128_t share_drop_amount = total_amount_to_distribute.value;
         share_drop_amount *= balance_iter->get_effective_balance().value;
         share_drop_amount /= total_bts_balance.value;
-        if (!share_drop_amount.to_uint64())
+        if (!share_drop_amount)
             break; // balances are decreasing, so every balance after will also round to zero
-        total_shares_dropped += share_drop_amount.to_uint64();
+        total_shares_dropped += share_drop_amount;
         effective_total_bts_balance += balance_iter->get_effective_balance();
     }
 
@@ -312,10 +312,10 @@ void generate_genesis_plugin::generate_snapshot()
 
     do {
         --balance_iter;
-        fc::uint128 share_drop_amount = remaining_amount_to_distribute.value;
+        fc::uint128_t share_drop_amount = remaining_amount_to_distribute.value;
         share_drop_amount *= balance_iter->get_effective_balance().value;
         share_drop_amount /= bts_balance_remaining.value;
-        graphene::chain::share_type amount_distributed =  share_drop_amount.to_uint64();
+        graphene::chain::share_type amount_distributed =  share_drop_amount;
 
         by_effective_balance_index.modify(balance_iter, [&](my_account_balance_object& balance_object) {
             balance_object.sharedrop += amount_distributed;

@@ -1,12 +1,14 @@
+#include <graphene/protocol/operations.hpp>
+
 #include <graphene/chain/offer_evaluator.hpp>
 #include <graphene/chain/account_object.hpp>
 #include <graphene/chain/offer_object.hpp>
 #include <graphene/chain/nft_object.hpp>
-#include <graphene/chain/protocol/operations.hpp>
 #include <graphene/chain/account_role_object.hpp>
 #include <graphene/chain/exceptions.hpp>
 #include <graphene/chain/hardfork.hpp>
 #include <graphene/chain/is_authorized_asset.hpp>
+
 #include <iostream>
 
 namespace graphene
@@ -94,7 +96,6 @@ namespace graphene
                 auto now = d.head_block_time();
                 FC_ASSERT(now >= HARDFORK_NFT_TIME, "Not allowed until NFT HF");
                 const auto &offer = op.offer_id(d);
-                op.bidder(d);
                 for (const auto &item : offer.item_ids)
                 {
                     const auto &nft_obj = item(d);

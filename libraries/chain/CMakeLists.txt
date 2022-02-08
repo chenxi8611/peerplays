@@ -6,31 +6,33 @@ set_source_files_properties( "${CMAKE_CURRENT_BINARY_DIR}/include/graphene/chain
 add_dependencies( build_hardfork_hpp cat-parts )
 
 file(GLOB HEADERS "include/graphene/chain/*.hpp")
-file(GLOB PROTOCOL_HEADERS "include/graphene/chain/protocol/*.hpp")
+list(APPEND HEADERS "${CMAKE_CURRENT_BINARY_DIR}/include/graphene/chain/hardfork.hpp")
 
 file(GLOB CPP_FILES "*.cpp")
-file(GLOB PROTOCOL_CPP_FILES "protocol/*.cpp")
 
 #if( GRAPHENE_DISABLE_UNITY_BUILD )
    list(FILTER CPP_FILES EXCLUDE REGEX "[/]database[.]cpp$")
    #message ("--- ${CPP_FILES}")
    message( STATUS "Graphene database unity build disabled" )
 #else( GRAPHENE_DISABLE_UNITY_BUILD )
-#   list(FILTER CPP_FILES EXCLUDE REGEX ".*db_.*[.]cpp$")
-#   #message ("--- ${CPP_FILES}")
+#   set( GRAPHENE_DB_FILES
+#        database.cpp )
 #   message( STATUS "Graphene database unity build enabled" )
 #endif( GRAPHENE_DISABLE_UNITY_BUILD )
 
-add_library( graphene_chain
-             ${CPP_FILES}
-             ${PROTOCOL_CPP_FILES}
-             ${HEADERS}
-             ${PROTOCOL_HEADERS}
-             "${CMAKE_CURRENT_BINARY_DIR}/include/graphene/chain/hardfork.hpp"
-           )
+set( GRAPHENE_CHAIN_FILES
+     ${CPP_FILES}
+     ${HEADERS}
+     "${CMAKE_CURRENT_BINARY_DIR}/include/graphene/chain/hardfork.hpp"
+   )
+if (NOT ${GRAPHENE_BUILD_DYNAMIC_LIBRARIES})
+    add_library( graphene_chain ${GRAPHENE_CHAIN_FILES} )
+else()
+    add_library( graphene_chain SHARED ${GRAPHENE_CHAIN_FILES} )
+endif()
 
 add_dependencies( graphene_chain build_hardfork_hpp )
-target_link_libraries( graphene_chain graphene_db )
+target_link_libraries( graphene_chain fc graphene_db graphene_protocol )
 target_include_directories( graphene_chain
                             PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include" "${CMAKE_CURRENT_BINARY_DIR}/include" )
 
@@ -46,4 +48,3 @@ INSTALL( TARGETS
    ARCHIVE DESTINATION lib
 )
 INSTALL( FILES ${HEADERS} DESTINATION "include/graphene/chain" )
-INSTALL( FILES ${PROTOCOL_HEADERS} DESTINATION "include/graphene/chain/protocol" )

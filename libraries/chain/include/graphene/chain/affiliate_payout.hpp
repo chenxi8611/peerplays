@@ -23,8 +23,8 @@
  */
 #pragma once
 
-#include <graphene/chain/protocol/asset.hpp>
-#include <graphene/chain/protocol/affiliate.hpp>
+#include <graphene/protocol/asset.hpp>
+#include <graphene/protocol/affiliate.hpp>
 #include <graphene/chain/betting_market_object.hpp>
 #include <graphene/chain/tournament_object.hpp>
 

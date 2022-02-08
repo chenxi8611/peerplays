@@ -1,5 +1,9 @@
 #pragma once
-#include <graphene/chain/protocol/operations.hpp>
+
+#include <graphene/chain/types.hpp>
+
+#include <graphene/protocol/operations.hpp>
+
 #include <graphene/db/generic_index.hpp>
 
 namespace graphene
@@ -56,7 +60,8 @@ namespace graphene
         class offer_item_index : public secondary_index
         {
         public:
-            virtual void object_inserted(const object &obj) override;
+            virtual void object_loaded(const object &obj) override;
+            virtual void object_created(const object &obj) override;
             virtual void object_removed(const object &obj) override;
             virtual void about_to_modify(const object &before) override{};
             virtual void object_modified(const object &after) override;
@@ -98,6 +103,9 @@ namespace graphene
 
     } // namespace chain
 } // namespace graphene
+
+MAP_OBJECT_ID_TO_TYPE(graphene::chain::offer_object)
+MAP_OBJECT_ID_TO_TYPE(graphene::chain::offer_history_object)
 
 FC_REFLECT_DERIVED(graphene::chain::offer_object, (graphene::db::object),
                    (issuer)(item_ids)(bidder)(bid_price)(minimum_price)(

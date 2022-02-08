@@ -709,7 +709,7 @@ void database_fixture::issue_uia( account_id_type recipient_id, asset amount )
 }
 
 void database_fixture::change_fees(
-   const flat_set< fee_parameters >& new_params,
+   const fee_parameters::flat_set_type& new_params,
    uint32_t new_scale /* = 0 */
    )
 {
@@ -1632,6 +1632,7 @@ void database_fixture::resolve_betting_market_group(betting_market_group_id_type
    betting_market_group_resolve_operation betting_market_group_resolve_op;
    betting_market_group_resolve_op.betting_market_group_id = betting_market_group_id;
    betting_market_group_resolve_op.resolutions = resolutions;
+   wdump((resolutions)(betting_market_group_resolve_op));
    process_operation_by_witnesses(betting_market_group_resolve_op);
 } FC_CAPTURE_AND_RETHROW( (betting_market_group_id)(resolutions) ) }
 

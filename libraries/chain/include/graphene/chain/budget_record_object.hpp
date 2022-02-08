@@ -22,7 +22,9 @@
  * THE SOFTWARE.
  */
 #pragma once
-#include <graphene/chain/protocol/types.hpp>
+#include <graphene/chain/types.hpp>
+
+#include <graphene/db/object.hpp>
 #include <graphene/db/generic_index.hpp>
 
 namespace graphene { namespace chain {
@@ -66,6 +68,8 @@ class budget_record_object : public graphene::db::abstract_object<budget_record_
 };
 
 } }
+
+MAP_OBJECT_ID_TO_TYPE(graphene::chain::budget_record_object)
 
 FC_REFLECT(graphene::chain::budget_record,
    (time_since_last_budget)

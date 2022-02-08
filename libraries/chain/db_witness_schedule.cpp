@@ -22,12 +22,14 @@
  * THE SOFTWARE.
  */
 
+#include <graphene/protocol/son_info.hpp>
 #include <graphene/chain/database.hpp>
 #include <graphene/chain/global_property_object.hpp>
 #include <graphene/chain/witness_object.hpp>
 #include <graphene/chain/witness_schedule_object.hpp>
 #include <graphene/chain/son_object.hpp>
-#include <graphene/chain/son_info.hpp>
+
+#include <fc/popcount.hpp>
 
 namespace graphene { namespace chain {
 
@@ -267,7 +269,7 @@ void database::update_witness_schedule(const signed_block& next_block)
    modify(wso, [&](witness_schedule_object& _wso)
    {
       _wso.slots_since_genesis += schedule_slot;
-      witness_scheduler_rng rng(wso.rng_seed.data, _wso.slots_since_genesis);
+      witness_scheduler_rng rng(wso.rng_seed.data(), _wso.slots_since_genesis);
 
       _wso.scheduler._min_token_count = std::max(int(gpo.active_witnesses.size()) / 2, 1);
 
@@ -332,7 +334,7 @@ void database::update_son_schedule(const signed_block& next_block)
    modify(sso, [&](son_schedule_object& _sso)
    {
       _sso.slots_since_genesis += schedule_slot;
-      witness_scheduler_rng rng(sso.rng_seed.data, _sso.slots_since_genesis);
+      witness_scheduler_rng rng(sso.rng_seed.data(), _sso.slots_since_genesis);
 
       _sso.scheduler._min_token_count = std::max(int(gpo.active_sons.size()) / 2, 1);
 
@@ -391,12 +393,12 @@ uint32_t database::witness_participation_rate()const
     if (gpo.parameters.witness_schedule_algorithm == GRAPHENE_WITNESS_SHUFFLED_ALGORITHM)
     {
        const dynamic_global_property_object& dpo = get_dynamic_global_properties();
-       return uint64_t(GRAPHENE_100_PERCENT) * dpo.recent_slots_filled.popcount() / 128;
+       return uint64_t(GRAPHENE_100_PERCENT) * fc::popcount(dpo.recent_slots_filled) / 128;
     }
     if (gpo.parameters.witness_schedule_algorithm == GRAPHENE_WITNESS_SCHEDULED_ALGORITHM)
     {
        const witness_schedule_object& wso = get_witness_schedule_object();
-       return uint64_t(GRAPHENE_100_PERCENT) * wso.recent_slots_filled.popcount() / 128;
+       return uint64_t(GRAPHENE_100_PERCENT) * fc::popcount(wso.recent_slots_filled) / 128;
     }
     return 0;
 }

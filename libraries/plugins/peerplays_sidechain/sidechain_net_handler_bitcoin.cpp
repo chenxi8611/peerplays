@@ -11,11 +11,12 @@
 #include <fc/log/logger.hpp>
 #include <fc/network/ip.hpp>
 
+#include <graphene/protocol/son_info.hpp>
 #include <graphene/chain/account_object.hpp>
-#include <graphene/chain/protocol/son_wallet.hpp>
 #include <graphene/chain/sidechain_transaction_object.hpp>
-#include <graphene/chain/son_info.hpp>
 #include <graphene/chain/son_wallet_object.hpp>
+#include <graphene/protocol/son_wallet.hpp>
+#include <graphene/protocol/son_info.hpp>
 #include <graphene/peerplays_sidechain/bitcoin/bitcoin_address.hpp>
 #include <graphene/peerplays_sidechain/bitcoin/bitcoin_transaction.hpp>
 #include <graphene/peerplays_sidechain/bitcoin/serialize.hpp>

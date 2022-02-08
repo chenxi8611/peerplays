@@ -24,8 +24,8 @@
 
 #include <graphene/chain/genesis_state.hpp>
 
-// these are required to serialize a genesis_state
-#include <graphene/chain/protocol/fee_schedule.hpp>
+// this is required to serialize a genesis_state
+#include <graphene/protocol/fee_schedule.hpp>
 
 namespace graphene { namespace chain {
 

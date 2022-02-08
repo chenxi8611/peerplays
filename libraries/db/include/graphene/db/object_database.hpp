@@ -75,6 +75,10 @@ namespace graphene { namespace db {
          const index&  get_index()const { return get_index(T::space_id,T::type_id); }
          const index&  get_index(uint8_t space_id, uint8_t type_id)const;
          const index&  get_index(object_id_type id)const { return get_index(id.space(),id.type()); }
+         template<typename T>
+         const index* find_index()const { return find_index(T::space_id,T::type_id); }
+         const index* find_index(object_id_type id)const { return find_index(id.space(), id.type()); }
+         const index* find_index(uint8_t space_id, uint8_t type_id)const;
          /// @}
 
          const object& get_object( object_id_type id )const;
@@ -121,11 +125,15 @@ namespace graphene { namespace db {
             return static_cast<const T*>(obj);
          }
 
-         template<uint8_t SpaceID, uint8_t TypeID, typename T>
-         const T* find( object_id<SpaceID,TypeID,T> id )const { return find<T>(id); }
+         template<uint8_t SpaceID, uint8_t TypeID>
+         auto find( object_id<SpaceID,TypeID> id )const -> const object_downcast_t<decltype(id)>* {
+             return find<object_downcast_t<decltype(id)>>(id);
+         }
 
-         template<uint8_t SpaceID, uint8_t TypeID, typename T>
-         const T& get( object_id<SpaceID,TypeID,T> id )const { return get<T>(id); }
+         template<uint8_t SpaceID, uint8_t TypeID>
+         auto get( object_id<SpaceID,TypeID> id )const -> const object_downcast_t<decltype(id)>& {
+             return get<object_downcast_t<decltype(id)>>(id);
+         }
 
          template<typename IndexType>
          IndexType* add_index()
@@ -137,6 +145,43 @@ namespace graphene { namespace db {
             unique_ptr<index> indexptr( new IndexType(*this) );
             _index[ObjectType::space_id][ObjectType::type_id] = std::move(indexptr);
             return static_cast<IndexType*>(_index[ObjectType::space_id][ObjectType::type_id].get());
+         }
+
+         template<typename SecondaryIndexType, typename PrimaryIndexType = typename SecondaryIndexType::watched_index>
+         SecondaryIndexType* add_secondary_index()
+         {
+            return get_mutable_index_type<PrimaryIndexType>().template add_secondary_index<SecondaryIndexType>();
+         }
+         template<typename SecondaryIndexType>
+         SecondaryIndexType* add_secondary_index(const uint8_t space_id, const uint8_t type_id)
+         {
+            auto* base_primary = dynamic_cast<base_primary_index*>(&get_mutable_index(space_id, type_id));
+            FC_ASSERT(base_primary != nullptr,
+                      "Cannot add secondary index: index for space ID ${S} and type ID ${T} does not support secondary indexes.",
+                      ("S", space_id)("T", type_id));
+            return base_primary->template add_secondary_index<SecondaryIndexType>();
+         }
+
+         template<typename PrimaryIndexType>
+         void delete_secondary_index(const secondary_index& secondary) {
+            get_mutable_index_type<PrimaryIndexType>().delete_secondary_index(secondary);
+         }
+         void delete_secondary_index(const uint8_t space_id, const uint8_t type_id, const secondary_index& secondary) {
+            auto* base_primary = dynamic_cast<base_primary_index*>(&get_mutable_index(space_id, type_id));
+            FC_ASSERT(base_primary != nullptr,
+                      "Cannot add secondary index: index for space ID ${S} and type ID ${T} does not support secondary indexes.",
+                      ("S", space_id)("T", type_id));
+            base_primary->delete_secondary_index(secondary);
+         }
+
+         // Inspect each index in an object space. F is a callable taking a const index&
+         template<typename F>
+         void inspect_all_indexes(uint8_t space_id, F&& f) const {
+             FC_ASSERT(_index.size() > space_id, "Cannot inspect indexes in space ID ${ID}: no such object space",
+                       ("ID", space_id));
+             for (const auto& ptr : _index[space_id])
+                 if (ptr != nullptr)
+                     f((const index&)(*ptr));
          }
 
          void pop_undo();

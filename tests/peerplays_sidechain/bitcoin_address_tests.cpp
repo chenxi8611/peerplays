@@ -1,6 +1,7 @@
 #include <boost/test/unit_test.hpp>
 #include <graphene/peerplays_sidechain/bitcoin/bitcoin_address.hpp>
 
+using namespace graphene::protocol;
 using namespace graphene::peerplays_sidechain::bitcoin;
 
 BOOST_AUTO_TEST_SUITE(bitcoin_address_tests)

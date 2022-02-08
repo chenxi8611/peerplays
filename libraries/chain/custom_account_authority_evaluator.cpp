@@ -126,3 +126,4 @@ void_result delete_custom_account_authority_evaluator::do_apply(const custom_acc
 
 } // namespace chain
 } // namespace graphene
+

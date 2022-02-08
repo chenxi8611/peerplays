@@ -26,22 +26,22 @@
 #include <graphene/chain/db_with.hpp>
 #include <graphene/chain/hardfork.hpp>
 
-#include <graphene/chain/protocol/operations.hpp>
-#include <graphene/chain/protocol/betting_market.hpp>
-
 #include <graphene/chain/block_summary_object.hpp>
 #include <graphene/chain/global_property_object.hpp>
 #include <graphene/chain/operation_history_object.hpp>
 
 #include <graphene/chain/proposal_object.hpp>
-#include <graphene/chain/transaction_object.hpp>
+#include <graphene/chain/transaction_history_object.hpp>
 #include <graphene/chain/witness_object.hpp>
-#include <graphene/chain/protocol/fee_schedule.hpp>
 #include <graphene/chain/exceptions.hpp>
 #include <graphene/chain/evaluator.hpp>
 #include <graphene/chain/witness_schedule_object.hpp>
-#include <fc/crypto/digest.hpp>
 
+#include <graphene/protocol/fee_schedule.hpp>
+#include <graphene/protocol/operations.hpp>
+#include <graphene/protocol/betting_market.hpp>
+
+#include <fc/crypto/digest.hpp>
 
 namespace {
 
@@ -819,7 +819,7 @@ processed_transaction database::_apply_transaction(const signed_transaction& trx
          const auto& tapos_block_summary = block_summary_id_type( trx.ref_block_num )(*this);
 
          //Verify TaPoS block summary has correct ID prefix, and that this block's time is not past the expiration
-         FC_ASSERT( trx.ref_block_prefix == tapos_block_summary.block_id._hash[1] );
+         FC_ASSERT( trx.ref_block_prefix == tapos_block_summary.block_id._hash[1].value() );
       }
 
       fc::time_point_sec now = head_block_time();
@@ -832,8 +832,8 @@ processed_transaction database::_apply_transaction(const signed_transaction& trx
    //Insert transaction into unique transactions database.
    if( !(skip & skip_transaction_dupe_check) )
    {
-      create<transaction_object>([&trx_id,&trx](transaction_object& transaction) {
-         transaction.trx_id = trx_id;
+      create<transaction_history_object>([&trx](transaction_history_object& transaction) {
+         transaction.trx_id = trx.id();
          transaction.trx = trx;
       });
    }

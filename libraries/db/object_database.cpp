@@ -25,7 +25,6 @@
 
 #include <fc/io/raw.hpp>
 #include <fc/container/flat.hpp>
-#include <fc/uint128.hpp>
 
 namespace graphene { namespace db {
 
@@ -58,6 +57,13 @@ const index& object_database::get_index(uint8_t space_id, uint8_t type_id)const
    const auto& tmp = _index[space_id][type_id];
    FC_ASSERT( tmp );
    return *tmp;
+}
+
+const index* object_database::find_index(uint8_t space_id, uint8_t type_id) const
+{
+    if (_index.size() > space_id && _index[space_id].size() > type_id)
+        return _index[space_id][type_id].get();
+    return nullptr;
 }
 index& object_database::get_mutable_index(uint8_t space_id, uint8_t type_id)
 {

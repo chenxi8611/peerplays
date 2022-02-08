@@ -22,7 +22,7 @@
  * THE SOFTWARE.
  */
 
-#include <graphene/chain/protocol/fee_schedule.hpp>
+#include <graphene/protocol/fee_schedule.hpp>
 
 #include <graphene/chain/balance_object.hpp>
 #include <graphene/chain/block_summary_object.hpp>
@@ -37,14 +37,19 @@
 #include <graphene/chain/operation_history_object.hpp>
 #include <graphene/chain/son_object.hpp>
 #include <graphene/chain/special_authority_object.hpp>
-#include <graphene/chain/transaction_object.hpp>
+#include <graphene/chain/transaction_history_object.hpp>
 #include <graphene/chain/withdraw_permission_object.hpp>
 #include <graphene/chain/witness_object.hpp>
 #include <graphene/chain/witness_schedule_object.hpp>
 #include <graphene/chain/witness_scheduler.hpp>
 #include <graphene/chain/worker_object.hpp>
+#include <graphene/chain/betting_market_object.hpp>
 
 #include <fc/io/raw.hpp>
+
+namespace graphene { namespace chain {
+FC_IMPLEMENT_EXCEPTION(no_transition, 100000, "Invalid state transition");
+} }
 
 GRAPHENE_EXTERNAL_SERIALIZATION( /*not extern*/, graphene::chain::balance_object )
 GRAPHENE_EXTERNAL_SERIALIZATION( /*not extern*/, graphene::chain::block_summary_object )
@@ -66,7 +71,7 @@ GRAPHENE_EXTERNAL_SERIALIZATION( /*not extern*/, graphene::chain::account_transa
 GRAPHENE_EXTERNAL_SERIALIZATION( /*not extern*/, graphene::chain::son_object )
 GRAPHENE_EXTERNAL_SERIALIZATION( /*not extern*/, graphene::chain::son_statistics_object )
 GRAPHENE_EXTERNAL_SERIALIZATION( /*not extern*/, graphene::chain::special_authority_object )
-GRAPHENE_EXTERNAL_SERIALIZATION( /*not extern*/, graphene::chain::transaction_object )
+GRAPHENE_EXTERNAL_SERIALIZATION( /*not extern*/, graphene::chain::transaction_history_object )
 GRAPHENE_EXTERNAL_SERIALIZATION( /*not extern*/, graphene::chain::withdraw_permission_object )
 GRAPHENE_EXTERNAL_SERIALIZATION( /*not extern*/, graphene::chain::witness_object )
 GRAPHENE_EXTERNAL_SERIALIZATION( /*not extern*/, graphene::chain::witness_scheduler )

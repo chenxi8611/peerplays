@@ -5,7 +5,7 @@
 
 #include <fc/optional.hpp>
 
-#include <graphene/chain/protocol/types.hpp>
+#include <graphene/chain/types.hpp>
 #include <graphene/peerplays_sidechain/hive/asset.hpp>
 #include <graphene/peerplays_sidechain/hive/authority.hpp>
 #include <graphene/peerplays_sidechain/hive/types.hpp>

@@ -1,16 +1,18 @@
 #pragma once
 
+#include <graphene/chain/son_wallet_object.hpp>
+
+#include <graphene/peerplays_sidechain/bitcoin/bitcoin_address.hpp>
 #include <graphene/peerplays_sidechain/sidechain_net_handler.hpp>
 
-#include <string>
-#include <zmq.hpp>
+#include <fc/network/http/connection.hpp>
 
 #include <boost/signals2.hpp>
 
-#include <mutex>
+#include <zmq.hpp>
 
-#include <fc/network/http/connection.hpp>
-#include <graphene/peerplays_sidechain/bitcoin/bitcoin_address.hpp>
+#include <string>
+#include <mutex>
 
 namespace graphene { namespace peerplays_sidechain {
 

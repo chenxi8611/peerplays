@@ -29,6 +29,7 @@
 #include <graphene/chain/hardfork.hpp>
 #include <graphene/chain/is_authorized_asset.hpp>
 #include <graphene/chain/global_betting_statistics_object.hpp>
+#include <graphene/chain/betting_market_object.hpp>
 
 namespace graphene { namespace chain {
 

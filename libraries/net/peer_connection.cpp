@@ -24,8 +24,8 @@
 #include <graphene/net/peer_connection.hpp>
 #include <graphene/net/exceptions.hpp>
 #include <graphene/net/config.hpp>
-#include <graphene/chain/config.hpp>
-#include <graphene/chain/protocol/fee_schedule.hpp>
+#include <graphene/protocol/config.hpp>
+#include <graphene/protocol/fee_schedule.hpp>
 
 #include <fc/io/raw_fwd.hpp>
 #include <fc/thread/thread.hpp>

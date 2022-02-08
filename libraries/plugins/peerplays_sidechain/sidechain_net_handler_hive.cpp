@@ -14,14 +14,13 @@
 #include <fc/io/json.hpp>
 #include <fc/log/logger.hpp>
 #include <fc/network/ip.hpp>
-#include <fc/smart_ref_impl.hpp>
 #include <fc/time.hpp>
 
 #include <graphene/chain/account_object.hpp>
-#include <graphene/chain/protocol/fee_schedule.hpp>
-#include <graphene/chain/protocol/son_wallet.hpp>
-#include <graphene/chain/son_info.hpp>
 #include <graphene/chain/son_wallet_object.hpp>
+#include <graphene/protocol/son_info.hpp>
+#include <graphene/protocol/fee_schedule.hpp>
+#include <graphene/protocol/son_wallet.hpp>
 #include <graphene/peerplays_sidechain/common/utils.hpp>
 #include <graphene/peerplays_sidechain/hive/asset.hpp>
 #include <graphene/peerplays_sidechain/hive/operations.hpp>

@@ -502,3 +502,4 @@ BOOST_FIXTURE_TEST_CASE( saving_keys_wallet_test, cli_fixture )
 }
 
 BOOST_AUTO_TEST_SUITE_END()
+

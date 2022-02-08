@@ -1,5 +1,6 @@
 #pragma once
-#include <graphene/chain/protocol/types.hpp>
+#include <graphene/chain/types.hpp>
+
 #include <graphene/db/object.hpp>
 #include <graphene/db/generic_index.hpp>
 
@@ -23,7 +24,6 @@ namespace graphene { namespace chain {
          time_point_sec valid_to;
    };
 
-   struct by_id;
    struct by_permission_and_op;
    struct by_expiration;
    using custom_account_authority_multi_index_type = multi_index_container<
@@ -51,5 +51,8 @@ namespace graphene { namespace chain {
 
 } } // graphene::chain
 
+MAP_OBJECT_ID_TO_TYPE(graphene::chain::custom_account_authority_object)
+
 FC_REFLECT_DERIVED( graphene::chain::custom_account_authority_object, (graphene::db::object),
                     (permission_id)(operation_type)(valid_from)(valid_to) )
+

@@ -1,6 +1,7 @@
 #pragma once
+#include <graphene/protocol/son.hpp>
+
 #include <graphene/chain/evaluator.hpp>
-#include <graphene/chain/protocol/son.hpp>
 
 namespace graphene { namespace chain {
 

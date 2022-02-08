@@ -42,7 +42,7 @@
 #include <graphene/chain/son_wallet_object.hpp>
 #include <graphene/chain/son_wallet_deposit_object.hpp>
 #include <graphene/chain/son_wallet_withdraw_object.hpp>
-#include <graphene/chain/transaction_object.hpp>
+#include <graphene/chain/transaction_history_object.hpp>
 #include <graphene/chain/vesting_balance_object.hpp>
 #include <graphene/chain/witness_object.hpp>
 #include <graphene/chain/worker_object.hpp>
@@ -242,8 +242,8 @@ bool es_objects_plugin_impl::genesis()
       auto &idx = db.get_index_type<graphene::chain::transaction_index>();
       idx.inspect_all_objects([this, &db](const graphene::db::object &o) {
          auto obj = db.find_object(o.id);
-         auto b = static_cast<const transaction_object *>(obj);
-         prepareTemplate<transaction_object>(*b, "transaction");
+         auto b = static_cast<const transaction_history_object *>(obj);
+         prepareTemplate<transaction_history_object>(*b, "transaction");
       });
    }
    if (_es_objects_vesting_balance) {
@@ -464,14 +464,14 @@ bool es_objects_plugin_impl::index_database(const vector<object_id_type>& ids, s
                else
                   prepareTemplate<son_wallet_withdraw_object>(*ba, "son_wallet_withdraw");
             }
-         } else if (value.is<transaction_object>() && _es_objects_transaction) {
+         } else if (value.is<transaction_history_object>() && _es_objects_transaction) {
             auto obj = db.find_object(value);
-            auto ba = static_cast<const transaction_object *>(obj);
+            auto ba = static_cast<const transaction_history_object *>(obj);
             if (ba != nullptr) {
                if (action == "delete")
                   remove_from_database(ba->id, "transaction");
                else
-                  prepareTemplate<transaction_object>(*ba, "transaction");
+                  prepareTemplate<transaction_history_object>(*ba, "transaction");
             }
          } else if (value.is<vesting_balance_object>() && _es_objects_vesting_balance) {
             auto obj = db.find_object(value);

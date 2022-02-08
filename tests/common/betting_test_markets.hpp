@@ -30,6 +30,8 @@
 
 using namespace graphene::chain;
 
+template<class O> object_id<O::space_id, O::type_id> to_id(const O& o) { return o.id; }
+
 #define CREATE_ICE_HOCKEY_BETTING_MARKET(never_in_play, delay_before_settling) \
   create_sport({{"en", "Ice Hockey"}, {"zh_Hans", "冰球"}, {"ja", "アイスホッケー"}}); \
   generate_blocks(1); \
@@ -149,6 +151,8 @@ struct simple_bet_test_fixture : database_fixture {
    {
       ACTORS( (alice)(bob) );
       CREATE_ICE_HOCKEY_BETTING_MARKET(false, 0);
+      capitals_win_betting_market_id = capitals_win_market_id;
+      blackhawks_win_betting_market_id = blackhawks_win_market_id;
 
       // give alice and bob 10k each
       transfer(account_id_type(), alice_id, asset(10000));

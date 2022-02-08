@@ -3,7 +3,7 @@
 #include <graphene/peerplays_sidechain/bitcoin/types.hpp>
 #include <graphene/peerplays_sidechain/bitcoin/utils.hpp>
 
-using namespace graphene::chain;
+using namespace graphene::protocol;
 
 namespace graphene { namespace peerplays_sidechain { namespace bitcoin {
 
@@ -126,7 +126,7 @@ public:
       return witness_script;
    }
 
-   std::vector<public_key_type> get_keys();
+   std::vector<graphene::protocol::public_key_type> get_keys();
 
 private:
    void create_witness_script();
@@ -217,6 +217,7 @@ public:
 private:
    void create_redeem_script(const fc::ecc::public_key &user_key_data, const std::vector<std::pair<fc::ecc::public_key, uint16_t>> &keys_data);
 
+public:
    uint32_t latency_;
 };
 
@@ -244,6 +245,8 @@ FC_REFLECT_DERIVED(graphene::peerplays_sidechain::bitcoin::btc_one_or_weighted_m
                    (graphene::peerplays_sidechain::bitcoin::bitcoin_address),
                    (redeem_script_)(witness_script_));
 
+/* It is not possible to reflect latency_ because it is private
 FC_REFLECT_DERIVED(graphene::peerplays_sidechain::bitcoin::btc_timelocked_one_or_weighted_multisig_address,
                    (graphene::peerplays_sidechain::bitcoin::btc_one_or_weighted_multisig_address),
                    (latency_));
+*/

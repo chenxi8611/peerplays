@@ -2465,6 +2465,9 @@ class wallet_api
                                              bool broadcast);
       vector<account_role_object> get_account_roles_by_owner(string owner_account_id_or_name) const;
 
+      signed_transaction run_custom_operation(string payer_id_or_name, std::vector<string> required_auths,
+                                              string data, uint16_t id=0, bool broadcast=false);
+
       void dbg_make_uia(string creator, string symbol);
       void dbg_make_mia(string creator, string symbol);
       void dbg_push_blocks( std::string src_filename, uint32_t count );
@@ -2795,4 +2798,5 @@ FC_API( graphene::wallet::wallet_api,
         (get_custom_account_authorities_by_permission_id)
         (get_custom_account_authorities_by_permission_name)
         (get_active_custom_account_authorities_by_operation)
+        (run_custom_operation)
       )

@@ -1,6 +1,10 @@
 *.a
 *.sw*
 
+/build
+/build-*
+
+CMakeLists.txt.user
 *.cmake
 CMakeCache.txt
 CMakeFiles

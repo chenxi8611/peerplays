@@ -2,6 +2,7 @@
 
 #include <fc/crypto/elliptic.hpp>
 #include <fc/crypto/ripemd160.hpp>
+#include <fc/static_variant.hpp>
 
 namespace graphene { namespace peerplays_sidechain { namespace hive {
 
@@ -16,7 +17,7 @@ enum network {
 struct void_t {};
 
 typedef fc::static_variant<void_t> future_extensions;
-typedef fc::flat_set<future_extensions> extensions_type;
+typedef future_extensions::flat_set_type extensions_type;
 
 typedef fc::ecc::private_key private_key_type;
 typedef fc::sha256 chain_id_type;

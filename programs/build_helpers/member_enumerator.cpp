@@ -18,8 +18,8 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
-#include <graphene/chain/protocol/protocol.hpp>
-#include <graphene/chain/protocol/fee_schedule.hpp>
+#include <graphene/protocol/block.hpp>
+#include <graphene/protocol/fee_schedule.hpp>
 #include <graphene/chain/vesting_balance_object.hpp>
 #include <graphene/chain/withdraw_permission_object.hpp>
 #include <graphene/chain/proposal_object.hpp>
@@ -109,7 +109,7 @@ void class_processor::process_class( const static_variant< T... >* dummy )
    }
 }
 
-template<typename IsEnum = fc::false_type>
+template<bool IsEnum>
 struct if_enum
 {
    template< typename T >
@@ -130,7 +130,7 @@ struct if_enum
 };
 
 template<>
-struct if_enum<fc::true_type>
+struct if_enum<true>
 {
    template< typename T >
    static void process_class( class_processor* proc, const T* dummy )
@@ -140,7 +140,7 @@ struct if_enum<fc::true_type>
    }
 };
 
-template<typename IsReflected=fc::false_type>
+template<typename IsReflected=std::false_type>
 struct if_reflected
 {
    template< typename T >
@@ -152,12 +152,12 @@ struct if_reflected
 };
 
 template<>
-struct if_reflected<fc::true_type>
+struct if_reflected<std::true_type>
 {
    template< typename T >
    static void process_class( class_processor* proc, const T* dummy )
    {
-      if_enum< typename fc::reflector<T>::is_enum >::process_class(proc, dummy);
+      if_enum< std::is_enum<T>::value >::process_class(proc, dummy);
    }
 };
 
@@ -216,7 +216,7 @@ int main( int argc, char** argv )
       graphene::member_enumerator::class_processor::process_class<signed_block>(result);
 
       fc::mutable_variant_object mvo;
-      for( const std::pair< std::string, std::vector< std::string > >& e : result )
+      for( const auto& e : result )
       {
          variant v;
          to_variant( e.second, v , 1);

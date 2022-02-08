@@ -48,7 +48,7 @@ public:
    inline asset_id_type get_asset_id()const { return total_payout.asset_id; }
 };
 
-typedef object_id<AFFILIATE_STATS_SPACE_ID, app_reward_object_type, app_reward_object> app_reward_id_type;
+typedef object_id<AFFILIATE_STATS_SPACE_ID, app_reward_object_type> app_reward_id_type;
 
 struct by_asset;
 struct by_app_asset;
@@ -86,7 +86,7 @@ public:
    inline asset_id_type get_asset_id()const { return total_payout.asset_id; }
 };
 
-typedef object_id<AFFILIATE_STATS_SPACE_ID, referral_reward_object_type, referral_reward_object> referral_reward_id_type;
+typedef object_id<AFFILIATE_STATS_SPACE_ID, referral_reward_object_type> referral_reward_id_type;
 
 struct by_referral_asset;
 typedef multi_index_container<

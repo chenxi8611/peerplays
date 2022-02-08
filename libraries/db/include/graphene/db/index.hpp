@@ -129,20 +129,29 @@ namespace graphene { namespace db {
          }
 
          virtual void               inspect_all_objects(std::function<void(const object&)> inspector)const = 0;
-         virtual fc::uint128        hash()const = 0;
          virtual void               add_observer( const shared_ptr<index_observer>& ) = 0;
 
          virtual void               object_from_variant( const fc::variant& var, object& obj, uint32_t max_depth )const = 0;
          virtual void               object_default( object& obj )const = 0;
    };
 
+   /** @class secondary_index
+    *   @brief A secondary index is intended to observe a primary index.
+    *   A secondary index is not automatically persisted when the node shuts own.
+    */
    class secondary_index
    {
       public:
          virtual ~secondary_index(){};
-         virtual void object_inserted( const object& obj ){};
+         // Called when an object from a previous node session is loaded from persistence
+         virtual void object_loaded( const object& obj ){};
+         // Called when an object from the current node session is created
+         virtual void object_created( const object& obj ){};
+         // Called when an object is removed
          virtual void object_removed( const object& obj ){};
+         // Called when an object is about to be modified
          virtual void about_to_modify( const object& before ){};
+         // Called when an object is modified
          virtual void object_modified( const object& after  ){};
    };
 
@@ -184,6 +193,13 @@ namespace graphene { namespace db {
             FC_THROW_EXCEPTION( fc::assert_exception, "invalid index type" );
          }
 
+         void delete_secondary_index(const secondary_index& secondary) {
+             auto itr = std::find_if(_sindex.begin(), _sindex.end(),
+                                     [&secondary](const auto& ptr) { return &secondary == ptr.get(); });
+             FC_ASSERT(itr != _sindex.end(), "Cannot remove secondary index: secondary index not found");
+             _sindex.erase(itr);
+         }
+
       protected:
          vector< shared_ptr<index_observer> >   _observers;
          vector< unique_ptr<secondary_index> >  _sindex;
@@ -220,7 +236,12 @@ namespace graphene { namespace db {
 
          virtual ~direct_index(){}
 
-         virtual void object_inserted( const object& obj )
+         virtual void object_loaded( const object& obj )
+         {
+            object_created(obj);
+         }
+
+         virtual void object_created( const object& obj )
          {
             uint64_t instance = obj.id.instance();
             if( instance == next )
@@ -380,7 +401,7 @@ namespace graphene { namespace db {
          {
             const auto& result = DerivedIndex::insert( fc::raw::unpack<object_type>( data ) );
             for( const auto& item : _sindex )
-               item->object_inserted( result );
+               item->object_loaded( result );
             return result;
          }
 
@@ -389,7 +410,7 @@ namespace graphene { namespace db {
          {
             const auto& result = DerivedIndex::create( constructor );
             for( const auto& item : _sindex )
-               item->object_inserted( result );
+               item->object_created( result );
             on_add( result );
             return result;
          }

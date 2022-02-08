@@ -3,6 +3,8 @@
 #include <graphene/peerplays_sidechain/bitcoin/bitcoin_transaction.hpp>
 #include <graphene/peerplays_sidechain/bitcoin/types.hpp>
 
+#include <endian.h>
+
 namespace graphene { namespace peerplays_sidechain { namespace bitcoin {
 
 inline void write_compact_size(bytes &vec, size_t size) {
@@ -186,7 +188,7 @@ inline void pack(Stream &s, const bitcoin_transaction &tx, bool with_witness = t
       pack(s, out);
 
    if (flags & 1) {
-      for (const auto in : tx.vin) {
+      for (const auto& in : tx.vin) {
          pack_compact_size(s, in.scriptWitness.size());
          for (const auto &sc : in.scriptWitness)
             pack(s, sc);
@@ -294,13 +296,13 @@ inline void pack_tx_witness_signature(Stream &s, const std::vector<char> &script
 
    {
       fc::datastream<size_t> ps;
-      for (const auto in : tx.vin)
+      for (const auto& in : tx.vin)
          pack(ps, in.prevout);
 
       std::vector<char> vec(ps.tellp());
       if (vec.size()) {
          fc::datastream<char *> ds(vec.data(), size_t(vec.size()));
-         for (const auto in : tx.vin)
+         for (const auto& in : tx.vin)
             pack(ds, in.prevout);
       }
 
@@ -309,13 +311,13 @@ inline void pack_tx_witness_signature(Stream &s, const std::vector<char> &script
 
    {
       fc::datastream<size_t> ps;
-      for (const auto in : tx.vin)
+      for (const auto& in : tx.vin)
          pack(ps, in.nSequence);
 
       std::vector<char> vec(ps.tellp());
       if (vec.size()) {
          fc::datastream<char *> ds(vec.data(), size_t(vec.size()));
-         for (const auto in : tx.vin)
+         for (const auto& in : tx.vin)
             pack(ds, in.nSequence);
       }
 
@@ -324,13 +326,13 @@ inline void pack_tx_witness_signature(Stream &s, const std::vector<char> &script
 
    {
       fc::datastream<size_t> ps;
-      for (const auto out : tx.vout)
+      for (const auto& out : tx.vout)
          pack(ps, out);
 
       std::vector<char> vec(ps.tellp());
       if (vec.size()) {
          fc::datastream<char *> ds(vec.data(), size_t(vec.size()));
-         for (const auto out : tx.vout)
+         for (const auto& out : tx.vout)
             pack(ds, out);
       }
 

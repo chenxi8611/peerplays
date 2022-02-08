@@ -11,13 +11,14 @@
 #include <fc/crypto/hex.hpp>
 #include <fc/log/logger.hpp>
 #include <fc/network/ip.hpp>
-#include <fc/smart_ref_impl.hpp>
 
+#include <graphene/protocol/fee_schedule.hpp>
+#include <graphene/protocol/son_wallet.hpp>
+#include <graphene/protocol/son_info.hpp>
 #include <graphene/chain/account_object.hpp>
-#include <graphene/chain/protocol/fee_schedule.hpp>
-#include <graphene/chain/protocol/son_wallet.hpp>
-#include <graphene/chain/son_info.hpp>
 #include <graphene/chain/son_wallet_object.hpp>
+#include <graphene/protocol/son_wallet.hpp>
+#include <graphene/protocol/son_info.hpp>
 #include <graphene/utilities/key_conversion.hpp>
 
 namespace graphene { namespace peerplays_sidechain {

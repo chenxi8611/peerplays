@@ -23,13 +23,16 @@
  */
 #pragma once
 
-#include <graphene/chain/protocol/types.hpp>
+#include <graphene/chain/types.hpp>
+
+#include <graphene/protocol/event.hpp>
+
 #include <graphene/db/object.hpp>
 #include <graphene/db/generic_index.hpp>
-#include <graphene/chain/protocol/event.hpp>
-#include <sstream>
 
 #include <boost/multi_index/composite_key.hpp>
+
+#include <sstream>
 
 namespace graphene { namespace chain {
    class event_object;
@@ -158,6 +161,9 @@ typedef generic_index<event_object, event_object_multi_index_type> event_object_
       return s;
    }
 } } // graphene::chain
-FC_REFLECT(graphene::chain::event_object, (name)(season)(start_time)(event_group_id)(at_least_one_betting_market_group_settled)(scores))
 
+MAP_OBJECT_ID_TO_TYPE(graphene::chain::event_object)
+
+FC_REFLECT_DERIVED(graphene::chain::event_object, (graphene::db::object),
+                   (name)(season)(start_time)(event_group_id)(at_least_one_betting_market_group_settled)(scores))
 

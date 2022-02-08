@@ -29,6 +29,8 @@
 #include <graphene/chain/betting_market_object.hpp>
 #include <graphene/chain/event_object.hpp>
 
+#include <fc/log/logger.hpp>
+
 #include <boost/range/iterator_range.hpp>
 #include <boost/range/combine.hpp>
 #include <boost/range/join.hpp>
@@ -132,7 +134,7 @@ void database::resolve_betting_market_group(const betting_market_group_object& b
    bool group_was_canceled = resolutions.begin()->second == betting_market_resolution_type::cancel;
 
    if (group_was_canceled)
-      modify(betting_market_group, [group_was_canceled,this](betting_market_group_object& betting_market_group_obj) {
+      modify(betting_market_group, [this](betting_market_group_object& betting_market_group_obj) {
          betting_market_group_obj.on_canceled_event(*this, false); // this cancels the betting markets
       });
    else {
@@ -149,7 +151,7 @@ void database::resolve_betting_market_group(const betting_market_group_object& b
          });
       }
 
-      modify(betting_market_group, [group_was_canceled,this](betting_market_group_object& betting_market_group_obj) {
+      modify(betting_market_group, [this](betting_market_group_object& betting_market_group_obj) {
          betting_market_group_obj.on_graded_event(*this);
       });
    }
@@ -263,7 +265,7 @@ void database::settle_betting_market_group(const betting_market_group_object& be
       share_type rake_amount;
       if (net_profits.value > 0 && rake_account_id)
       {
-         rake_amount = ((fc::uint128_t(net_profits.value) * rake_fee_percentage + GRAPHENE_100_PERCENT - 1) / GRAPHENE_100_PERCENT).to_uint64();
+         rake_amount = ((fc::uint128_t(net_profits.value) * rake_fee_percentage + GRAPHENE_100_PERCENT - 1) / GRAPHENE_100_PERCENT);
          share_type affiliates_share;
          if (rake_amount.value)
             affiliates_share = payout_helper.payout( bettor_id, rake_amount );
@@ -490,7 +492,7 @@ int match_bet(database& db, const bet_object& taker_bet, const bet_object& maker
       payout_128 += taker_amount_to_match.value;
       payout_128 *= GRAPHENE_BETTING_ODDS_PRECISION;
       payout_128 /= maker_bet.back_or_lay == bet_type::back ? maker_amount_to_match.value : taker_amount_to_match.value;
-      assert(payout_128.to_uint64() == maker_bet.backer_multiplier);
+      assert(payout_128 == maker_bet.backer_multiplier);
    }
 #endif
 

@@ -872,8 +872,11 @@ std::vector<zmq::message_t> zmq_listener::receive_multipart() {
    std::vector<zmq::message_t> msgs;
 
    auto res = zmq::recv_multipart(socket, std::back_inserter(msgs));
-   assert(res);
-   assert(3 == *res);
+   FC_ASSERT(res);
+   if (3 != *res) {
+       elog("zmq::recv_multipart returned: ${res}", ("res", *res));	   
+       throw zmq::error_t();
+   }
 
    return msgs;
 }

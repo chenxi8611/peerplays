@@ -163,5 +163,13 @@ FC_REFLECT_ENUM(graphene::chain::match_state,
                 (match_complete))
 
 //FC_REFLECT_TYPENAME(graphene::chain::match_object) // manually serialized
-FC_REFLECT(graphene::chain::match_object, (players))
-
+FC_REFLECT_DERIVED(graphene::chain::match_object, (graphene::db::object),
+                   (tournament_id)
+                   (players)
+                   (games)
+                   (game_winners)
+                   (number_of_wins)
+                   (number_of_ties)
+                   (match_winners)
+                   (start_time)
+                   (end_time))

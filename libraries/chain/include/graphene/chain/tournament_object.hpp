@@ -240,12 +240,20 @@ FC_REFLECT_DERIVED(graphene::chain::tournament_details_object, (graphene::db::ob
                    (payers)
                    (players_payers)
                    (matches))
+
 //FC_REFLECT_TYPENAME(graphene::chain::tournament_object) // manually serialized
-FC_REFLECT(graphene::chain::tournament_object, (creator))
+FC_REFLECT_DERIVED(graphene::chain::tournament_object, (graphene::db::object),
+                   (creator)
+                   (options)
+                   (start_time)
+                   (end_time)
+                   (prize_pool)
+                   (registered_players)
+                   (tournament_details_id))
+
 FC_REFLECT_ENUM(graphene::chain::tournament_state,
                 (accepting_registrations)
                 (awaiting_start)
                 (in_progress)
                 (registration_period_expired)
                 (concluded))
-

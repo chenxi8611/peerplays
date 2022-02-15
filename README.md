@@ -30,7 +30,8 @@ git submodule update --init --recursive
 # If you want to build Mainnet node
 cmake -DCMAKE_BUILD_TYPE=Release
 # If you want to build Testnet node
-cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_PEERPLAYS_TESTNET=1
+cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_PEERPLAYS_TESTNET=
+#Update -j flag depending on your current system specs; Recommended 4GB of RAM per 1 CPU core
 make -j$(nproc)
 
 make install # this can install the executable files under /usr/local

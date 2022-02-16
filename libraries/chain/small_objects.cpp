@@ -45,6 +45,7 @@
 #include <graphene/chain/worker_object.hpp>
 #include <graphene/chain/game_object.hpp>
 #include <graphene/chain/tournament_object.hpp>
+#include <graphene/chain/event_object.hpp>
 #include <graphene/chain/match_object.hpp>
 
 #include <fc/io/raw.hpp>
@@ -77,4 +78,5 @@ GRAPHENE_EXTERNAL_SERIALIZATION( /*not extern*/, graphene::chain::witness_schedu
 GRAPHENE_EXTERNAL_SERIALIZATION( /*not extern*/, graphene::chain::worker_object )
 GRAPHENE_EXTERNAL_SERIALIZATION( /*not extern*/, graphene::chain::game_object )
 GRAPHENE_EXTERNAL_SERIALIZATION( /*not extern*/, graphene::chain::tournament_object )
+GRAPHENE_EXTERNAL_SERIALIZATION( /*not extern*/, graphene::chain::event_object )
 GRAPHENE_EXTERNAL_SERIALIZATION( /*not extern*/, graphene::chain::match_object )

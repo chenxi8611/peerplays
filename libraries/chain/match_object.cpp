@@ -28,8 +28,6 @@
 
 #include <boost/msm/back/state_machine.hpp>
 #include <boost/msm/front/state_machine_def.hpp>
-#include <boost/archive/binary_oarchive.hpp>
-#include <boost/archive/binary_iarchive.hpp>
 #include <boost/msm/back/tools.hpp>
 #include <boost/range/algorithm/copy.hpp>
 
@@ -327,18 +325,6 @@ namespace graphene { namespace chain {
       return state;  
    }
 
-   void match_object::pack_impl(std::ostream& stream) const
-   {
-      boost::archive::binary_oarchive oa(stream, boost::archive::no_header|boost::archive::no_codecvt|boost::archive::no_xml_tag_checking);
-      oa << my->state_machine;
-   }
-
-   void match_object::unpack_impl(std::istream& stream)
-   {
-      boost::archive::binary_iarchive ia(stream, boost::archive::no_header|boost::archive::no_codecvt|boost::archive::no_xml_tag_checking);
-      ia >> my->state_machine;
-   }
-
    void match_object::on_initiate_match(database& db)
    {
       my->state_machine.process_event(initiate_match(db));
@@ -361,46 +347,5 @@ namespace graphene { namespace chain {
 #endif
 
 } } // graphene::chain
-
-namespace fc { 
-   // Manually reflect match_object to variant to properly reflect "state"
-   void to_variant(const graphene::chain::match_object& match_obj, fc::variant& v, uint32_t max_depth)
-   { try {
-      fc_elog(fc::logger::get("tournament"), "In match_obj to_variant");
-      elog("In match_obj to_variant");
-      fc::mutable_variant_object o;
-      o("id", fc::variant(match_obj.id, max_depth))
-       ("tournament_id", fc::variant(match_obj.tournament_id, max_depth))
-       ("players", fc::variant(match_obj.players, max_depth))
-       ("games", fc::variant(match_obj.games, max_depth))
-       ("game_winners", fc::variant(match_obj.game_winners, max_depth))
-       ("number_of_wins", fc::variant(match_obj.number_of_wins, max_depth))
-       ("number_of_ties", fc::variant(match_obj.number_of_ties, max_depth))
-       ("match_winners", fc::variant(match_obj.match_winners, max_depth))
-       ("start_time", fc::variant(match_obj.start_time, max_depth))
-       ("end_time", fc::variant(match_obj.end_time, max_depth))
-       ("state", fc::variant(match_obj.get_state(), max_depth));
-
-      v = o;
-   } FC_RETHROW_EXCEPTIONS(warn, "") }
-
-   // Manually reflect match_object to variant to properly reflect "state"
-   void from_variant(const fc::variant& v, graphene::chain::match_object& match_obj, uint32_t max_depth)
-   { try {
-      fc_elog(fc::logger::get("tournament"), "In match_obj from_variant");
-      match_obj.id = v["id"].as<graphene::chain::match_id_type>( max_depth );
-      match_obj.tournament_id = v["tournament_id"].as<graphene::chain::tournament_id_type>( max_depth );
-      match_obj.players = v["players"].as<std::vector<graphene::chain::account_id_type> >( max_depth );
-      match_obj.games = v["games"].as<std::vector<graphene::chain::game_id_type> >( max_depth );
-      match_obj.game_winners = v["game_winners"].as<std::vector<flat_set<graphene::chain::account_id_type> > >( max_depth );
-      match_obj.number_of_wins = v["number_of_wins"].as<std::vector<uint32_t> >( max_depth );
-      match_obj.number_of_ties = v["number_of_ties"].as<uint32_t>( max_depth );
-      match_obj.match_winners = v["match_winners"].as<flat_set<graphene::chain::account_id_type> >( max_depth );
-      match_obj.start_time = v["start_time"].as<time_point_sec>( max_depth );
-      match_obj.end_time = v["end_time"].as<optional<time_point_sec> >( max_depth );
-      graphene::chain::match_state state = v["state"].as<graphene::chain::match_state>( max_depth );
-      const_cast<int*>(match_obj.my->state_machine.current_state())[0] = (int)state;
-   } FC_RETHROW_EXCEPTIONS(warn, "") }
-} //end namespace fc
 
 

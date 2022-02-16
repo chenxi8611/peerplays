@@ -30,8 +30,6 @@
 
 #include <boost/msm/back/state_machine.hpp>
 #include <boost/msm/front/state_machine_def.hpp>
-#include <boost/archive/binary_oarchive.hpp>
-#include <boost/archive/binary_iarchive.hpp>
 #include <boost/msm/back/tools.hpp>
 
 namespace graphene { namespace chain {
@@ -460,18 +458,6 @@ betting_market_group_status betting_market_group_object::get_status() const
    };
 }
 
-void betting_market_group_object::pack_impl(std::ostream& stream) const
-{
-   boost::archive::binary_oarchive oa(stream, boost::archive::no_header|boost::archive::no_codecvt|boost::archive::no_xml_tag_checking);
-   oa << my->state_machine;
-}
-
-void betting_market_group_object::unpack_impl(std::istream& stream)
-{
-   boost::archive::binary_iarchive ia(stream, boost::archive::no_header|boost::archive::no_codecvt|boost::archive::no_xml_tag_checking);
-   ia >> my->state_machine;
-}
-
 void betting_market_group_object::on_upcoming_event(database& db)
 {
    my->state_machine.process_event(upcoming_event(db));
@@ -540,39 +526,4 @@ void betting_market_group_object::dispatch_new_status(database& db, betting_mark
 
 
 } } // graphene::chain
-
-namespace fc { 
-   // Manually reflect betting_market_group_object to variant to properly reflect "state"
-   void to_variant(const graphene::chain::betting_market_group_object& betting_market_group_obj, fc::variant& v, uint32_t max_depth)
-   {
-      fc::mutable_variant_object o;
-      o("id", fc::variant(betting_market_group_obj.id, max_depth))
-       ("description", fc::variant(betting_market_group_obj.description, max_depth))
-       ("event_id", fc::variant(betting_market_group_obj.event_id, max_depth))
-       ("rules_id", fc::variant(betting_market_group_obj.rules_id, max_depth))
-       ("asset_id", fc::variant(betting_market_group_obj.asset_id, max_depth))
-       ("total_matched_bets_amount", fc::variant(betting_market_group_obj.total_matched_bets_amount, max_depth))
-       ("never_in_play", fc::variant(betting_market_group_obj.never_in_play, max_depth))
-       ("delay_before_settling", fc::variant(betting_market_group_obj.delay_before_settling, max_depth))
-       ("settling_time", fc::variant(betting_market_group_obj.settling_time, max_depth))
-       ("status", fc::variant(betting_market_group_obj.get_status(), max_depth));
-
-      v = o;
-   }
-
-   // Manually reflect betting_market_group_object to variant to properly reflect "state"
-   void from_variant(const fc::variant& v, graphene::chain::betting_market_group_object& betting_market_group_obj, uint32_t max_depth)
-   {
-      betting_market_group_obj.id = v["id"].as<graphene::chain::betting_market_group_id_type>( max_depth );
-      betting_market_group_obj.description = v["description"].as<graphene::chain::internationalized_string_type>( max_depth );
-      betting_market_group_obj.event_id = v["event_id"].as<graphene::chain::event_id_type>( max_depth );
-      betting_market_group_obj.asset_id = v["asset_id"].as<graphene::chain::asset_id_type>( max_depth );
-      betting_market_group_obj.total_matched_bets_amount = v["total_matched_bets_amount"].as<graphene::chain::share_type>( max_depth );
-      betting_market_group_obj.never_in_play = v["never_in_play"].as<bool>( max_depth );
-      betting_market_group_obj.delay_before_settling = v["delay_before_settling"].as<uint32_t>( max_depth );
-      betting_market_group_obj.settling_time = v["settling_time"].as<fc::optional<fc::time_point_sec>>( max_depth );
-      graphene::chain::betting_market_group_status status = v["status"].as<graphene::chain::betting_market_group_status>( max_depth );
-      const_cast<int*>(betting_market_group_obj.my->state_machine.current_state())[0] = (int)status;
-   }
-} //end namespace fc
 

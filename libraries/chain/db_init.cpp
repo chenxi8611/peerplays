@@ -577,10 +577,10 @@ void database::init_genesis(const genesis_state_type& genesis_state)
 
    const asset_dividend_data_object& div_asset =
       create<asset_dividend_data_object>([&genesis_state](asset_dividend_data_object& a) {
-           a.options.minimum_distribution_interval = 3*24*60*60;
+           a.options.minimum_distribution_interval = 3*20;
            a.options.minimum_fee_percentage = 10*GRAPHENE_1_PERCENT;
-           a.options.next_payout_time = genesis_state.initial_timestamp + fc::days(1);
-           a.options.payout_interval = 30*24*60*60;
+           a.options.next_payout_time = genesis_state.initial_timestamp + fc::seconds(20);
+           a.options.payout_interval = 3*20;
            a.dividend_distribution_account = GRAPHENE_RAKE_FEE_ACCOUNT_ID;
       });
 

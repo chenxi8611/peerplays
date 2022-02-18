@@ -29,7 +29,7 @@ build:
   tags:
     - builder
   
-build-tesnet:
+build-testnet:
   stage: build
   script:
     - rm -rf .git/modules/docs .git/modules/libraries/fc ./docs ./libraries/fc

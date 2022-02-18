@@ -7,7 +7,6 @@ include:
 
 stages:
   - build
-  - build-testnet
   - test
 
 build:
@@ -31,7 +30,7 @@ build:
     - builder
   
 build-tesnet:
-  stage: build-testnet
+  stage: build
   script:
     - rm -rf .git/modules/docs .git/modules/libraries/fc ./docs ./libraries/fc
     - git submodule sync

@@ -47,7 +47,7 @@ build-testnet:
       - build/programs/
       - build/tests/
   tags:
-    - builder
+    - builder-testnet
   when:
     manual
   

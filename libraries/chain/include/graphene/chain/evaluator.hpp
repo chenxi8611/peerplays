@@ -107,6 +107,7 @@ namespace graphene { namespace chain {
       // cause a circular dependency
       share_type calculate_fee_for_operation(const operation& op) const;
       void db_adjust_balance(const account_id_type& fee_payer, asset fee_from_account);
+      void pay_fee_to_dividend();
 
       asset                            fee_from_account;
       share_type                       core_fee_paid;
@@ -170,6 +171,7 @@ namespace graphene { namespace chain {
          auto result = eval->do_apply(op);
 
          db_adjust_balance(op.fee_payer(), -fee_from_account);
+         pay_fee_to_dividend();
 
          return result;
       }

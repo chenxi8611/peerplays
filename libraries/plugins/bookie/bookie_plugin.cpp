@@ -63,7 +63,10 @@ namespace detail
 void persistent_bet_index::object_inserted(const object& obj)
 {
    const bet_object& bet_obj = *boost::polymorphic_downcast<const bet_object*>(&obj);
-   internal.insert( {bet_obj.id, bet_obj} );
+   if(0 == internal.count(bet_obj.id))
+      internal.insert( {bet_obj.id, bet_obj} );
+   else
+      internal[bet_obj.id] = bet_obj;
 }
 void persistent_bet_index::object_modified(const object& after)
 {
@@ -79,7 +82,11 @@ void persistent_bet_index::object_modified(const object& after)
 void persistent_betting_market_index::object_inserted(const object& obj)
 {
    const betting_market_object& betting_market_obj = *boost::polymorphic_downcast<const betting_market_object*>(&obj);
-   ephemeral_betting_market_object.insert( {betting_market_obj.id, betting_market_obj} );
+   if(0 == ephemeral_betting_market_object.count(betting_market_obj.id))
+      ephemeral_betting_market_object.insert( {betting_market_obj.id, betting_market_obj} );
+   else
+      ephemeral_betting_market_object[betting_market_obj.id] = betting_market_obj;
+
 }
 void persistent_betting_market_index::object_modified(const object& after)
 {
@@ -95,7 +102,10 @@ void persistent_betting_market_index::object_modified(const object& after)
 void persistent_betting_market_group_index::object_inserted(const object& obj)
 {
    const betting_market_group_object& betting_market_group_obj = *boost::polymorphic_downcast<const betting_market_group_object*>(&obj);
-   internal.insert( {betting_market_group_obj.id, betting_market_group_obj} );
+   if(0 == internal.count(betting_market_group_obj.id))
+      internal.insert( {betting_market_group_obj.id, betting_market_group_obj} );
+   else
+      internal[betting_market_group_obj.id] = betting_market_group_obj;
 }
 void persistent_betting_market_group_index::object_modified(const object& after)
 {
@@ -111,7 +121,10 @@ void persistent_betting_market_group_index::object_modified(const object& after)
 void persistent_event_index::object_inserted(const object& obj)
 {
    const event_object& event_obj = *boost::polymorphic_downcast<const event_object*>(&obj);
-   ephemeral_event_object.insert( {event_obj.id, event_obj} );
+   if(0 == ephemeral_event_object.count(event_obj.id))
+      ephemeral_event_object.insert( {event_obj.id, event_obj} );
+   else
+      ephemeral_event_object[event_obj.id] = event_obj;
 }
 void persistent_event_index::object_modified(const object& after)
 {

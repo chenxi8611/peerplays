@@ -91,6 +91,8 @@ class persistent_betting_market_group_index : public secondary_index
 public:
    struct internal_type
    {
+      internal_type() = default;
+
       internal_type(const betting_market_group_object& other)
             : ephemeral_betting_market_group_object{other}
       {}
@@ -151,6 +153,8 @@ class persistent_bet_index : public secondary_index
 public:
    struct internal_type
    {
+      internal_type() = default;
+
       internal_type(const bet_object& other)
             : ephemeral_bet_object{other}
       {}

@@ -171,7 +171,6 @@ fc::variants bookie_api_impl::get_objects(const vector<object_id_type>& ids) con
             const auto &idx = db->get_index_type<bet_object_index>();
             const auto &aidx = dynamic_cast<const base_primary_index &>(idx);
             const auto &refs = aidx.get_secondary_index<detail::persistent_bet_index>();
-            auto tmp = id.as<bet_id_type>();
             auto iter = refs.internal.find(id.as<bet_id_type>());
             if (iter != refs.internal.end())
                return iter->second.ephemeral_bet_object.to_variant();

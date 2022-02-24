@@ -28,6 +28,8 @@
 
 #include <boost/msm/back/state_machine.hpp>
 #include <boost/msm/front/state_machine_def.hpp>
+#include <boost/archive/binary_oarchive.hpp>
+#include <boost/archive/binary_iarchive.hpp>
 #include <boost/msm/back/tools.hpp>
 
 namespace graphene { namespace chain {
@@ -531,6 +533,18 @@ namespace graphene { namespace chain {
       return state;  
    }
 
+   void tournament_object::pack_impl(std::ostream& stream) const
+   {
+      boost::archive::binary_oarchive oa(stream, boost::archive::no_header|boost::archive::no_codecvt|boost::archive::no_xml_tag_checking);
+      oa << my->state_machine;
+   }
+
+   void tournament_object::unpack_impl(std::istream& stream)
+   {
+      boost::archive::binary_iarchive ia(stream, boost::archive::no_header|boost::archive::no_codecvt|boost::archive::no_xml_tag_checking);
+      ia >> my->state_machine;
+   }
+
    void tournament_object::on_registration_deadline_passed(database& db)
    {
       my->state_machine.process_event(registration_deadline_passed(db));
@@ -706,5 +720,43 @@ namespace graphene { namespace chain {
       }
    }
 } } // graphene::chain
+
+namespace fc {
+// Manually reflect tournament_object to variant to properly reflect "state"
+void to_variant(const graphene::chain::tournament_object& tournament_obj, fc::variant& v, uint32_t max_depth)
+{
+   fc_elog(fc::logger::get("tournament"), "In tournament_obj to_variant");
+   elog("In tournament_obj to_variant");
+   fc::mutable_variant_object o;
+   o("id", fc::variant(tournament_obj.id, max_depth))
+   ("creator", fc::variant(tournament_obj.creator, max_depth))
+   ("options", fc::variant(tournament_obj.options, max_depth))
+   ("start_time", fc::variant(tournament_obj.start_time, max_depth))
+   ("end_time", fc::variant(tournament_obj.end_time, max_depth))
+   ("prize_pool", fc::variant(tournament_obj.prize_pool, max_depth))
+   ("registered_players", fc::variant(tournament_obj.registered_players, max_depth))
+   ("tournament_details_id", fc::variant(tournament_obj.tournament_details_id, max_depth))
+   ("state", fc::variant(tournament_obj.get_state(), max_depth));
+
+   v = o;
+}
+
+// Manually reflect tournament_object to variant to properly reflect "state"
+void from_variant(const fc::variant& v, graphene::chain::tournament_object& tournament_obj, uint32_t max_depth)
+{
+   fc_elog(fc::logger::get("tournament"), "In tournament_obj from_variant");
+   tournament_obj.id = v["id"].as<graphene::chain::tournament_id_type>( max_depth );
+   tournament_obj.creator = v["creator"].as<graphene::chain::account_id_type>( max_depth );
+   tournament_obj.options = v["options"].as<graphene::chain::tournament_options>( max_depth );
+   tournament_obj.start_time = v["start_time"].as<optional<time_point_sec> >( max_depth );
+   tournament_obj.end_time = v["end_time"].as<optional<time_point_sec> >( max_depth );
+   tournament_obj.prize_pool = v["prize_pool"].as<graphene::chain::share_type>( max_depth );
+   tournament_obj.registered_players = v["registered_players"].as<uint32_t>( max_depth );
+   tournament_obj.tournament_details_id = v["tournament_details_id"].as<graphene::chain::tournament_details_id_type>( max_depth );
+   graphene::chain::tournament_state state = v["state"].as<graphene::chain::tournament_state>( max_depth );
+   const_cast<int*>(tournament_obj.my->state_machine.current_state())[0] = (int)state;
+}
+} //end namespace fc
+
 
 

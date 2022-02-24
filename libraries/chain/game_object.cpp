@@ -28,6 +28,8 @@
 
 #include <boost/msm/back/state_machine.hpp>
 #include <boost/msm/front/state_machine_def.hpp>
+#include <boost/archive/binary_oarchive.hpp>
+#include <boost/archive/binary_iarchive.hpp>
 #include <boost/msm/back/tools.hpp>
 #include <boost/range/algorithm/copy.hpp>
 
@@ -531,6 +533,49 @@ namespace graphene { namespace chain {
       my->state_machine.process_event(initiate_game(db, players));
    }
 
+   void game_object::pack_impl(std::ostream& stream) const
+   {
+      boost::archive::binary_oarchive oa(stream, boost::archive::no_header|boost::archive::no_codecvt|boost::archive::no_xml_tag_checking);
+      oa << my->state_machine;
+   }
+
+   void game_object::unpack_impl(std::istream& stream)
+   {
+      boost::archive::binary_iarchive ia(stream, boost::archive::no_header|boost::archive::no_codecvt|boost::archive::no_xml_tag_checking);
+      ia >> my->state_machine;
+   }
+
 } } // graphene::chain
 
+namespace fc {
+// Manually reflect game_object to variant to properly reflect "state"
+void to_variant(const graphene::chain::game_object& game_obj, fc::variant& v, uint32_t max_depth)
+{
+   fc_elog(fc::logger::get("tournament"), "In game_obj to_variant");
+   elog("In game_obj to_variant");
+   fc::mutable_variant_object o;
+   o("id", fc::variant(game_obj.id,  max_depth ))
+   ("match_id", fc::variant(game_obj.match_id,  max_depth ))
+   ("players", fc::variant(game_obj.players,  max_depth ))
+   ("winners", fc::variant(game_obj.winners,  max_depth ))
+   ("game_details", fc::variant(game_obj.game_details,  max_depth ))
+   ("next_timeout", fc::variant(game_obj.next_timeout,  max_depth ))
+   ("state", fc::variant(game_obj.get_state(),  max_depth ));
 
+   v = o;
+}
+
+// Manually reflect game_object to variant to properly reflect "state"
+void from_variant(const fc::variant& v, graphene::chain::game_object& game_obj, uint32_t max_depth)
+{
+   fc_elog(fc::logger::get("tournament"), "In game_obj from_variant");
+   game_obj.id = v["id"].as<graphene::chain::game_id_type>(  max_depth  );
+   game_obj.match_id = v["match_id"].as<graphene::chain::match_id_type>(  max_depth  );
+   game_obj.players = v["players"].as<std::vector<graphene::chain::account_id_type> >(  max_depth  );
+   game_obj.winners = v["winners"].as<flat_set<graphene::chain::account_id_type> >(  max_depth  );
+   game_obj.game_details = v["game_details"].as<graphene::chain::game_specific_details>(  max_depth  );
+   game_obj.next_timeout = v["next_timeout"].as<fc::optional<time_point_sec> >(  max_depth  );
+   graphene::chain::game_state state = v["state"].as<graphene::chain::game_state>(  max_depth  );
+   const_cast<int*>(game_obj.my->state_machine.current_state())[0] = (int)state;
+}
+} //end namespace fc

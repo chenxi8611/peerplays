@@ -749,7 +749,7 @@ public:
    {
       std::string account_id = account_id_to_string(id);
       auto rec = _remote_db->get_accounts({account_id}).front();
-      FC_ASSERT(rec);
+      FC_ASSERT(rec, "Accout id: ${account_id} doesn't exist", ("account_id", account_id));
       return *rec;
    }
    account_object get_account(string account_name_or_id) const
@@ -762,7 +762,7 @@ public:
          return get_account(*id);
       } else {
          auto rec = _remote_db->lookup_account_names({account_name_or_id}).front();
-         FC_ASSERT( rec && rec->name == account_name_or_id );
+         FC_ASSERT( rec && rec->name == account_name_or_id, "Account name or id: ${account_name_or_id} doesn't exist", ("account_name_or_id",account_name_or_id ) );
          return *rec;
       }
    }
@@ -1955,6 +1955,49 @@ public:
             catch (const fc::exception&)
             {
                FC_THROW("No account or SON named ${account}", ("account", owner_account));
+            }
+         }
+      }
+      FC_CAPTURE_AND_RETHROW( (owner_account) )
+   }
+
+   vector<worker_object> get_workers(string owner_account)
+   {
+      try
+      {
+         fc::optional<worker_id_type> worker_id = maybe_id<worker_id_type>(owner_account);
+         if (worker_id)
+         {
+            std::vector<worker_id_type> ids_to_get;
+            ids_to_get.push_back(*worker_id);
+            std::vector<fc::optional<worker_object>> worker_objects = _remote_db->get_workers(ids_to_get);
+
+            if(!worker_objects.empty()) {
+               std::vector<worker_object> result;
+               for (const auto &worker_object : worker_objects) {
+                  if (worker_object)
+                     result.emplace_back(*worker_object);
+               }
+               return result;
+            }
+            else
+               FC_THROW("No workers is registered for id ${id}", ("id", owner_account));
+         }
+         else
+         {
+            // then maybe it's the owner account
+            try
+            {
+               std::string owner_account_id = account_id_to_string(get_account_id(owner_account));
+               auto workers = _remote_db->get_workers_by_account(owner_account_id);
+               if (!workers.empty())
+                  return workers;
+               else
+                  FC_THROW("No workers is registered for account ${account}", ("account", owner_account));
+            }
+            catch (const fc::exception&)
+            {
+               FC_THROW("No account or worker named ${account}", ("account", owner_account));
             }
          }
       }
@@ -4471,6 +4514,7 @@ asset wallet_api::get_lottery_balance( asset_id_type lottery_id )const
 
 vector<operation_detail> wallet_api::get_account_history(string name, int limit) const
 {
+   FC_ASSERT(my->get_account(name).name == name, "Account name: ${account_name} doesn't exist", ("account_name", name));
    vector<operation_detail> result;
 
    while (limit > 0)
@@ -4525,6 +4569,8 @@ vector<operation_detail> wallet_api::get_relative_account_history(string name, u
 {
 
    FC_ASSERT( start > 0 || limit <= 100 );
+   FC_ASSERT(my->get_account(name).name == name, "Account name: ${account_name} doesn't exist", ("account_name", name));
+
 
    vector<operation_detail> result;
 
@@ -4700,7 +4746,7 @@ account_object wallet_api::get_account(string account_name_or_id) const
 asset_object wallet_api::get_asset(string asset_name_or_id) const
 {
    auto a = my->find_asset(asset_name_or_id);
-   FC_ASSERT(a);
+   FC_ASSERT(a, "Asset name or id: ${asset_name_or_id} doesn't exist", ("asset_name_or_id", asset_name_or_id) );
    return *a;
 }
 
@@ -4723,7 +4769,7 @@ asset_id_type wallet_api::get_asset_id(string asset_symbol_or_id) const
 
 bool wallet_api::import_key(string account_name_or_id, string wif_key)
 {
-   FC_ASSERT(!is_locked());
+   FC_ASSERT(!is_locked(), "Wallet is locked, please unlock to get all operations available");
    // backup wallet
    fc::optional<fc::ecc::private_key> optional_private_key = wif_to_key(wif_key);
    if (!optional_private_key)
@@ -4742,7 +4788,7 @@ bool wallet_api::import_key(string account_name_or_id, string wif_key)
 
 map<string, bool> wallet_api::import_accounts( string filename, string password )
 {
-   FC_ASSERT( !is_locked() );
+   FC_ASSERT( !is_locked(), "Wallet is locked, please unlock to get all operations available" );
    FC_ASSERT( fc::exists( filename ) );
 
    const auto imported_keys = fc::json::from_file<exported_keys>( filename );
@@ -4812,7 +4858,7 @@ map<string, bool> wallet_api::import_accounts( string filename, string password 
 
 bool wallet_api::import_account_keys( string filename, string password, string src_account_name, string dest_account_name )
 {
-   FC_ASSERT( !is_locked() );
+   FC_ASSERT( !is_locked(), "Wallet is locked, please unlock to get all operations available" );
    FC_ASSERT( fc::exists( filename ) );
 
    bool is_my_account = false;
@@ -5027,6 +5073,11 @@ map<string,committee_member_id_type> wallet_api::list_committee_members(const st
    return my->_remote_db->lookup_committee_member_accounts(lowerbound, limit);
 }
 
+map<string, worker_id_type> wallet_api::list_workers(const string& lowerbound, uint32_t limit)
+{
+   return my->_remote_db->lookup_worker_accounts(lowerbound, limit);
+}
+
 son_object wallet_api::get_son(string owner_account)
 {
    return my->get_son(owner_account);
@@ -5045,6 +5096,11 @@ bool wallet_api::is_witness(string owner_account)
 committee_member_object wallet_api::get_committee_member(string owner_account)
 {
    return my->get_committee_member(owner_account);
+}
+
+vector<worker_object> wallet_api::get_workers(string owner_account)
+{
+   return my->get_workers(owner_account);
 }
 
 signed_transaction wallet_api::create_vesting_balance(string owner_account,
@@ -5351,13 +5407,13 @@ operation wallet_api::get_prototype_operation(string operation_name)
 
 void wallet_api::dbg_make_uia(string creator, string symbol)
 {
-   FC_ASSERT(!is_locked());
+   FC_ASSERT(!is_locked(), "Wallet is locked, please unlock to get all operations available");
    my->dbg_make_uia(creator, symbol);
 }
 
 void wallet_api::dbg_make_mia(string creator, string symbol)
 {
-   FC_ASSERT(!is_locked());
+   FC_ASSERT(!is_locked(), "Wallet is locked, please unlock to get all operations available");
    my->dbg_make_mia(creator, symbol);
 }
 
@@ -5393,7 +5449,7 @@ vector< variant > wallet_api::network_get_connected_peers()
 
 void wallet_api::flood_network(string prefix, uint32_t number_of_transactions)
 {
-   FC_ASSERT(!is_locked());
+   FC_ASSERT(!is_locked(), "Wallet is locked, please unlock to get all operations available");
    my->flood_network(prefix, number_of_transactions);
 }
 
@@ -5872,13 +5928,13 @@ signed_transaction wallet_api::buy( string buyer_account,
 signed_transaction wallet_api::borrow_asset(string seller_name, string amount_to_sell,
                                                 string asset_symbol, string amount_of_collateral, bool broadcast)
 {
-   FC_ASSERT(!is_locked());
+   FC_ASSERT(!is_locked(), "Wallet is locked, please unlock to get all operations available");
    return my->borrow_asset(seller_name, amount_to_sell, asset_symbol, amount_of_collateral, broadcast);
 }
 
 signed_transaction wallet_api::cancel_order(object_id_type order_id, bool broadcast)
 {
-   FC_ASSERT(!is_locked());
+   FC_ASSERT(!is_locked(), "Wallet is locked, please unlock to get all operations available");
    return my->cancel_order(order_id, broadcast);
 }
 
@@ -5928,7 +5984,7 @@ map<string,public_key_type> wallet_api::get_blind_accounts()const
 }
 map<string,public_key_type> wallet_api::get_my_blind_accounts()const
 {
-   FC_ASSERT( !is_locked() );
+   FC_ASSERT( !is_locked(), "Wallet is locked, please unlock to get all operations available" );
    map<string,public_key_type> result;
    for( const auto& item : my->_wallet.labeled_keys )
    {
@@ -5940,7 +5996,7 @@ map<string,public_key_type> wallet_api::get_my_blind_accounts()const
 
 public_key_type    wallet_api::create_blind_account( string label, string brain_key  )
 {
-   FC_ASSERT( !is_locked() );
+   FC_ASSERT( !is_locked(), "Wallet is locked, please unlock to get all operations available" );
 
    auto label_itr = my->_wallet.labeled_keys.get<by_label>().find(label);
    if( label_itr !=  my->_wallet.labeled_keys.get<by_label>().end() )
@@ -6068,7 +6124,7 @@ blind_confirmation wallet_api::blind_transfer_help( string from_key_or_label,
    blind_confirmation confirm;
    try {
 
-   FC_ASSERT( !is_locked() );
+   FC_ASSERT( !is_locked(), "Wallet is locked, please unlock to get all operations available" );
    public_key_type from_key = get_public_key(from_key_or_label);
    public_key_type to_key   = get_public_key(to_key_or_label);
 
@@ -6237,7 +6293,7 @@ blind_confirmation wallet_api::transfer_to_blind( string from_account_id_or_name
                                                   vector<pair<string, string>> to_amounts,
                                                   bool broadcast )
 { try {
-   FC_ASSERT( !is_locked() );
+   FC_ASSERT( !is_locked(), "Wallet is locked, please unlock to get all operations available" );
    idump((to_amounts));
 
    blind_confirmation confirm;
@@ -6317,7 +6373,7 @@ blind_confirmation wallet_api::transfer_to_blind( string from_account_id_or_name
 
 blind_receipt wallet_api::receive_blind_transfer( string confirmation_receipt, string opt_from, string opt_memo )
 {
-   FC_ASSERT( !is_locked() );
+   FC_ASSERT( !is_locked(), "Wallet is locked, please unlock to get all operations available" );
    stealth_confirmation conf(confirmation_receipt);
    FC_ASSERT( conf.to );
 
@@ -6459,7 +6515,7 @@ signed_transaction wallet_api::propose_create_sport(
         internationalized_string_type name,
         bool broadcast /*= false*/)
 {
-   FC_ASSERT( !is_locked() );
+   FC_ASSERT( !is_locked(), "Wallet is locked, please unlock to get all operations available" );
    const chain_parameters& current_params = get_global_properties().parameters;
 
    sport_create_operation sport_create_op;
@@ -6487,7 +6543,7 @@ signed_transaction wallet_api::propose_update_sport(
         fc::optional<internationalized_string_type> name,
         bool broadcast /*= false*/)
 {
-   FC_ASSERT( !is_locked() );
+   FC_ASSERT( !is_locked() , "Wallet is locked, please unlock to get all operations available" );
    const chain_parameters& current_params = get_global_properties().parameters;
 
    sport_update_operation sport_update_op;
@@ -6515,7 +6571,7 @@ signed_transaction wallet_api::propose_delete_sport(
         sport_id_type sport_id,
         bool broadcast /*= false*/)
 {
-    FC_ASSERT( !is_locked() );
+    FC_ASSERT( !is_locked() , "Wallet is locked, please unlock to get all operations available" );
     const chain_parameters& current_params = get_global_properties().parameters;
 
     sport_delete_operation sport_delete_op;
@@ -6543,7 +6599,7 @@ signed_transaction wallet_api::propose_create_event_group(
         sport_id_type sport_id,
         bool broadcast /*= false*/)
 {
-    FC_ASSERT( !is_locked() );
+    FC_ASSERT( !is_locked(), "Wallet is locked, please unlock to get all operations available" );
     const chain_parameters& current_params = get_global_properties().parameters;
 
     event_group_create_operation event_group_create_op;
@@ -6573,7 +6629,7 @@ signed_transaction wallet_api::propose_update_event_group(
         fc::optional<internationalized_string_type> name,
         bool broadcast /*= false*/)
 {
-    FC_ASSERT( !is_locked() );
+    FC_ASSERT( !is_locked() , "Wallet is locked, please unlock to get all operations available" );
     const chain_parameters& current_params = get_global_properties().parameters;
 
     event_group_update_operation event_group_update_op;
@@ -6602,7 +6658,7 @@ signed_transaction wallet_api::propose_delete_event_group(
         event_group_id_type event_group,
         bool broadcast /*= false*/)
 {
-    FC_ASSERT( !is_locked() );
+    FC_ASSERT( !is_locked() , "Wallet is locked, please unlock to get all operations available" );
     const chain_parameters& current_params = get_global_properties().parameters;
 
     event_group_delete_operation event_group_delete_op;
@@ -6632,7 +6688,7 @@ signed_transaction wallet_api::propose_create_event(
         event_group_id_type event_group_id,
         bool broadcast /*= false*/)
 {
-    FC_ASSERT( !is_locked() );
+    FC_ASSERT( !is_locked() , "Wallet is locked, please unlock to get all operations available" );
     const chain_parameters& current_params = get_global_properties().parameters;
 
     event_create_operation event_create_op;
@@ -6667,7 +6723,7 @@ signed_transaction wallet_api::propose_update_event(
         fc::optional<time_point_sec> start_time,
         bool broadcast /*= false*/)
 {
-    FC_ASSERT( !is_locked() );
+    FC_ASSERT( !is_locked() , "Wallet is locked, please unlock to get all operations available" );
     const chain_parameters& current_params = get_global_properties().parameters;
 
     event_update_operation event_update_op;
@@ -6700,7 +6756,7 @@ signed_transaction wallet_api::propose_create_betting_market_rules(
         internationalized_string_type description,
         bool broadcast /*= false*/)
 {
-    FC_ASSERT( !is_locked() );
+    FC_ASSERT( !is_locked() , "Wallet is locked, please unlock to get all operations available" );
     const chain_parameters& current_params = get_global_properties().parameters;
 
     betting_market_rules_create_operation betting_market_rules_create_op;
@@ -6730,7 +6786,7 @@ signed_transaction wallet_api::propose_update_betting_market_rules(
         fc::optional<internationalized_string_type> description,
         bool broadcast /*= false*/)
 {
-    FC_ASSERT( !is_locked() );
+    FC_ASSERT( !is_locked() , "Wallet is locked, please unlock to get all operations available" );
     const chain_parameters& current_params = get_global_properties().parameters;
 
     betting_market_rules_update_operation betting_market_rules_update_op;
@@ -6762,7 +6818,7 @@ signed_transaction wallet_api::propose_create_betting_market_group(
         asset_id_type asset_id,
         bool broadcast /*= false*/)
 {
-    FC_ASSERT( !is_locked() );
+    FC_ASSERT( !is_locked() , "Wallet is locked, please unlock to get all operations available" );
     const chain_parameters& current_params = get_global_properties().parameters;
 
     betting_market_group_create_operation betting_market_group_create_op;
@@ -6795,7 +6851,7 @@ signed_transaction wallet_api::propose_update_betting_market_group(
         fc::optional<betting_market_group_status> status,
         bool broadcast /*= false*/)
 {
-    FC_ASSERT( !is_locked() );
+    FC_ASSERT( !is_locked() , "Wallet is locked, please unlock to get all operations available" );
     const chain_parameters& current_params = get_global_properties().parameters;
 
     betting_market_group_update_operation betting_market_group_update_op;
@@ -6827,7 +6883,7 @@ signed_transaction wallet_api::propose_create_betting_market(
         internationalized_string_type payout_condition,
         bool broadcast /*= false*/)
 {
-    FC_ASSERT( !is_locked() );
+    FC_ASSERT( !is_locked() , "Wallet is locked, please unlock to get all operations available" );
     const chain_parameters& current_params = get_global_properties().parameters;
 
     betting_market_create_operation betting_market_create_op;
@@ -6859,7 +6915,7 @@ signed_transaction wallet_api::propose_update_betting_market(
         fc::optional<internationalized_string_type> payout_condition,
         bool broadcast /*= false*/)
 {
-    FC_ASSERT( !is_locked() );
+    FC_ASSERT( !is_locked() , "Wallet is locked, please unlock to get all operations available" );
     const chain_parameters& current_params = get_global_properties().parameters;
 
     betting_market_update_operation betting_market_update_op;
@@ -6891,7 +6947,7 @@ signed_transaction wallet_api::place_bet(string betting_account,
                                          double backer_multiplier,
                                          bool broadcast /*= false*/)
 {
-    FC_ASSERT( !is_locked() );
+    FC_ASSERT( !is_locked(), "Wallet is locked, please unlock to get all operations available" );
     fc::optional<asset_object> asset_obj = get_asset(asset_symbol);
     FC_ASSERT(asset_obj, "Could not find asset matching ${asset}", ("asset", asset_symbol));
 
@@ -6916,7 +6972,7 @@ signed_transaction wallet_api::cancel_bet(string betting_account,
                                           bet_id_type bet_id,
                                           bool broadcast /*= false*/)
 {
-    FC_ASSERT( !is_locked() );
+    FC_ASSERT( !is_locked(), "Wallet is locked, please unlock to get all operations available" );
 
     const chain_parameters& current_params = get_global_properties().parameters;
 
@@ -6939,7 +6995,7 @@ signed_transaction wallet_api::propose_resolve_betting_market_group(
         const std::map<betting_market_id_type, betting_market_resolution_type>& resolutions,
         bool broadcast /*= false*/)
 {
-    FC_ASSERT( !is_locked() );
+    FC_ASSERT( !is_locked(), "Wallet is locked, please unlock to get all operations available" );
     const chain_parameters& current_params = get_global_properties().parameters;
 
     betting_market_group_resolve_operation betting_market_group_resolve_op;
@@ -6967,7 +7023,7 @@ signed_transaction wallet_api::propose_cancel_betting_market_group(
         betting_market_group_id_type betting_market_group_id,
         bool broadcast /*= false*/)
 {
-    FC_ASSERT( !is_locked() );
+    FC_ASSERT( !is_locked(), "Wallet is locked, please unlock to get all operations available" );
     const chain_parameters& current_params = get_global_properties().parameters;
 
     betting_market_group_cancel_unmatched_bets_operation betting_market_group_cancel_unmatched_bets_op;
@@ -6990,7 +7046,7 @@ signed_transaction wallet_api::propose_cancel_betting_market_group(
 
 signed_transaction wallet_api::tournament_create( string creator, tournament_options options, bool broadcast )
 {
-   FC_ASSERT( !is_locked() );
+   FC_ASSERT( !is_locked(), "Wallet is locked, please unlock to get all operations available" );
    account_object creator_account_obj = get_account(creator);
 
    signed_transaction tx;
@@ -7011,7 +7067,7 @@ signed_transaction wallet_api::tournament_join( string payer_account,
                                                 string buy_in_asset_symbol,
                                                 bool broadcast )
 {
-   FC_ASSERT( !is_locked() );
+   FC_ASSERT( !is_locked(), "Wallet is locked, please unlock to get all operations available" );
    account_object payer_account_obj = get_account(payer_account);
    account_object player_account_obj = get_account(player_account);
    //graphene::chain::tournament_object tournament_obj = my->get_object<graphene::chain::tournament_object>(tournament_id);
@@ -7038,7 +7094,7 @@ signed_transaction wallet_api::tournament_leave( string canceling_account,
                                                  tournament_id_type tournament_id,
                                                  bool broadcast)
 {
-    FC_ASSERT( !is_locked() );
+    FC_ASSERT( !is_locked(), "Wallet is locked, please unlock to get all operations available" );
     account_object player_account_obj = get_account(player_account);
     account_object canceling_account_obj = get_account(canceling_account);
     //graphene::chain::tournament_object tournament_obj = my->get_object<graphene::chain::tournament_object>(tournament_id);
@@ -7083,7 +7139,7 @@ signed_transaction wallet_api::rps_throw(game_id_type game_id,
                                          rock_paper_scissors_gesture gesture,
                                          bool broadcast)
 {
-   FC_ASSERT( !is_locked() );
+   FC_ASSERT( !is_locked(), "Wallet is locked, please unlock to get all operations available" );
 
    // check whether the gesture is appropriate for the game we're playing
    graphene::chain::game_object game_obj = my->get_object<graphene::chain::game_object>(game_id);

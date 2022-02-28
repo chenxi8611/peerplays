@@ -12,7 +12,7 @@ Following dependencies are needed for a clean install of Ubuntu 20.04:
 ```
 sudo apt-get install \
     apt-utils autoconf bash build-essential ca-certificates cmake dnsutils \
-    doxygen expect git graphviz libboost1.67-all-dev libbz2-dev libcurl4-openssl-dev \
+    doxygen expect git graphviz libboost-all-dev libbz2-dev libcurl4-openssl-dev \
     libncurses-dev libreadline-dev libsnappy-dev libssl-dev libtool libzip-dev \
     libzmq3-dev locales mc nano net-tools ntp openssh-server pkg-config perl \
     python3 python3-jinja2 sudo wget
@@ -27,10 +27,18 @@ cd $HOME/src
 git clone https://gitlab.com/PBSA/peerplays.git
 cd peerplays
 git submodule update --init --recursive
+
 # If you want to build Mainnet node
 cmake -DCMAKE_BUILD_TYPE=Release
+
 # If you want to build Testnet node
 cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_PEERPLAYS_TESTNET=1
+
+# Update -j flag depending on your current system specs;
+# Recommended 4GB of RAM per 1 CPU core
+# make -j2 for 8GB RAM
+# make -j4 for 16GB RAM
+# make -j8 for 32GB RAM
 make -j$(nproc)
 
 make install # this can install the executable files under /usr/local

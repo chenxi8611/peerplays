@@ -31,15 +31,15 @@
 #include <sstream>
 
 namespace graphene { namespace chain {
-class betting_market_object;
-class betting_market_group_object;
+   class betting_market_object;
+   class betting_market_group_object;
 } }
 
 namespace fc {
-void to_variant(const graphene::chain::betting_market_object& betting_market_obj, fc::variant& v, uint32_t max_depth = 1);
-void from_variant(const fc::variant& v, graphene::chain::betting_market_object& betting_market_obj, uint32_t max_depth = 1);
-void to_variant(const graphene::chain::betting_market_group_object& betting_market_group_obj, fc::variant& v, uint32_t max_depth = 1);
-void from_variant(const fc::variant& v, graphene::chain::betting_market_group_object& betting_market_group_obj, uint32_t max_depth = 1);
+   void to_variant(const graphene::chain::betting_market_object& betting_market_obj, fc::variant& v, uint32_t max_depth = 1);
+   void from_variant(const fc::variant& v, graphene::chain::betting_market_object& betting_market_obj, uint32_t max_depth = 1);
+   void to_variant(const graphene::chain::betting_market_group_object& betting_market_group_obj, fc::variant& v, uint32_t max_depth = 1);
+   void from_variant(const fc::variant& v, graphene::chain::betting_market_group_object& betting_market_group_obj, uint32_t max_depth = 1);
 } //end namespace fc
 
 namespace graphene { namespace chain {
@@ -722,100 +722,100 @@ FC_REFLECT_DERIVED( graphene::chain::betting_market_position_object, (graphene::
 
 namespace fc {
 
-template<>
-template<>
-inline void if_enum<fc::false_type>::from_variant(const variant &vo, graphene::chain::betting_market_object &v, uint32_t max_depth) {
-   from_variant(vo, v, max_depth);
-}
-
-template<>
-template<>
-inline void if_enum<fc::false_type>::to_variant(const graphene::chain::betting_market_object &v, variant &vo, uint32_t max_depth) {
-   to_variant(v, vo, max_depth);
-}
-
-namespace raw { namespace detail {
-
-template<>
-template<>
-inline void if_enum<fc::false_type>::pack(fc::datastream<size_t> &s, const graphene::chain::betting_market_object &v, uint32_t) {
-   s << v;
-}
-
-template<>
-template<>
-inline void if_enum<fc::false_type>::pack(fc::datastream<char*> &s, const graphene::chain::betting_market_object &v, uint32_t) {
-   s << v;
-}
-
-template<>
-template<>
-inline void if_enum<fc::false_type>::unpack(fc::datastream<const char*> &s, graphene::chain::betting_market_object &v, uint32_t) {
-   s >> v;
-}
-
-} }
-
-template <>
-struct get_typename<graphene::chain::betting_market_object> {
-   static const char *name() {
-      return "graphene::chain::betting_market_object";
+   template<>
+   template<>
+   inline void if_enum<fc::false_type>::from_variant(const variant &vo, graphene::chain::betting_market_object &v, uint32_t max_depth) {
+      from_variant(vo, v, max_depth);
    }
-};
-template <>
-struct reflector<graphene::chain::betting_market_object> {
-   typedef graphene::chain::betting_market_object type;
-   typedef fc::true_type is_defined;
-   typedef fc::false_type is_enum;
-};
+
+   template<>
+   template<>
+   inline void if_enum<fc::false_type>::to_variant(const graphene::chain::betting_market_object &v, variant &vo, uint32_t max_depth) {
+      to_variant(v, vo, max_depth);
+   }
+
+   namespace raw { namespace detail {
+
+      template<>
+      template<>
+      inline void if_enum<fc::false_type>::pack(fc::datastream<size_t> &s, const graphene::chain::betting_market_object &v, uint32_t) {
+         s << v;
+      }
+
+      template<>
+      template<>
+      inline void if_enum<fc::false_type>::pack(fc::datastream<char*> &s, const graphene::chain::betting_market_object &v, uint32_t) {
+         s << v;
+      }
+
+      template<>
+      template<>
+      inline void if_enum<fc::false_type>::unpack(fc::datastream<const char*> &s, graphene::chain::betting_market_object &v, uint32_t) {
+         s >> v;
+      }
+
+   } }  // namespace fc::raw::detail
+
+   template <>
+   struct get_typename<graphene::chain::betting_market_object> {
+      static const char *name() {
+         return "graphene::chain::betting_market_object";
+      }
+   };
+   template <>
+   struct reflector<graphene::chain::betting_market_object> {
+      typedef graphene::chain::betting_market_object type;
+      typedef fc::true_type is_defined;
+      typedef fc::false_type is_enum;
+   };
 } // namespace fc
 
 namespace fc {
 
-template<>
-template<>
-inline void if_enum<fc::false_type>::from_variant(const variant &vo, graphene::chain::betting_market_group_object &v, uint32_t max_depth) {
-   from_variant(vo, v, max_depth);
-}
-
-template<>
-template<>
-inline void if_enum<fc::false_type>::to_variant(const graphene::chain::betting_market_group_object &v, variant &vo, uint32_t max_depth) {
-   to_variant(v, vo, max_depth);
-}
-
-namespace raw { namespace detail {
-
-template<>
-template<>
-inline void if_enum<fc::false_type>::pack(fc::datastream<size_t> &s, const graphene::chain::betting_market_group_object &v, uint32_t) {
-   s << v;
-}
-
-template<>
-template<>
-inline void if_enum<fc::false_type>::pack(fc::datastream<char*> &s, const graphene::chain::betting_market_group_object &v, uint32_t) {
-   s << v;
-}
-
-template<>
-template<>
-inline void if_enum<fc::false_type>::unpack(fc::datastream<const char*> &s, graphene::chain::betting_market_group_object &v, uint32_t) {
-   s >> v;
-}
-
-} }
-
-template <>
-struct get_typename<graphene::chain::betting_market_group_object> {
-   static const char *name() {
-      return "graphene::chain::betting_market_group_object";
+   template<>
+   template<>
+   inline void if_enum<fc::false_type>::from_variant(const variant &vo, graphene::chain::betting_market_group_object &v, uint32_t max_depth) {
+      from_variant(vo, v, max_depth);
    }
-};
-template <>
-struct reflector<graphene::chain::betting_market_group_object> {
-   typedef graphene::chain::betting_market_group_object type;
-   typedef fc::true_type is_defined;
-   typedef fc::false_type is_enum;
-};
+
+   template<>
+   template<>
+   inline void if_enum<fc::false_type>::to_variant(const graphene::chain::betting_market_group_object &v, variant &vo, uint32_t max_depth) {
+      to_variant(v, vo, max_depth);
+   }
+
+   namespace raw { namespace detail {
+
+      template<>
+      template<>
+      inline void if_enum<fc::false_type>::pack(fc::datastream<size_t> &s, const graphene::chain::betting_market_group_object &v, uint32_t) {
+         s << v;
+      }
+
+      template<>
+      template<>
+      inline void if_enum<fc::false_type>::pack(fc::datastream<char*> &s, const graphene::chain::betting_market_group_object &v, uint32_t) {
+         s << v;
+      }
+
+      template<>
+      template<>
+      inline void if_enum<fc::false_type>::unpack(fc::datastream<const char*> &s, graphene::chain::betting_market_group_object &v, uint32_t) {
+         s >> v;
+      }
+
+   } } // namespace fc::raw:detail
+
+   template <>
+   struct get_typename<graphene::chain::betting_market_group_object> {
+      static const char *name() {
+         return "graphene::chain::betting_market_group_object";
+      }
+   };
+   template <>
+   struct reflector<graphene::chain::betting_market_group_object> {
+      typedef graphene::chain::betting_market_group_object type;
+      typedef fc::true_type is_defined;
+      typedef fc::false_type is_enum;
+   };
 } // namespace fc

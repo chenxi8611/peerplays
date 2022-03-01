@@ -1522,6 +1522,89 @@ BOOST_AUTO_TEST_CASE( no_proposal )
    }
 }
 
+BOOST_AUTO_TEST_CASE( dividend_distribution_fee )
+{
+   try {
+      // advance to HF
+      generate_blocks(HARDFORK_FEES_AS_DIVIDENDS_TIME);
+      generate_block();
+
+      // update default gpos global parameters to 4 days
+      auto now = db.head_block_time();
+      update_gpos_global(345600, 86400, now);
+
+      generate_block();
+      set_expiration(db, trx);
+
+      ACTORS((nathan)(alice)(voter1)(voter2));
+
+      const auto& core = asset_id_type()(db);
+
+      // get core asset object
+      const auto& dividend_holder_asset_object = get_asset(GRAPHENE_SYMBOL);
+
+      // by default core token pays dividends once per month
+      const auto& dividend_data = dividend_holder_asset_object.dividend_data(db);
+      BOOST_CHECK_EQUAL(*dividend_data.options.payout_interval, 2592000); //  30 days
+
+      // update the payout interval to 1 day for speed purposes of the test
+      update_payout_interval(core.symbol, db.head_block_time() + fc::minutes(1), 60 * 60 * 24); // 1 day
+
+      // get the dividend distribution account
+      const account_object& dividend_distribution_account = dividend_data.dividend_distribution_account(db);
+
+      // transfer to voters and nathan without fee. We can't enable fee yet, since create worker is a custom 
+      // function which doesn't take the fee in transaction so by enabling it we will end up with not sufficient fee
+      transfer( committee_account, voter1_id, core.amount( 2000 * GRAPHENE_BLOCKCHAIN_PRECISION ) );
+      transfer( committee_account, voter2_id, core.amount( 3000 * GRAPHENE_BLOCKCHAIN_PRECISION ) );
+      transfer( committee_account, nathan_id, core.amount( 1000000 * GRAPHENE_BLOCKCHAIN_PRECISION ) );
+      // create some vesting for voters
+      create_vesting(voter1_id, core.amount(100 * GRAPHENE_BLOCKCHAIN_PRECISION ), vesting_balance_type::gpos);
+      create_vesting(voter2_id, core.amount(100 * GRAPHENE_BLOCKCHAIN_PRECISION ), vesting_balance_type::gpos);
+      // create worker
+      upgrade_to_lifetime_member(nathan_id);
+      auto worker = create_worker(nathan_id, 50 * GRAPHENE_BLOCKCHAIN_PRECISION, fc::days(2));
+
+      generate_block();
+
+      // vote for worker
+      vote_for(voter1_id, worker.vote_for, voter1_private_key);
+
+      // for now on enable fees
+      enable_fees();
+
+      // transfering some coins to alice.
+      for(int i = 0; i < 50; i++) {
+         transfer( nathan_id, alice_id,  core.amount( 100 * GRAPHENE_BLOCKCHAIN_PRECISION ) );
+      }
+
+      generate_blocks(db.get_dynamic_global_properties().next_maintenance_time);
+
+      // on the dividend account from total fee should be only network cut which is 20% of total fee.
+      // note that we did 50 transactions.
+      // Each transaction takes for fee 20 * GRAPHENE_BLOCKCHAIN_PRECISION
+      int dividend_distribution_account_balance = get_balance(dividend_distribution_account, core);
+      BOOST_CHECK_EQUAL(dividend_distribution_account_balance, 50 * 20 * GRAPHENE_BLOCKCHAIN_PRECISION * 20 / 100);
+
+      // voters are not yet paid from dividend account, it will be on next maintenance
+      BOOST_CHECK_EQUAL(get_balance(voter1_id(db), core), 1900 * GRAPHENE_BLOCKCHAIN_PRECISION);
+      BOOST_CHECK_EQUAL(get_balance(voter2_id(db), core), 2900 * GRAPHENE_BLOCKCHAIN_PRECISION);
+
+      generate_blocks(db.get_dynamic_global_properties().next_maintenance_time);
+
+      // verify that voter_1 is payed from dividend account and voter_2 is not since voter_2 didn't vote
+      // note that we pass two maintenance intervals, so vesting factor is not anymore 1, instead it is  0.75
+      int payout_to_voter1 = (dividend_distribution_account_balance / 2 ) * 0.75;
+      BOOST_CHECK_EQUAL(get_balance(voter1_id(db), core), 1900 * GRAPHENE_BLOCKCHAIN_PRECISION + payout_to_voter1);
+      BOOST_CHECK_EQUAL(get_balance(voter2_id(db), core), 2900 * GRAPHENE_BLOCKCHAIN_PRECISION);
+
+   }
+   catch (fc::exception &e) {
+      edump((e.to_detail_string()));
+      throw;
+   }
+}
+
 BOOST_AUTO_TEST_CASE( database_api )
 {
    ACTORS((alice)(bob));

@@ -76,9 +76,16 @@ void account_statistics_object::process_fees(const account_object& a, database& 
          share_type lifetime_cut = cut_fee(core_fee_total, account.lifetime_referrer_fee_percentage);
          share_type referral = core_fee_total - network_cut - lifetime_cut;
 
-         d.modify( d.get_core_dynamic_data(), [network_cut](asset_dynamic_data_object& addo) {
+         if(d.head_block_time() >= HARDFORK_FEES_AS_DIVIDENDS_TIME ) {
+            const asset_object& ao = d.get_core_asset();
+            const asset_dividend_data_object& core_asset_dividend_data_obj  = (*ao.dividend_data_id)(d);
+            account_id_type rake_account_id = core_asset_dividend_data_obj.dividend_distribution_account;
+            d.adjust_balance(rake_account_id, network_cut);
+         } else {
+            d.modify( d.get_core_dynamic_data(), [network_cut](asset_dynamic_data_object& addo) {
             addo.accumulated_fees += network_cut;
-         });
+            });
+         }
 
          // Potential optimization: Skip some of this math and object lookups by special casing on the account type.
          // For example, if the account is a lifetime member, we can skip all this and just deposit the referral to

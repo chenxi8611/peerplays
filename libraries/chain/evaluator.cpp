@@ -128,19 +128,6 @@ database& generic_evaluator::db()const { return trx_state->db(); }
      db().adjust_balance(fee_payer, fee_from_account);
    }
 
-   void generic_evaluator::pay_fee_to_dividend()
-   {
-      const database& d = db();
-      
-      if(d.head_block_time() > HARDFORK_FEES_AS_DIVIDENDS_TIME) {
-         const asset_object& ao = (*fee_asset).get_id()(d);
-         const asset_dividend_data_object& core_asset_dividend_data_obj  = (*ao.dividend_data_id)(d);
-         fc::optional<account_id_type> rake_account_id = core_asset_dividend_data_obj.dividend_distribution_account;
-         db_adjust_balance(*rake_account_id, fee_from_account);
-      }
-
-   }
-
    object_id_type generic_evaluator::get_relative_id( object_id_type rel_id )const
    {
      if (!is_relative(rel_id))

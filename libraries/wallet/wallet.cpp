@@ -2830,6 +2830,57 @@ public:
       return sign_transaction( tx, broadcast );
    } FC_CAPTURE_AND_RETHROW( (voting_account)(sons_to_approve)(sons_to_reject)(desired_number_of_sons)(broadcast) ) }
 
+   signed_transaction sidechain_deposit_transaction(  const string &son_name_or_id,
+                                                      const string &account_from_name_or_id,
+                                                      const string &account_to_name_or_id,
+                                                      const sidechain_type& sidechain,
+                                                      const string &transaction_id,
+                                                      uint32_t operation_index,
+                                                      const string &asset_name_or_id,
+                                                      const string &amount)
+   {
+      //! Get data we need to procced transaction
+      const auto dynamic_props = get_dynamic_global_properties();
+      const auto son_obj = get_son(son_name_or_id);
+      FC_ASSERT(son_obj.status == son_status::active, "Son account is not active, current status: ${status}", ("status", son_obj.status));
+      const auto account_obj_from = get_account(account_from_name_or_id);
+      const auto account_obj_to = get_account(account_to_name_or_id);
+      const std::string sidechain_str = [&sidechain](){
+         switch (sidechain) {
+            case sidechain_type::peerplays : return "peerplays";
+            case sidechain_type::bitcoin : return "bitcoin";
+            case sidechain_type::hive : return "hive";
+            default:
+               FC_THROW("Wrong sidechain type: ${sidechain}", ("sidechain", sidechain));
+         }
+      }();
+      fc::optional<asset_object> asset_obj = get_asset(asset_name_or_id);
+      FC_ASSERT(asset_obj, "Could not find asset matching ${asset}", ("asset", asset_name_or_id));
+      const auto asset_val = asset_obj->amount_from_string(amount);
+      const auto asset_price = asset_obj->options.core_exchange_rate;
+
+      //! Create transaction
+      signed_transaction son_wallet_deposit_create_transaction;
+      son_wallet_deposit_create_operation op;
+      op.payer = son_obj.son_account;
+      op.son_id = son_obj.id;
+      op.timestamp = dynamic_props.time;
+      op.block_num = dynamic_props.head_block_number;
+      op.sidechain = sidechain;
+      op.sidechain_uid = sidechain_str + "-" + transaction_id + "-" + std::to_string(operation_index);
+      op.sidechain_transaction_id = transaction_id;
+      op.sidechain_from = object_id_to_string(account_obj_from.id);
+      op.sidechain_to = object_id_to_string(account_obj_to.id);
+      op.sidechain_currency = object_id_to_string(asset_obj->id);
+      op.sidechain_amount = asset_val.amount;
+      op.peerplays_from = account_obj_from.id;
+      op.peerplays_to = account_obj_to.id;
+      op.peerplays_asset = asset(asset_val.amount * asset_price.base.amount / asset_price.quote.amount);
+      son_wallet_deposit_create_transaction.operations.push_back(op);
+
+      return sign_transaction(son_wallet_deposit_create_transaction, true);
+   }
+
    signed_transaction vote_for_witness(string voting_account,
                                        string witness,
                                        bool approve,
@@ -5339,6 +5390,25 @@ signed_transaction wallet_api::update_son_votes(string voting_account,
                                                     bool broadcast /* = false */)
 {
    return my->update_son_votes(voting_account, sons_to_approve, sons_to_reject, desired_number_of_sons, broadcast);
+}
+
+signed_transaction wallet_api::sidechain_deposit_transaction(  const string &son_name_or_id,
+                                                               const string &account_from_name_or_id,
+                                                               const string &account_to_name_or_id,
+                                                               const sidechain_type& sidechain,
+                                                               const string &transaction_id,
+                                                               uint32_t operation_index,
+                                                               const string &asset_name_or_id,
+                                                               const string &amount)
+{
+   return my->sidechain_deposit_transaction(son_name_or_id, 
+      account_from_name_or_id,
+      account_to_name_or_id,
+      sidechain,
+      transaction_id,
+      operation_index,
+      asset_name_or_id,
+      amount);
 }
 
 signed_transaction wallet_api::vote_for_witness(string voting_account,

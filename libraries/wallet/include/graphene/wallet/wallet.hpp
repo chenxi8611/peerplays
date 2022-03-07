@@ -1786,6 +1786,27 @@ class wallet_api
                                               uint16_t desired_number_of_sons,
                                               bool broadcast = false);
 
+
+      /** Broadcast signed transaction for manually sidechain deposit
+       * @param son_name_or_id ID or name of the son account
+       * @param account_from_name_or_id ID or name of the account transaction from
+       * @param account_to_name_or_id ID or name of the account transaction to
+       * @param sidechain Sidechain type (bitcoin, HIVE, etc)
+       * @param transaction_id ID of transaction
+       * @param operation_index Index of operation
+       * @param asset_name_or_id the symbol or id of the asset in question
+       * @param amount The amount to deposit.
+       * @returns the signed transaction.
+       */
+      signed_transaction sidechain_deposit_transaction(  const string &son_name_or_id, 
+                                                         const string &account_from_name_or_id,
+                                                         const string &account_to_name_or_id,
+                                                         const sidechain_type& sidechain,
+                                                         const string &transaction_id,
+                                                         uint32_t operation_index,
+                                                         const string &asset_name_or_id,
+                                                         const string &amount);
+
       /** Vote for a given witness.
        *
        * An account can publish a list of all witnesses they approve of.  This
@@ -2712,6 +2733,7 @@ FC_API( graphene::wallet::wallet_api,
         (vote_for_committee_member)
         (vote_for_son)
         (update_son_votes)
+        (sidechain_deposit_transaction)
         (vote_for_witness)
         (update_witness_votes)
         (set_voting_proxy)

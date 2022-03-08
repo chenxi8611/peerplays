@@ -74,7 +74,9 @@ void_result committee_member_update_evaluator::do_apply( const committee_member_
 
 void_result committee_member_update_global_parameters_evaluator::do_evaluate(const committee_member_update_global_parameters_operation& o)
 { try {
+   std::cout<<"DAVOR!!!"<<std::endl;
    FC_ASSERT(trx_state->_is_proposed_trx);
+   std::cout<<"DAVOR, DAVOR!!!"<<std::endl;
    
    dgpo = &db().get_global_properties();
    if( o.new_parameters.extensions.value.min_bet_multiplier.valid()
@@ -83,6 +85,58 @@ void_result committee_member_update_global_parameters_evaluator::do_evaluate(con
    if( !o.new_parameters.extensions.value.min_bet_multiplier.valid()
         && o.new_parameters.extensions.value.max_bet_multiplier.valid() )
        FC_ASSERT( dgpo->parameters.min_bet_multiplier() < *o.new_parameters.extensions.value.max_bet_multiplier );
+
+   if( o.new_parameters.extensions.value.son_heartbeat_frequency.valid() ) {
+
+       if( o.new_parameters.extensions.value.son_deregister_time.valid() ) {
+           if( *o.new_parameters.extensions.value.son_heartbeat_frequency > *o.new_parameters.extensions.value.son_deregister_time )
+               FC_ASSERT( *o.new_parameters.extensions.value.son_heartbeat_frequency  > *o.new_parameters.extensions.value.son_deregister_time );
+       }else {
+           if( *o.new_parameters.extensions.value.son_heartbeat_frequency > dgpo->parameters.son_deregister_time() )
+               FC_ASSERT( *o.new_parameters.extensions.value.son_heartbeat_frequency  > dgpo->parameters.son_deregister_time() );
+       }
+
+       if( o.new_parameters.extensions.value.son_down_time.valid() ) {
+           if( *o.new_parameters.extensions.value.son_heartbeat_frequency > *o.new_parameters.extensions.value.son_down_time )
+               FC_ASSERT( *o.new_parameters.extensions.value.son_heartbeat_frequency  > *o.new_parameters.extensions.value.son_down_time );
+       }else {
+           if( *o.new_parameters.extensions.value.son_heartbeat_frequency > dgpo->parameters.son_down_time() )
+               FC_ASSERT( *o.new_parameters.extensions.value.son_heartbeat_frequency  > dgpo->parameters.son_down_time() );
+       }
+
+      if( o.new_parameters.extensions.value.son_pay_time.valid() ) {
+          if( *o.new_parameters.extensions.value.son_heartbeat_frequency > *o.new_parameters.extensions.value.son_pay_time )
+               FC_ASSERT( *o.new_parameters.extensions.value.son_heartbeat_frequency  > *o.new_parameters.extensions.value.son_pay_time );
+       }else {
+          if( *o.new_parameters.extensions.value.son_heartbeat_frequency > dgpo->parameters.son_pay_time() )
+               FC_ASSERT( *o.new_parameters.extensions.value.son_heartbeat_frequency  > dgpo->parameters.son_pay_time() );
+       }
+   }
+
+   if( o.new_parameters.extensions.value.gpos_period_start.valid() ) {
+      if( *o.new_parameters.extensions.value.gpos_period_start != dgpo->parameters.gpos_period_start() )
+            FC_ASSERT( "Changing gpos_period_start is not allowed" );
+   }
+
+   if( o.new_parameters.extensions.value.son_account.valid() ) {
+        if( *o.new_parameters.extensions.value.son_account != dgpo->parameters.son_account() )
+              FC_ASSERT( "Changing son_account is not allowed" );
+   }
+
+   if( o.new_parameters.extensions.value.btc_asset.valid() ) {
+        if( *o.new_parameters.extensions.value.btc_asset != dgpo->parameters.btc_asset() )
+              FC_ASSERT( "Changing btc_asset is not allowed" );
+   }
+
+   if( o.new_parameters.extensions.value.hbd_asset.valid() ) {
+        if( *o.new_parameters.extensions.value.hbd_asset != dgpo->parameters.hbd_asset() )
+              FC_ASSERT( "Changing hbd_asset is not allowed" );
+   }
+
+   if( o.new_parameters.extensions.value.hive_asset.valid() ) {
+        if( *o.new_parameters.extensions.value.hive_asset != dgpo->parameters.hive_asset() )
+              FC_ASSERT( "Changing hive_asset is not allowed" );
+   }
 
    return void_result();
 } FC_CAPTURE_AND_RETHROW( (o) ) }

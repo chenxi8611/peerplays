@@ -74,9 +74,7 @@ void_result committee_member_update_evaluator::do_apply( const committee_member_
 
 void_result committee_member_update_global_parameters_evaluator::do_evaluate(const committee_member_update_global_parameters_operation& o)
 { try {
-   std::cout<<"DAVOR!!!"<<std::endl;
    FC_ASSERT(trx_state->_is_proposed_trx);
-   std::cout<<"DAVOR, DAVOR!!!"<<std::endl;
    
    dgpo = &db().get_global_properties();
    if( o.new_parameters.extensions.value.min_bet_multiplier.valid()

@@ -78,7 +78,7 @@ vector<std::reference_wrapper<const typename Index::object_type>> database::sort
 }
 
 template<>
-vector<std::reference_wrapper<const son_object>> database::sort_votable_objects<son_index>(size_t count) const
+vector<std::reference_wrapper<const son_object>> database::sort_votable_objects<son_index>(sidechain_type sidechain, size_t count) const
 {
    const auto& all_sons = get_index_type<son_index>().indices().get< by_id >();
    std::vector<std::reference_wrapper<const son_object>> refs;
@@ -91,13 +91,35 @@ vector<std::reference_wrapper<const son_object>> database::sort_votable_objects<
    }
    count = std::min(count, refs.size());
    std::partial_sort(refs.begin(), refs.begin() + count, refs.end(),
-                   [this](const son_object& a, const son_object& b)->bool {
-      share_type oa_vote = _vote_tally_buffer[a.vote_id];
-      share_type ob_vote = _vote_tally_buffer[b.vote_id];
+                   [this, sidechain](const son_object& a, const son_object& b)->bool {
+      share_type oa_vote = 0;
+      share_type ob_vote = 0;
+      switch (sidechain) {
+         case sidechain_type::bitcoin:
+            oa_vote = _vote_tally_buffer[a.vote_id_bitcoin];
+            ob_vote = _vote_tally_buffer[b.vote_id_bitcoin];
+            break;
+         case sidechain_type::hive:
+            oa_vote = _vote_tally_buffer[a.vote_id_hive];
+            ob_vote = _vote_tally_buffer[b.vote_id_hive];
+            break;
+          default:
+            FC_THROW("Unexpected sidechain type");
+      };
+
       if( oa_vote != ob_vote )
          return oa_vote > ob_vote;
-      return a.vote_id < b.vote_id;
-   });
+
+      switch (sidechain) {
+         case sidechain_type::bitcoin:
+            return a.vote_id_bitcoin < b.vote_id_bitcoin;
+         case sidechain_type::hive:
+            return a.vote_id_hive < b.vote_id_hive;
+          default:
+            FC_THROW("Unexpected sidechain type");
+      };
+      return 0;
+});
 
    refs.resize(count, refs.front());
    return refs;
@@ -182,12 +204,13 @@ void database::pay_sons()
    const dynamic_global_property_object& dpo = get_dynamic_global_properties();
    // Current requirement is that we have to pay every 24 hours, so the following check
    if( dpo.son_budget.value > 0 && ((now - dpo.last_son_payout_time) >= fc::seconds(get_global_properties().parameters.son_pay_time()))) {
-      auto sons = sort_votable_objects<son_index>(get_global_properties().parameters.maximum_son_count());
+      auto sons = sort_votable_objects<son_index>(sidechain_type::bitcoin, get_global_properties().parameters.maximum_son_count());
       // After SON2 HF
       uint64_t total_votes = 0;
       for( const son_object& son : sons )
       {
-         total_votes += _vote_tally_buffer[son.vote_id];
+         total_votes += _vote_tally_buffer[son.vote_id_bitcoin];
+         total_votes += _vote_tally_buffer[son.vote_id_hive];
       }
       int8_t bits_to_drop = std::max(int(boost::multiprecision::detail::find_msb(total_votes)) - 15, 0);
       auto get_weight = [&bits_to_drop]( uint64_t son_votes ) {
@@ -206,9 +229,11 @@ void database::pay_sons()
          const son_statistics_object& s = static_cast<const son_statistics_object&>(o);
          const auto& idx = get_index_type<son_index>().indices().get<by_id>();
          auto son_obj = idx.find( s.owner );
-         auto son_weight = get_weight(_vote_tally_buffer[son_obj->vote_id]);
+         auto son_weight = get_weight(_vote_tally_buffer[son_obj->vote_id_bitcoin]) +
+                           get_weight(_vote_tally_buffer[son_obj->vote_id_hive]);
          if( now < HARDFORK_SON2_TIME ) {
-            son_weight = get_weight_before_son2_hf(_vote_tally_buffer[son_obj->vote_id]);
+            son_weight = get_weight_before_son2_hf(_vote_tally_buffer[son_obj->vote_id_bitcoin]) +
+                         get_weight_before_son2_hf(_vote_tally_buffer[son_obj->vote_id_hive]);
          }
          uint64_t txs_signed = 0;
          for (const auto &ts : s.txs_signed) {
@@ -228,9 +253,11 @@ void database::pay_sons()
          if(txs_signed > 0){
             const auto& idx = get_index_type<son_index>().indices().get<by_id>();
             auto son_obj = idx.find( s.owner );
-            auto son_weight = get_weight(_vote_tally_buffer[son_obj->vote_id]);
+            auto son_weight = get_weight(_vote_tally_buffer[son_obj->vote_id_bitcoin]) +
+                              get_weight(_vote_tally_buffer[son_obj->vote_id_hive]);
             if( now < HARDFORK_SON2_TIME ) {
-               son_weight = get_weight_before_son2_hf(_vote_tally_buffer[son_obj->vote_id]);
+               son_weight = get_weight_before_son2_hf(_vote_tally_buffer[son_obj->vote_id_bitcoin]) +
+                            get_weight_before_son2_hf(_vote_tally_buffer[son_obj->vote_id_hive]);
             }
             share_type pay = (txs_signed * son_weight * son_budget.value)/weighted_total_txs_signed;
             modify( *son_obj, [&]( son_object& _son_obj)
@@ -680,7 +707,7 @@ void database::update_active_sons()
 
    const global_property_object& gpo = get_global_properties();
    const chain_parameters& cp = gpo.parameters;
-   auto sons = sort_votable_objects<son_index>(cp.maximum_son_count());
+   auto sons = sort_votable_objects<son_index>(sidechain_type::bitcoin, cp.maximum_son_count());
 
    const auto& all_sons = get_index_type<son_index>().indices();
 
@@ -695,7 +722,7 @@ void database::update_active_sons()
             });
       }
       modify( son, [local_vote_buffer_ref]( son_object& obj ){
-              obj.total_votes = local_vote_buffer_ref[obj.vote_id];
+              obj.total_votes = local_vote_buffer_ref[obj.vote_id_bitcoin];
               if(obj.status == son_status::request_maintenance)
                  obj.status = son_status::in_maintenance;
               });

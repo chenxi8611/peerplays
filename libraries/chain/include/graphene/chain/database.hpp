@@ -513,6 +513,9 @@ namespace graphene { namespace chain {
          template<class Index>
          vector<std::reference_wrapper<const typename Index::object_type>> sort_votable_objects(size_t count)const;
 
+         template<class Index>
+         vector<std::reference_wrapper<const typename Index::object_type>> sort_votable_objects(sidechain_type sidechain, size_t count)const;
+
          //////////////////// db_block.cpp ////////////////////
 
        public:

@@ -1743,6 +1743,7 @@ class wallet_api
        *
        * @param voting_account the name or id of the account who is voting with their shares
        * @param son the name or id of the SONs' owner account
+       * @param sidechain the name of the sidechain
        * @param approve true if you wish to vote in favor of that SON, false to
        *                remove your vote in favor of that SON
        * @param broadcast true if you wish to broadcast the transaction
@@ -1750,6 +1751,7 @@ class wallet_api
        */
       signed_transaction vote_for_son(string voting_account,
                                              string son,
+                                             sidechain_type sidechain,
                                              bool approve,
                                              bool broadcast = false);
 

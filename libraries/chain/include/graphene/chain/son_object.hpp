@@ -64,7 +64,8 @@ namespace graphene { namespace chain {
          static const uint8_t type_id  = son_object_type;
 
          account_id_type son_account;
-         vote_id_type vote_id;
+         vote_id_type vote_id_bitcoin;
+         vote_id_type vote_id_hive;
          uint64_t total_votes = 0;
          string url;
          vesting_balance_id_type deposit;
@@ -80,7 +81,8 @@ namespace graphene { namespace chain {
    };
 
    struct by_account;
-   struct by_vote_id;
+   struct by_vote_id_bitcoin;
+   struct by_vote_id_hive;
    using son_multi_index_type = multi_index_container<
       son_object,
       indexed_by<
@@ -90,8 +92,11 @@ namespace graphene { namespace chain {
          ordered_unique< tag<by_account>,
             member<son_object, account_id_type, &son_object::son_account>
          >,
-         ordered_unique< tag<by_vote_id>,
-            member<son_object, vote_id_type, &son_object::vote_id>
+         ordered_unique< tag<by_vote_id_bitcoin>,
+            member<son_object, vote_id_type, &son_object::vote_id_bitcoin>
+         >,
+         ordered_unique< tag<by_vote_id_hive>,
+            member<son_object, vote_id_type, &son_object::vote_id_hive>
          >
       >
    >;
@@ -117,7 +122,8 @@ FC_REFLECT_ENUM(graphene::chain::son_status, (inactive)(active)(request_maintena
 
 FC_REFLECT_DERIVED( graphene::chain::son_object, (graphene::db::object),
                     (son_account)
-                    (vote_id)
+                    (vote_id_bitcoin)
+                    (vote_id_hive)
                     (total_votes)
                     (url)
                     (deposit)

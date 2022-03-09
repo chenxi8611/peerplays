@@ -2057,61 +2057,61 @@ voters_info database_api::get_voters(const string &account_name_or_id) const {
 vector<variant> database_api_impl::lookup_vote_ids(const vector<vote_id_type> &votes) const {
    FC_ASSERT(votes.size() < 1000, "Only 1000 votes can be queried at a time");
 
-   const auto &witness_idx = _db.get_index_type<witness_index>().indices().get<by_vote_id>();
-   const auto &committee_idx = _db.get_index_type<committee_member_index>().indices().get<by_vote_id>();
-   const auto &for_worker_idx = _db.get_index_type<worker_index>().indices().get<by_vote_for>();
-   const auto &against_worker_idx = _db.get_index_type<worker_index>().indices().get<by_vote_against>();
-   const auto &son_idx = _db.get_index_type<son_index>().indices().get<by_vote_id>();
+   //const auto &witness_idx = _db.get_index_type<witness_index>().indices().get<by_vote_id>();
+   //const auto &committee_idx = _db.get_index_type<committee_member_index>().indices().get<by_vote_id>();
+   //const auto &for_worker_idx = _db.get_index_type<worker_index>().indices().get<by_vote_for>();
+   //const auto &against_worker_idx = _db.get_index_type<worker_index>().indices().get<by_vote_against>();
+   //const auto &son_idx = _db.get_index_type<son_index>().indices().get<by_vote_id>();
 
    vector<variant> result;
-   result.reserve(votes.size());
-   for (auto id : votes) {
-      switch (id.type()) {
-      case vote_id_type::committee: {
-         auto itr = committee_idx.find(id);
-         if (itr != committee_idx.end())
-            result.emplace_back(variant(*itr, 1));
-         else
-            result.emplace_back(variant());
-         break;
-      }
-      case vote_id_type::witness: {
-         auto itr = witness_idx.find(id);
-         if (itr != witness_idx.end())
-            result.emplace_back(variant(*itr, 1));
-         else
-            result.emplace_back(variant());
-         break;
-      }
-      case vote_id_type::worker: {
-         auto itr = for_worker_idx.find(id);
-         if (itr != for_worker_idx.end()) {
-            result.emplace_back(variant(*itr, 1));
-         } else {
-            auto itr = against_worker_idx.find(id);
-            if (itr != against_worker_idx.end()) {
-               result.emplace_back(variant(*itr, 1));
-            } else {
-               result.emplace_back(variant());
-            }
-         }
-         break;
-      }
-      case vote_id_type::son: {
-         auto itr = son_idx.find(id);
-         if (itr != son_idx.end())
-            result.emplace_back(variant(*itr, 5));
-         else
-            result.emplace_back(variant());
-         break;
-      }
-
-      case vote_id_type::VOTE_TYPE_COUNT:
-         break; // supress unused enum value warnings
-      default:
-         FC_CAPTURE_AND_THROW(fc::out_of_range_exception, (id));
-      }
-   }
+   //result.reserve(votes.size());
+   //for (auto id : votes) {
+   //   switch (id.type()) {
+   //   case vote_id_type::committee: {
+   //      auto itr = committee_idx.find(id);
+   //      if (itr != committee_idx.end())
+   //         result.emplace_back(variant(*itr, 1));
+   //      else
+   //         result.emplace_back(variant());
+   //      break;
+   //   }
+   //   case vote_id_type::witness: {
+   //      auto itr = witness_idx.find(id);
+   //      if (itr != witness_idx.end())
+   //         result.emplace_back(variant(*itr, 1));
+   //      else
+   //         result.emplace_back(variant());
+   //      break;
+   //   }
+   //   case vote_id_type::worker: {
+   //      auto itr = for_worker_idx.find(id);
+   //      if (itr != for_worker_idx.end()) {
+   //         result.emplace_back(variant(*itr, 1));
+   //      } else {
+   //         auto itr = against_worker_idx.find(id);
+   //         if (itr != against_worker_idx.end()) {
+   //            result.emplace_back(variant(*itr, 1));
+   //         } else {
+   //            result.emplace_back(variant());
+   //         }
+   //      }
+   //      break;
+   //   }
+   //   case vote_id_type::son: {
+   //      auto itr = son_idx.find(id);
+   //      if (itr != son_idx.end())
+   //         result.emplace_back(variant(*itr, 5));
+   //      else
+   //         result.emplace_back(variant());
+   //      break;
+   //   }
+   //
+   //   case vote_id_type::VOTE_TYPE_COUNT:
+   //      break; // supress unused enum value warnings
+   //   default:
+   //      FC_CAPTURE_AND_THROW(fc::out_of_range_exception, (id));
+   //   }
+   //}
    return result;
 }
 
@@ -2130,63 +2130,63 @@ vector<vote_id_type> database_api_impl::get_votes_ids(const string &account_name
 votes_info database_api_impl::get_votes(const string &account_name_or_id) const {
    votes_info result;
 
-   const auto &votes_ids = get_votes_ids(account_name_or_id);
-   const auto &committee_ids = get_votes_objects<committee_member_index, by_vote_id>(votes_ids);
-   const auto &witness_ids = get_votes_objects<witness_index, by_vote_id>(votes_ids);
-   const auto &for_worker_ids = get_votes_objects<worker_index, by_vote_for>(votes_ids);
-   const auto &against_worker_ids = get_votes_objects<worker_index, by_vote_against>(votes_ids);
-   const auto &son_ids = get_votes_objects<son_index, by_vote_id>(votes_ids, 5);
+   //const auto &votes_ids = get_votes_ids(account_name_or_id);
+   //const auto &committee_ids = get_votes_objects<committee_member_index, by_vote_id>(votes_ids);
+   //const auto &witness_ids = get_votes_objects<witness_index, by_vote_id>(votes_ids);
+   //const auto &for_worker_ids = get_votes_objects<worker_index, by_vote_for>(votes_ids);
+   //const auto &against_worker_ids = get_votes_objects<worker_index, by_vote_against>(votes_ids);
+   //const auto &son_ids = get_votes_objects<son_index, by_vote_id>(votes_ids, 5);
 
-   //! Fill votes info
-   if (!committee_ids.empty()) {
-      vector<votes_info_object> votes_for_committee_members;
-      votes_for_committee_members.reserve(committee_ids.size());
-      for (const auto &committee : committee_ids) {
-         const auto &committee_obj = committee.as<committee_member_object>(2);
-         votes_for_committee_members.emplace_back(votes_info_object{committee_obj.vote_id, committee_obj.id});
-      }
-      result.votes_for_committee_members = std::move(votes_for_committee_members);
-   }
-
-   if (!witness_ids.empty()) {
-      vector<votes_info_object> votes_for_witnesses;
-      votes_for_witnesses.reserve(witness_ids.size());
-      for (const auto &witness : witness_ids) {
-         const auto &witness_obj = witness.as<witness_object>(2);
-         votes_for_witnesses.emplace_back(votes_info_object{witness_obj.vote_id, witness_obj.id});
-      }
-      result.votes_for_witnesses = std::move(votes_for_witnesses);
-   }
-
-   if (!for_worker_ids.empty()) {
-      vector<votes_info_object> votes_for_workers;
-      votes_for_workers.reserve(for_worker_ids.size());
-      for (const auto &for_worker : for_worker_ids) {
-         const auto &for_worker_obj = for_worker.as<worker_object>(2);
-         votes_for_workers.emplace_back(votes_info_object{for_worker_obj.vote_for, for_worker_obj.id});
-      }
-      result.votes_for_workers = std::move(votes_for_workers);
-   }
-
-   if (!against_worker_ids.empty()) {
-      vector<votes_info_object> votes_against_workers;
-      votes_against_workers.reserve(against_worker_ids.size());
-      for (const auto &against_worker : against_worker_ids) {
-         const auto &against_worker_obj = against_worker.as<worker_object>(2);
-         votes_against_workers.emplace_back(votes_info_object{against_worker_obj.vote_against, against_worker_obj.id});
-      }
-      result.votes_against_workers = std::move(votes_against_workers);
-   }
-
-   if (!son_ids.empty()) {
-      vector<votes_info_object> votes_for_sons;
-      votes_for_sons.reserve(son_ids.size());
-      for (const auto &son : son_ids) {
-         const auto &son_obj = son.as<son_object>(6);
-         votes_for_sons.emplace_back(votes_info_object{son_obj.vote_id, son_obj.id});
-      }
-      result.votes_for_sons = std::move(votes_for_sons);
-   }
+   ////! Fill votes info
+   //if (!committee_ids.empty()) {
+   //   vector<votes_info_object> votes_for_committee_members;
+   //   votes_for_committee_members.reserve(committee_ids.size());
+   //   for (const auto &committee : committee_ids) {
+   //      const auto &committee_obj = committee.as<committee_member_object>(2);
+   //      votes_for_committee_members.emplace_back(votes_info_object{committee_obj.vote_id, committee_obj.id});
+   //   }
+   //   result.votes_for_committee_members = std::move(votes_for_committee_members);
+   //}
+   //
+   //if (!witness_ids.empty()) {
+   //   vector<votes_info_object> votes_for_witnesses;
+   //   votes_for_witnesses.reserve(witness_ids.size());
+   //   for (const auto &witness : witness_ids) {
+   //      const auto &witness_obj = witness.as<witness_object>(2);
+   //      votes_for_witnesses.emplace_back(votes_info_object{witness_obj.vote_id, witness_obj.id});
+   //   }
+   //   result.votes_for_witnesses = std::move(votes_for_witnesses);
+   //}
+   //
+   //if (!for_worker_ids.empty()) {
+   //   vector<votes_info_object> votes_for_workers;
+   //   votes_for_workers.reserve(for_worker_ids.size());
+   //   for (const auto &for_worker : for_worker_ids) {
+   //      const auto &for_worker_obj = for_worker.as<worker_object>(2);
+   //      votes_for_workers.emplace_back(votes_info_object{for_worker_obj.vote_for, for_worker_obj.id});
+   //   }
+   //   result.votes_for_workers = std::move(votes_for_workers);
+   //}
+   //
+   //if (!against_worker_ids.empty()) {
+   //   vector<votes_info_object> votes_against_workers;
+   //   votes_against_workers.reserve(against_worker_ids.size());
+   //   for (const auto &against_worker : against_worker_ids) {
+   //      const auto &against_worker_obj = against_worker.as<worker_object>(2);
+   //      votes_against_workers.emplace_back(votes_info_object{against_worker_obj.vote_against, against_worker_obj.id});
+   //   }
+   //   result.votes_against_workers = std::move(votes_against_workers);
+   //}
+   //
+   //if (!son_ids.empty()) {
+   //   vector<votes_info_object> votes_for_sons;
+   //   votes_for_sons.reserve(son_ids.size());
+   //   for (const auto &son : son_ids) {
+   //      const auto &son_obj = son.as<son_object>(6);
+   //      votes_for_sons.emplace_back(votes_info_object{son_obj.vote_id, son_obj.id});
+   //   }
+   //   result.votes_for_sons = std::move(votes_for_sons);
+   //}
 
    return result;
 }
@@ -2207,165 +2207,165 @@ vector<account_object> database_api_impl::get_voters_by_id(const vote_id_type &v
 voters_info database_api_impl::get_voters(const string &account_name_or_id) const {
    voters_info result;
 
-   //! Find account name
-   bool owner_account_found = false;
-   std::string owner_account_id;
-
-   //! Check if we have account by name
-   const auto &account_object = get_account_by_name(account_name_or_id);
-   if (account_object) {
-      //! It is account
-      owner_account_id = object_id_to_string(account_object->get_id());
-      owner_account_found = true;
-   } else {
-      //! Check if we have account id
-      const auto &account_id = maybe_id<account_id_type>(account_name_or_id);
-      if (account_id) {
-         //! It may be account id
-         const auto &account_objects = get_accounts({account_name_or_id});
-         if (!account_objects.empty()) {
-            const auto &account_object = account_objects.front();
-            if (account_object) {
-               //! It is account object
-               owner_account_id = object_id_to_string(account_object->get_id());
-               owner_account_found = true;
-            }
-         }
-      } else {
-         //! Check if we have committee member id
-         const auto &committee_member_id = maybe_id<committee_member_id_type>(account_name_or_id);
-         if (committee_member_id) {
-            //! It may be committee member id
-            const auto &committee_member_objects = get_committee_members({*committee_member_id});
-            if (!committee_member_objects.empty()) {
-               const auto &committee_member_object = committee_member_objects.front();
-               if (committee_member_object) {
-                  //! It is committee member object
-                  owner_account_id = object_id_to_string(committee_member_object->committee_member_account);
-                  owner_account_found = true;
-               }
-            }
-         } else {
-            //! Check if we have witness id
-            const auto &witness_id = maybe_id<witness_id_type>(account_name_or_id);
-            if (witness_id) {
-               //! It may be witness id
-               const auto &witness_objects = get_witnesses({*witness_id});
-               if (!witness_objects.empty()) {
-                  const auto &witness_object = witness_objects.front();
-                  if (witness_object) {
-                     //! It is witness object
-                     owner_account_id = object_id_to_string(witness_object->witness_account);
-                     owner_account_found = true;
-                  }
-               }
-            } else {
-               //! Check if we have worker id
-               const auto &worker_id = maybe_id<worker_id_type>(account_name_or_id);
-               if (worker_id) {
-                  //! It may be worker id
-                  const auto &worker_objects = get_workers({*worker_id});
-                  if (!worker_objects.empty()) {
-                     const auto &worker_object = worker_objects.front();
-                     if (worker_object) {
-                        //! It is worker object
-                        owner_account_id = object_id_to_string(worker_object->worker_account);
-                        owner_account_found = true;
-                     }
-                  }
-               } else {
-                  //! Check if we have son id
-                  const auto &son_id = maybe_id<son_id_type>(account_name_or_id);
-                  if (son_id) {
-                     //! It may be son id
-                     const auto &son_objects = get_sons({*son_id});
-                     if (!son_objects.empty()) {
-                        const auto &son_object = son_objects.front();
-                        if (son_object) {
-                           //! It is son object
-                           owner_account_id = object_id_to_string(son_object->son_account);
-                           owner_account_found = true;
-                        }
-                     }
-                  }
-               }
-            }
-         }
-      }
-   }
-
-   //! We didn't find who it was
-   if (!owner_account_found)
-      FC_THROW_EXCEPTION(database_query_exception, "Wrong account_name_or_id: ${account_name_or_id}", ("account_name_or_id", account_name_or_id));
-
-   //! Fill voters_info
-   const auto &committee_member_object = get_committee_member_by_account(owner_account_id);
-   const auto &witness_object = get_witness_by_account(owner_account_id);
-   const auto &worker_objects = get_workers_by_account(owner_account_id);
-   const auto &son_object = get_son_by_account(owner_account_id);
-
-   //! Info for committee member voters
-   if (committee_member_object) {
-      const auto &committee_member_voters = get_voters_by_id(committee_member_object->vote_id);
-      voters_info_object voters_for_committee_member;
-      voters_for_committee_member.vote_id = committee_member_object->vote_id;
-      voters_for_committee_member.voters.reserve(committee_member_voters.size());
-      for (const auto &voter : committee_member_voters) {
-         voters_for_committee_member.voters.emplace_back(voter.get_id());
-      }
-      result.voters_for_committee_member = std::move(voters_for_committee_member);
-   }
-
-   //! Info for witness voters
-   if (witness_object) {
-      const auto &witness_voters = get_voters_by_id(witness_object->vote_id);
-      voters_info_object voters_for_witness;
-      voters_for_witness.vote_id = witness_object->vote_id;
-      voters_for_witness.voters.reserve(witness_voters.size());
-      for (const auto &voter : witness_voters) {
-         voters_for_witness.voters.emplace_back(voter.get_id());
-      }
-      result.voters_for_witness = std::move(voters_for_witness);
-   }
-
-   //! Info for worker voters
-   if (!worker_objects.empty()) {
-      vector<voters_info_object> voters_for_workers(worker_objects.size());
-      vector<voters_info_object> voters_against_workers(worker_objects.size());
-      for (const auto &worker_object : worker_objects) {
-         voters_info_object voters_for_worker;
-         const auto &for_worker_voters = get_voters_by_id(worker_object.vote_for);
-         voters_for_worker.vote_id = worker_object.vote_for;
-         voters_for_worker.voters.reserve(for_worker_voters.size());
-         for (const auto &voter : for_worker_voters) {
-            voters_for_worker.voters.emplace_back(voter.get_id());
-         }
-         voters_for_workers.emplace_back(std::move(voters_for_worker));
-
-         voters_info_object voters_against_worker;
-         const auto &against_worker_voters = get_voters_by_id(worker_object.vote_against);
-         voters_against_worker.vote_id = worker_object.vote_against;
-         voters_against_worker.voters.reserve(against_worker_voters.size());
-         for (const auto &voter : against_worker_voters) {
-            voters_against_worker.voters.emplace_back(voter.get_id());
-         }
-         voters_against_workers.emplace_back(std::move(voters_against_worker));
-      }
-      result.voters_for_workers = std::move(voters_for_workers);
-      result.voters_against_workers = std::move(voters_against_workers);
-   }
-
-   //! Info for son voters
-   if (son_object) {
-      const auto &son_voters = get_voters_by_id(son_object->vote_id);
-      voters_info_object voters_for_son;
-      voters_for_son.vote_id = son_object->vote_id;
-      voters_for_son.voters.reserve(son_voters.size());
-      for (const auto &voter : son_voters) {
-         voters_for_son.voters.emplace_back(voter.get_id());
-      }
-      result.voters_for_son = std::move(voters_for_son);
-   }
+   ////! Find account name
+   //bool owner_account_found = false;
+   //std::string owner_account_id;
+   //
+   ////! Check if we have account by name
+   //const auto &account_object = get_account_by_name(account_name_or_id);
+   //if (account_object) {
+   //   //! It is account
+   //   owner_account_id = object_id_to_string(account_object->get_id());
+   //   owner_account_found = true;
+   //} else {
+   //   //! Check if we have account id
+   //   const auto &account_id = maybe_id<account_id_type>(account_name_or_id);
+   //   if (account_id) {
+   //      //! It may be account id
+   //      const auto &account_objects = get_accounts({account_name_or_id});
+   //      if (!account_objects.empty()) {
+   //         const auto &account_object = account_objects.front();
+   //         if (account_object) {
+   //            //! It is account object
+   //            owner_account_id = object_id_to_string(account_object->get_id());
+   //            owner_account_found = true;
+   //         }
+   //      }
+   //   } else {
+   //      //! Check if we have committee member id
+   //      const auto &committee_member_id = maybe_id<committee_member_id_type>(account_name_or_id);
+   //      if (committee_member_id) {
+   //         //! It may be committee member id
+   //         const auto &committee_member_objects = get_committee_members({*committee_member_id});
+   //         if (!committee_member_objects.empty()) {
+   //            const auto &committee_member_object = committee_member_objects.front();
+   //            if (committee_member_object) {
+   //               //! It is committee member object
+   //               owner_account_id = object_id_to_string(committee_member_object->committee_member_account);
+   //               owner_account_found = true;
+   //            }
+   //         }
+   //      } else {
+   //         //! Check if we have witness id
+   //         const auto &witness_id = maybe_id<witness_id_type>(account_name_or_id);
+   //         if (witness_id) {
+   //            //! It may be witness id
+   //            const auto &witness_objects = get_witnesses({*witness_id});
+   //            if (!witness_objects.empty()) {
+   //               const auto &witness_object = witness_objects.front();
+   //               if (witness_object) {
+   //                  //! It is witness object
+   //                  owner_account_id = object_id_to_string(witness_object->witness_account);
+   //                  owner_account_found = true;
+   //               }
+   //            }
+   //         } else {
+   //            //! Check if we have worker id
+   //            const auto &worker_id = maybe_id<worker_id_type>(account_name_or_id);
+   //            if (worker_id) {
+   //               //! It may be worker id
+   //               const auto &worker_objects = get_workers({*worker_id});
+   //               if (!worker_objects.empty()) {
+   //                  const auto &worker_object = worker_objects.front();
+   //                  if (worker_object) {
+   //                     //! It is worker object
+   //                     owner_account_id = object_id_to_string(worker_object->worker_account);
+   //                     owner_account_found = true;
+   //                  }
+   //               }
+   //            } else {
+   //               //! Check if we have son id
+   //               const auto &son_id = maybe_id<son_id_type>(account_name_or_id);
+   //               if (son_id) {
+   //                  //! It may be son id
+   //                  const auto &son_objects = get_sons({*son_id});
+   //                  if (!son_objects.empty()) {
+   //                     const auto &son_object = son_objects.front();
+   //                     if (son_object) {
+   //                        //! It is son object
+   //                        owner_account_id = object_id_to_string(son_object->son_account);
+   //                        owner_account_found = true;
+   //                     }
+   //                  }
+   //               }
+   //            }
+   //         }
+   //      }
+   //   }
+   //}
+   //
+   ////! We didn't find who it was
+   //if (!owner_account_found)
+   //   FC_THROW_EXCEPTION(database_query_exception, "Wrong account_name_or_id: ${account_name_or_id}", ("account_name_or_id", account_name_or_id));
+   //
+   ////! Fill voters_info
+   //const auto &committee_member_object = get_committee_member_by_account(owner_account_id);
+   //const auto &witness_object = get_witness_by_account(owner_account_id);
+   //const auto &worker_objects = get_workers_by_account(owner_account_id);
+   //const auto &son_object = get_son_by_account(owner_account_id);
+   //
+   ////! Info for committee member voters
+   //if (committee_member_object) {
+   //   const auto &committee_member_voters = get_voters_by_id(committee_member_object->vote_id);
+   //   voters_info_object voters_for_committee_member;
+   //   voters_for_committee_member.vote_id = committee_member_object->vote_id;
+   //   voters_for_committee_member.voters.reserve(committee_member_voters.size());
+   //   for (const auto &voter : committee_member_voters) {
+   //      voters_for_committee_member.voters.emplace_back(voter.get_id());
+   //   }
+   //   result.voters_for_committee_member = std::move(voters_for_committee_member);
+   //}
+   //
+   ////! Info for witness voters
+   //if (witness_object) {
+   //   const auto &witness_voters = get_voters_by_id(witness_object->vote_id);
+   //   voters_info_object voters_for_witness;
+   //   voters_for_witness.vote_id = witness_object->vote_id;
+   //   voters_for_witness.voters.reserve(witness_voters.size());
+   //   for (const auto &voter : witness_voters) {
+   //      voters_for_witness.voters.emplace_back(voter.get_id());
+   //   }
+   //   result.voters_for_witness = std::move(voters_for_witness);
+   //}
+   //
+   ////! Info for worker voters
+   //if (!worker_objects.empty()) {
+   //   vector<voters_info_object> voters_for_workers(worker_objects.size());
+   //   vector<voters_info_object> voters_against_workers(worker_objects.size());
+   //   for (const auto &worker_object : worker_objects) {
+   //      voters_info_object voters_for_worker;
+   //      const auto &for_worker_voters = get_voters_by_id(worker_object.vote_for);
+   //      voters_for_worker.vote_id = worker_object.vote_for;
+   //      voters_for_worker.voters.reserve(for_worker_voters.size());
+   //      for (const auto &voter : for_worker_voters) {
+   //         voters_for_worker.voters.emplace_back(voter.get_id());
+   //      }
+   //      voters_for_workers.emplace_back(std::move(voters_for_worker));
+   //
+   //      voters_info_object voters_against_worker;
+   //      const auto &against_worker_voters = get_voters_by_id(worker_object.vote_against);
+   //      voters_against_worker.vote_id = worker_object.vote_against;
+   //      voters_against_worker.voters.reserve(against_worker_voters.size());
+   //      for (const auto &voter : against_worker_voters) {
+   //         voters_against_worker.voters.emplace_back(voter.get_id());
+   //      }
+   //      voters_against_workers.emplace_back(std::move(voters_against_worker));
+   //   }
+   //   result.voters_for_workers = std::move(voters_for_workers);
+   //   result.voters_against_workers = std::move(voters_against_workers);
+   //}
+   //
+   ////! Info for son voters
+   //if (son_object) {
+   //   const auto &son_voters = get_voters_by_id(son_object->vote_id);
+   //   voters_info_object voters_for_son;
+   //   voters_for_son.vote_id = son_object->vote_id;
+   //   voters_for_son.voters.reserve(son_voters.size());
+   //   for (const auto &voter : son_voters) {
+   //      voters_for_son.voters.emplace_back(voter.get_id());
+   //   }
+   //   result.voters_for_son = std::move(voters_for_son);
+   //}
 
    return result;
 }

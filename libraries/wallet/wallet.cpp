@@ -2743,6 +2743,7 @@ public:
 
    signed_transaction vote_for_son(string voting_account,
                                         string son,
+                                        sidechain_type sidechain,
                                         bool approve,
                                         bool broadcast /* = false */)
    { try {
@@ -2758,17 +2759,30 @@ public:
       fc::optional<son_object> son_obj = _remote_db->get_son_by_account_id(son_account_id);
       if (!son_obj)
          FC_THROW("Account ${son} is not registered as a son", ("son", son));
+      
+      vote_id_type sidechain_vote_id;
+      switch (sidechain) {
+         case sidechain_type::bitcoin:
+            sidechain_vote_id = son_obj->vote_id_bitcoin;
+            break;
+         case sidechain_type::hive:
+            sidechain_vote_id = son_obj->vote_id_hive;
+            break;
+         default:
+            FC_THROW("Invalid sidechain type");
+      };
+
       if (approve)
       {
-         auto insert_result = voting_account_object.options.votes.insert(son_obj->vote_id);
+         auto insert_result = voting_account_object.options.votes.insert(sidechain_vote_id);
          if (!insert_result.second)
-            FC_THROW("Account ${account} was already voting for son ${son}", ("account", voting_account)("son", son));
+            FC_THROW("Account ${account} has already voted for son ${son} for sidechain ${sidechain}", ("account", voting_account)("son", son)("sidechain", sidechain));
       }
       else
       {
-         unsigned votes_removed = voting_account_object.options.votes.erase(son_obj->vote_id);
+         unsigned votes_removed = voting_account_object.options.votes.erase(sidechain_vote_id);
          if (!votes_removed)
-            FC_THROW("Account ${account} is already not voting for son ${son}", ("account", voting_account)("son", son));
+            FC_THROW("Account ${account} has already unvoted for son ${son} for sidechain ${sidechain}", ("account", voting_account)("son", son)("sidechain", sidechain));
       }
       account_update_operation account_update_op;
       account_update_op.account = voting_account_object.id;
@@ -2788,44 +2802,44 @@ public:
                                            uint16_t desired_number_of_sons,
                                            bool broadcast /* = false */)
    { try {
-      FC_ASSERT(sons_to_approve.size() || sons_to_reject.size(), "Both accepted and rejected lists can't be empty simultaneously");
-      std::vector<vesting_balance_object_with_info> vbo_info = get_vesting_balances(voting_account);
-      std::vector<vesting_balance_object_with_info>::iterator vbo_iter;
-      vbo_iter = std::find_if(vbo_info.begin(), vbo_info.end(), [](vesting_balance_object_with_info const& obj){return obj.balance_type == vesting_balance_type::gpos;});
-      if( vbo_info.size() == 0 ||  vbo_iter == vbo_info.end())
-         FC_THROW("Account ${account} has no core Token ${TOKEN} vested and will not be allowed to vote for the SON account", ("account", voting_account)("TOKEN", GRAPHENE_SYMBOL));
-
-      account_object voting_account_object = get_account(voting_account);
-      for (const std::string& son : sons_to_approve)
-      {
-         account_id_type son_owner_account_id = get_account_id(son);
-         fc::optional<son_object> son_obj = _remote_db->get_son_by_account_id(son_owner_account_id);
-         if (!son_obj)
-            FC_THROW("Account ${son} is not registered as a SON", ("son", son));
-         auto insert_result = voting_account_object.options.votes.insert(son_obj->vote_id);
-         if (!insert_result.second)
-            FC_THROW("Account ${account} was already voting for SON ${son}", ("account", voting_account)("son", son));
-      }
-      for (const std::string& son : sons_to_reject)
-      {
-         account_id_type son_owner_account_id = get_account_id(son);
-         fc::optional<son_object> son_obj = _remote_db->get_son_by_account_id(son_owner_account_id);
-         if (!son_obj)
-            FC_THROW("Account ${son} is not registered as a SON", ("son", son));
-         unsigned votes_removed = voting_account_object.options.votes.erase(son_obj->vote_id);
-         if (!votes_removed)
-            FC_THROW("Account ${account} is already not voting for SON ${son}", ("account", voting_account)("son", son));
-      }
-      voting_account_object.options.num_son = desired_number_of_sons;
-
-      account_update_operation account_update_op;
-      account_update_op.account = voting_account_object.id;
-      account_update_op.new_options = voting_account_object.options;
+      //FC_ASSERT(sons_to_approve.size() || sons_to_reject.size(), "Both accepted and rejected lists can't be empty simultaneously");
+      //std::vector<vesting_balance_object_with_info> vbo_info = get_vesting_balances(voting_account);
+      //std::vector<vesting_balance_object_with_info>::iterator vbo_iter;
+      //vbo_iter = std::find_if(vbo_info.begin(), vbo_info.end(), [](vesting_balance_object_with_info const& obj){return obj.balance_type == vesting_balance_type::gpos;});
+      //if( vbo_info.size() == 0 ||  vbo_iter == vbo_info.end())
+      //   FC_THROW("Account ${account} has no core Token ${TOKEN} vested and will not be allowed to vote for the SON account", ("account", voting_account)("TOKEN", GRAPHENE_SYMBOL));
+      //
+      //account_object voting_account_object = get_account(voting_account);
+      //for (const std::string& son : sons_to_approve)
+      //{
+      //   account_id_type son_owner_account_id = get_account_id(son);
+      //   fc::optional<son_object> son_obj = _remote_db->get_son_by_account_id(son_owner_account_id);
+      //   if (!son_obj)
+      //      FC_THROW("Account ${son} is not registered as a SON", ("son", son));
+      //   auto insert_result = voting_account_object.options.votes.insert(son_obj->vote_id);
+      //   if (!insert_result.second)
+      //      FC_THROW("Account ${account} was already voting for SON ${son}", ("account", voting_account)("son", son));
+      //}
+      //for (const std::string& son : sons_to_reject)
+      //{
+      //   account_id_type son_owner_account_id = get_account_id(son);
+      //   fc::optional<son_object> son_obj = _remote_db->get_son_by_account_id(son_owner_account_id);
+      //   if (!son_obj)
+      //      FC_THROW("Account ${son} is not registered as a SON", ("son", son));
+      //   unsigned votes_removed = voting_account_object.options.votes.erase(son_obj->vote_id);
+      //   if (!votes_removed)
+      //      FC_THROW("Account ${account} is already not voting for SON ${son}", ("account", voting_account)("son", son));
+      //}
+      //voting_account_object.options.num_son = desired_number_of_sons;
+      //
+      //account_update_operation account_update_op;
+      //account_update_op.account = voting_account_object.id;
+      //account_update_op.new_options = voting_account_object.options;
 
       signed_transaction tx;
-      tx.operations.push_back( account_update_op );
-      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees);
-      tx.validate();
+      //tx.operations.push_back( account_update_op );
+      //set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees);
+      //tx.validate();
 
       return sign_transaction( tx, broadcast );
    } FC_CAPTURE_AND_RETHROW( (voting_account)(sons_to_approve)(sons_to_reject)(desired_number_of_sons)(broadcast) ) }
@@ -5401,10 +5415,11 @@ signed_transaction wallet_api::vote_for_committee_member(string voting_account,
 
 signed_transaction wallet_api::vote_for_son(string voting_account,
                                                    string son,
+                                                   sidechain_type sidechain,
                                                    bool approve,
                                                    bool broadcast /* = false */)
 {
-   return my->vote_for_son(voting_account, son, approve, broadcast);
+   return my->vote_for_son(voting_account, son, sidechain, approve, broadcast);
 }
 
 signed_transaction wallet_api::update_son_votes(string voting_account,

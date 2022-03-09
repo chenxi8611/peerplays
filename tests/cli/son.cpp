@@ -201,6 +201,7 @@ BOOST_AUTO_TEST_CASE( son_voting )
    BOOST_TEST_MESSAGE("SON Vote cli wallet tests begin");
    try
    {
+      const sidechain_type type = sidechain_type::bitcoin;
       flat_map<sidechain_type, string> sidechain_public_keys;
 
       son_test_helper sth(*this);
@@ -232,7 +233,7 @@ BOOST_AUTO_TEST_CASE( son_voting )
       con.wallet_api_ptr->create_vesting_balance("nathan", "1000", "1.3.0", vesting_balance_type::gpos, true);
       // Vote for a son1account
       BOOST_TEST_MESSAGE("Voting for son1account");
-      vote_son1_tx = con.wallet_api_ptr->vote_for_son("nathan", "son1account", true, true);
+      vote_son1_tx = con.wallet_api_ptr->vote_for_son("nathan", "son1account", type, true, true);
       BOOST_CHECK(generate_maintenance_block());
 
       // Verify that the vote is there
@@ -242,7 +243,7 @@ BOOST_AUTO_TEST_CASE( son_voting )
 
       // Vote for a son2account
       BOOST_TEST_MESSAGE("Voting for son2account");
-      vote_son2_tx = con.wallet_api_ptr->vote_for_son("nathan", "son2account", true, true);
+      vote_son2_tx = con.wallet_api_ptr->vote_for_son("nathan", "son2account", type, true, true);
       BOOST_CHECK(generate_maintenance_block());
 
       // Verify that the vote is there
@@ -274,7 +275,7 @@ BOOST_AUTO_TEST_CASE( son_voting )
 
       // Withdraw vote for a son1account
       BOOST_TEST_MESSAGE("Withdraw vote for a son1account");
-      vote_son1_tx = con.wallet_api_ptr->vote_for_son("nathan", "son1account", false, true);
+      vote_son1_tx = con.wallet_api_ptr->vote_for_son("nathan", "son1account", type, false, true);
       BOOST_CHECK(generate_maintenance_block());
 
       // Verify that the vote is removed
@@ -295,7 +296,7 @@ BOOST_AUTO_TEST_CASE( son_voting )
 
       // Withdraw vote for a son2account
       BOOST_TEST_MESSAGE("Withdraw vote for a son2account");
-      vote_son2_tx = con.wallet_api_ptr->vote_for_son("nathan", "son2account", false, true);
+      vote_son2_tx = con.wallet_api_ptr->vote_for_son("nathan", "son2account", type, false, true);
       BOOST_CHECK(generate_maintenance_block());
 
       // Verify that the vote is removed
@@ -325,6 +326,7 @@ BOOST_FIXTURE_TEST_CASE( select_top_fifteen_sons, cli_fixture )
    BOOST_TEST_MESSAGE("SON cli wallet tests begin");
    try
    {
+      const sidechain_type type = sidechain_type::bitcoin;
       son_test_helper sth(*this);
 
       graphene::wallet::brain_key_info bki;
@@ -362,7 +364,7 @@ BOOST_FIXTURE_TEST_CASE( select_top_fifteen_sons, cli_fixture )
           con.wallet_api_ptr->create_vesting_balance("sonaccount" + fc::to_pretty_string(i), "500", "1.3.0", vesting_balance_type::gpos, true);
 
           std::string name = "sonaccount" + fc::to_pretty_string(i);
-          vote_tx = con.wallet_api_ptr->vote_for_son(name, name, true, true);
+          vote_tx = con.wallet_api_ptr->vote_for_son(name, name, type, true, true);
       }
       BOOST_CHECK(generate_maintenance_block());
 
@@ -370,7 +372,7 @@ BOOST_FIXTURE_TEST_CASE( select_top_fifteen_sons, cli_fixture )
       {
           std::string name1 = "sonaccount" + fc::to_pretty_string(i);
           std::string name2 = "sonaccount" + fc::to_pretty_string(i + 1);
-          vote_tx = con.wallet_api_ptr->vote_for_son(name1, name2, true, true);
+          vote_tx = con.wallet_api_ptr->vote_for_son(name1, name2, type, true, true);
       }
       gpo = con.wallet_api_ptr->get_global_properties();
       BOOST_TEST_MESSAGE("gpo: " << gpo.active_sons.size());
@@ -382,7 +384,7 @@ BOOST_FIXTURE_TEST_CASE( select_top_fifteen_sons, cli_fixture )
       {
           std::string name1 = "sonaccount" + fc::to_pretty_string(i + 2);
           std::string name2 = "sonaccount" + fc::to_pretty_string(i);
-          vote_tx = con.wallet_api_ptr->vote_for_son(name1, name2, true, true);
+          vote_tx = con.wallet_api_ptr->vote_for_son(name1, name2, type, true, true);
       }
       gpo = con.wallet_api_ptr->get_global_properties();
       BOOST_TEST_MESSAGE("gpo: " << gpo.active_sons.size());
@@ -394,7 +396,7 @@ BOOST_FIXTURE_TEST_CASE( select_top_fifteen_sons, cli_fixture )
       {
           std::string name1 = "sonaccount" + fc::to_pretty_string(i + 3);
           std::string name2 = "sonaccount" + fc::to_pretty_string(i);
-          vote_tx = con.wallet_api_ptr->vote_for_son(name1, name2, true, true);
+          vote_tx = con.wallet_api_ptr->vote_for_son(name1, name2, type, true, true);
       }
       gpo = con.wallet_api_ptr->get_global_properties();
       BOOST_TEST_MESSAGE("gpo: " << gpo.active_sons.size());
@@ -638,6 +640,7 @@ BOOST_FIXTURE_TEST_CASE( cli_list_active_sons, cli_fixture )
    BOOST_TEST_MESSAGE("SON cli wallet tests for list_active_sons begin");
    try
    {
+      const sidechain_type type = sidechain_type::bitcoin;
       son_test_helper sth(*this);
 
       signed_transaction vote_tx;
@@ -668,7 +671,7 @@ BOOST_FIXTURE_TEST_CASE( cli_list_active_sons, cli_fixture )
       for(unsigned int i = 1; i < son_number + 1; i++)
       {
           std::string name = "sonaccount" + fc::to_pretty_string(i);
-          vote_tx = con.wallet_api_ptr->vote_for_son(name, name, true, true);
+          vote_tx = con.wallet_api_ptr->vote_for_son(name, name, type, true, true);
       }
       BOOST_CHECK(generate_maintenance_block());
 
@@ -676,7 +679,7 @@ BOOST_FIXTURE_TEST_CASE( cli_list_active_sons, cli_fixture )
       {
           std::string name1 = "sonaccount" + fc::to_pretty_string(i);
           std::string name2 = "sonaccount" + fc::to_pretty_string(i + 1);
-          vote_tx = con.wallet_api_ptr->vote_for_son(name1, name2, true, true);
+          vote_tx = con.wallet_api_ptr->vote_for_son(name1, name2, type, true, true);
       }
       BOOST_CHECK(generate_maintenance_block());
       gpo = con.wallet_api_ptr->get_global_properties();
@@ -706,6 +709,7 @@ BOOST_AUTO_TEST_CASE( maintenance_test )
    BOOST_TEST_MESSAGE("SON maintenance cli wallet tests begin");
    try
    {
+      const sidechain_type type = sidechain_type::bitcoin;
       son_test_helper sth(*this);
 
       std::string name("sonaccount1");
@@ -735,7 +739,7 @@ BOOST_AUTO_TEST_CASE( maintenance_test )
          con.wallet_api_ptr->transfer(
               "nathan", "sonaccount" + fc::to_pretty_string(i), "1000", "1.3.0", "Here are some CORE tokens for your new account", true );
          con.wallet_api_ptr->create_vesting_balance("sonaccount" + fc::to_pretty_string(i), "500", "1.3.0", vesting_balance_type::gpos, true);
-         con.wallet_api_ptr->vote_for_son("sonaccount" + fc::to_pretty_string(i), name, true, true);
+         con.wallet_api_ptr->vote_for_son("sonaccount" + fc::to_pretty_string(i), name, type, true, true);
       }
       BOOST_CHECK(generate_maintenance_block());
 
@@ -787,6 +791,7 @@ BOOST_AUTO_TEST_CASE( sidechain_deposit_transaction_test )
    BOOST_TEST_MESSAGE("SON sidechain_deposit_transaction_test cli wallet tests begin");
    try
    {
+      const sidechain_type type = sidechain_type::bitcoin;
       son_test_helper sth(*this);
 
       std::string son_name("sonaccount1");
@@ -817,7 +822,7 @@ BOOST_AUTO_TEST_CASE( sidechain_deposit_transaction_test )
          con.wallet_api_ptr->transfer(
                "nathan", "sonaccount" + fc::to_pretty_string(i), "1000", "1.3.0", "Here are some CORE tokens for your new account", true );
          con.wallet_api_ptr->create_vesting_balance("sonaccount" + fc::to_pretty_string(i), "500", "1.3.0", vesting_balance_type::gpos, true);
-         con.wallet_api_ptr->vote_for_son("sonaccount" + fc::to_pretty_string(i), son_name, true, true);
+         con.wallet_api_ptr->vote_for_son("sonaccount" + fc::to_pretty_string(i), son_name, type, true, true);
       }
       BOOST_CHECK(generate_maintenance_block());
 

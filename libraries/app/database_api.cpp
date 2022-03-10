@@ -2130,63 +2130,74 @@ vector<vote_id_type> database_api_impl::get_votes_ids(const string &account_name
 votes_info database_api_impl::get_votes(const string &account_name_or_id) const {
    votes_info result;
 
-   //const auto &votes_ids = get_votes_ids(account_name_or_id);
-   //const auto &committee_ids = get_votes_objects<committee_member_index, by_vote_id>(votes_ids);
-   //const auto &witness_ids = get_votes_objects<witness_index, by_vote_id>(votes_ids);
-   //const auto &for_worker_ids = get_votes_objects<worker_index, by_vote_for>(votes_ids);
-   //const auto &against_worker_ids = get_votes_objects<worker_index, by_vote_against>(votes_ids);
-   //const auto &son_ids = get_votes_objects<son_index, by_vote_id>(votes_ids, 5);
+   const auto &votes_ids = get_votes_ids(account_name_or_id);
+   const auto &committee_ids = get_votes_objects<committee_member_index, by_vote_id>(votes_ids);
+   const auto &witness_ids = get_votes_objects<witness_index, by_vote_id>(votes_ids);
+   const auto &for_worker_ids = get_votes_objects<worker_index, by_vote_for>(votes_ids);
+   const auto &against_worker_ids = get_votes_objects<worker_index, by_vote_against>(votes_ids);
+   const auto &son_bitcoin_ids = get_votes_objects<son_index, by_vote_id_bitcoin>(votes_ids, 5);
+   const auto &son_hive_ids = get_votes_objects<son_index, by_vote_id_hive>(votes_ids, 5);
 
-   ////! Fill votes info
-   //if (!committee_ids.empty()) {
-   //   vector<votes_info_object> votes_for_committee_members;
-   //   votes_for_committee_members.reserve(committee_ids.size());
-   //   for (const auto &committee : committee_ids) {
-   //      const auto &committee_obj = committee.as<committee_member_object>(2);
-   //      votes_for_committee_members.emplace_back(votes_info_object{committee_obj.vote_id, committee_obj.id});
-   //   }
-   //   result.votes_for_committee_members = std::move(votes_for_committee_members);
-   //}
-   //
-   //if (!witness_ids.empty()) {
-   //   vector<votes_info_object> votes_for_witnesses;
-   //   votes_for_witnesses.reserve(witness_ids.size());
-   //   for (const auto &witness : witness_ids) {
-   //      const auto &witness_obj = witness.as<witness_object>(2);
-   //      votes_for_witnesses.emplace_back(votes_info_object{witness_obj.vote_id, witness_obj.id});
-   //   }
-   //   result.votes_for_witnesses = std::move(votes_for_witnesses);
-   //}
-   //
-   //if (!for_worker_ids.empty()) {
-   //   vector<votes_info_object> votes_for_workers;
-   //   votes_for_workers.reserve(for_worker_ids.size());
-   //   for (const auto &for_worker : for_worker_ids) {
-   //      const auto &for_worker_obj = for_worker.as<worker_object>(2);
-   //      votes_for_workers.emplace_back(votes_info_object{for_worker_obj.vote_for, for_worker_obj.id});
-   //   }
-   //   result.votes_for_workers = std::move(votes_for_workers);
-   //}
-   //
-   //if (!against_worker_ids.empty()) {
-   //   vector<votes_info_object> votes_against_workers;
-   //   votes_against_workers.reserve(against_worker_ids.size());
-   //   for (const auto &against_worker : against_worker_ids) {
-   //      const auto &against_worker_obj = against_worker.as<worker_object>(2);
-   //      votes_against_workers.emplace_back(votes_info_object{against_worker_obj.vote_against, against_worker_obj.id});
-   //   }
-   //   result.votes_against_workers = std::move(votes_against_workers);
-   //}
-   //
-   //if (!son_ids.empty()) {
-   //   vector<votes_info_object> votes_for_sons;
-   //   votes_for_sons.reserve(son_ids.size());
-   //   for (const auto &son : son_ids) {
-   //      const auto &son_obj = son.as<son_object>(6);
-   //      votes_for_sons.emplace_back(votes_info_object{son_obj.vote_id, son_obj.id});
-   //   }
-   //   result.votes_for_sons = std::move(votes_for_sons);
-   //}
+   //! Fill votes info
+   if (!committee_ids.empty()) {
+      vector<votes_info_object> votes_for_committee_members;
+      votes_for_committee_members.reserve(committee_ids.size());
+      for (const auto &committee : committee_ids) {
+         const auto &committee_obj = committee.as<committee_member_object>(2);
+         votes_for_committee_members.emplace_back(votes_info_object{committee_obj.vote_id, committee_obj.id});
+      }
+      result.votes_for_committee_members = std::move(votes_for_committee_members);
+   }
+
+   if (!witness_ids.empty()) {
+      vector<votes_info_object> votes_for_witnesses;
+      votes_for_witnesses.reserve(witness_ids.size());
+      for (const auto &witness : witness_ids) {
+         const auto &witness_obj = witness.as<witness_object>(2);
+         votes_for_witnesses.emplace_back(votes_info_object{witness_obj.vote_id, witness_obj.id});
+      }
+      result.votes_for_witnesses = std::move(votes_for_witnesses);
+   }
+
+   if (!for_worker_ids.empty()) {
+      vector<votes_info_object> votes_for_workers;
+      votes_for_workers.reserve(for_worker_ids.size());
+      for (const auto &for_worker : for_worker_ids) {
+         const auto &for_worker_obj = for_worker.as<worker_object>(2);
+         votes_for_workers.emplace_back(votes_info_object{for_worker_obj.vote_for, for_worker_obj.id});
+      }
+      result.votes_for_workers = std::move(votes_for_workers);
+   }
+
+   if (!against_worker_ids.empty()) {
+      vector<votes_info_object> votes_against_workers;
+      votes_against_workers.reserve(against_worker_ids.size());
+      for (const auto &against_worker : against_worker_ids) {
+         const auto &against_worker_obj = against_worker.as<worker_object>(2);
+         votes_against_workers.emplace_back(votes_info_object{against_worker_obj.vote_against, against_worker_obj.id});
+      }
+      result.votes_against_workers = std::move(votes_against_workers);
+   }
+
+   if (!son_bitcoin_ids.empty()) {
+      vector<votes_info_object> votes_for_sons;
+      votes_for_sons.reserve(son_bitcoin_ids.size());
+      for (const auto &son : son_bitcoin_ids) {
+         const auto &son_obj = son.as<son_object>(6);
+         votes_for_sons.emplace_back(votes_info_object{son_obj.vote_id_bitcoin, son_obj.id});
+      }
+      result.votes_for_bitcoin_sons = std::move(votes_for_sons);
+   }
+
+   if (!son_hive_ids.empty()) {
+      vector<votes_info_object> votes_for_sons;
+      votes_for_sons.reserve(son_hive_ids.size());
+      for (const auto &son : son_hive_ids) {
+         const auto &son_obj = son.as<son_object>(6);
+         votes_for_sons.emplace_back(votes_info_object{son_obj.vote_id_hive, son_obj.id});
+      }
+      result.votes_for_hive_sons = std::move(votes_for_sons);
+   }
 
    return result;
 }

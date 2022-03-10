@@ -23,7 +23,8 @@ namespace graphene { namespace chain {
       optional< vector< votes_info_object > > votes_for_witnesses;
       optional< vector< votes_info_object > > votes_for_workers;
       optional< vector< votes_info_object > > votes_against_workers;
-      optional< vector< votes_info_object > > votes_for_sons;
+      optional< vector< votes_info_object > > votes_for_bitcoin_sons;
+      optional< vector< votes_info_object > > votes_for_hive_sons;
    };
 
 } } // graphene::chain
@@ -37,4 +38,5 @@ FC_REFLECT( graphene::chain::votes_info,
    (votes_for_witnesses)
    (votes_for_workers)
    (votes_against_workers)
-   (votes_for_sons) )
+   (votes_for_bitcoin_sons)
+   (votes_for_hive_sons))
